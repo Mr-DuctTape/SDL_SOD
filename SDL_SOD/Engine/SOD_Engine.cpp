@@ -4,14 +4,13 @@ void Engine::Initialize()
 {
 	// creates the window and renderer
 	application.Initialize(renderingSystem.renderer);
-	// sets up the renderer
-	renderingSystem.Initialize();
-	// Give debugger a camera ref
+
+	// Initialize rendering system, give references or pointers to others
+	renderingSystem.Initialize(&debugger);
 	debugger.Initialize(&renderingSystem.camera);
-	// Give assetmanager a renderer
 	assetManager.Initialize(renderingSystem.renderer);
-	// Just gives pointer too the debugger
 	physics.Intialize(&debugger);
+
 	isRunning = true;
 }
 
@@ -20,10 +19,14 @@ void Engine::Quit()
 	isRunning = false;
 }
 
-void Engine::DeltaTimeUpdate() {
+void Engine::DeltaTimeUpdate() 
+{
 	Uint64 now = SDL_GetPerformanceCounter();
 	deltaTime = (float)(now - previousFrame) / SDL_GetPerformanceFrequency();
 	previousFrame = now;
+
+	constexpr float deltaTimeMAX = 0.033f;
+	deltaTime = (deltaTime > deltaTimeMAX) ? deltaTimeMAX : deltaTime;
 }
 
 void Engine::Physics()
@@ -33,7 +36,8 @@ void Engine::Physics()
 
 void Engine::Update()
 {
-	DeltaTimeUpdate(); // Before or after destroyable calculation idk???
+	// Before or after destroyable calculation idk???
+	Uint64 start = SDL_GetPerformanceCounter();
 
 	std::vector<Entity*> destroyables;
 	for (auto& entity : entityManager.entities)
@@ -61,4 +65,10 @@ void Engine::Update()
 
 	// Update physics
 	Physics();
+
+	Uint64 end = SDL_GetPerformanceCounter();
+	if (debugger.enabled) {
+		float ms = (end - start) * 1000.0f / SDL_GetPerformanceFrequency();
+		debugger.debugStats.updateMs = ms;
+	}
 }

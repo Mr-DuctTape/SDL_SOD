@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include "../Macros/DEBUGPRINT.h"
+#include "../Debug/Debugger.h"
 #include "Camera.h"
 
 struct SDL_Renderer;
@@ -9,33 +10,25 @@ class Debugger;
 
 class RenderingSystem
 {
+private:
+	Debugger* debugger = nullptr;
+
 public:
 	Camera camera;
+
 	SDL_Renderer* renderer = nullptr;
 	SDL_Texture* renderTexture = nullptr;
 
 	const int renderResX = 1280;
 	const int renderResY = 720;
 
+	Debugger* GetDebugger();
 	void PresentScreen();
-	void Initialize() {
-		renderTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR32, SDL_TEXTUREACCESS_TARGET, renderResX, renderResY);
-		SDL_SetTextureScaleMode(renderTexture, SDL_SCALEMODE_NEAREST);
-		SDL_SetRenderLogicalPresentation(
-			renderer,
-			renderResX,
-			renderResY,
-			SDL_LOGICAL_PRESENTATION_STRETCH
-		);
-	}
-	void RenderFrame(EntityManager& entityManager, Debugger& debugger);
+	void Initialize(Debugger* debugger);
+	void RenderFrame(EntityManager& entityManager);
 	void ClearScreen();
 
-	RenderingSystem()
-	{
-	
-	}
-
+	RenderingSystem() {};
 	~RenderingSystem()
 	{
 		if(DEBUGPRINT)

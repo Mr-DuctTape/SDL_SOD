@@ -14,10 +14,10 @@ private:
 	void TileMapCollision(Entity* entity, TileMap* tileMap);
 	void Gravity(Entity* entity, float deltaTime);
 	void Movement(Entity* entity, float deltaTime);
-
 public:
 
-	void Intialize(Debugger* debugger) {
+	void Intialize(Debugger* debugger) 
+	{
 		this->debugger = debugger;
 	}
 	void Update(EntityManager& entityManager, float deltaTime);

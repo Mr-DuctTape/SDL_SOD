@@ -44,6 +44,12 @@ struct Vec2i
 	Vec2i operator/ (const int scaler) const;
 	void operator/= (const Vec2i& other);
 	void operator/= (const int scaler);
+
+	bool operator == (const Vec2i& other) const;
+	bool operator >= (const Vec2i& other) const;
+	bool operator <= (const Vec2i& other) const;
+	bool operator > (const Vec2i& other) const;
+	bool operator < (const Vec2i& other) const;
 };
 
 struct Vec2f
@@ -93,6 +99,11 @@ struct Vec2f
 	void operator/= (const float scaler);
 
 	bool operator== (const Vec2f& other) const;
+
+	bool operator >= (const Vec2f& other) const;
+	bool operator <= (const Vec2f& other) const;
+	bool operator > (const Vec2f& other) const;
+	bool operator < (const Vec2f& other) const;
 
 	friend std::ostream& operator<<(std::ostream& os, const Vec2f& vec);
 };

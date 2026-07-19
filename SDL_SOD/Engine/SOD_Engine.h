@@ -18,6 +18,7 @@ public:
 	Application application;
 	RenderingSystem renderingSystem;
 	Debugger debugger;
+
 	InputSystem inputSystem;
 	EntityManager entityManager;
 	AssetManager assetManager;

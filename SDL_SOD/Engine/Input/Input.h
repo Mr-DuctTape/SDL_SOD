@@ -14,6 +14,8 @@ enum Mouse
 class InputSystem
 {
 private:
+	// Possible improvement for less memory usage on stack, by using bits to represent booleans
+
 	bool previousKeys[SDL_SCANCODE_COUNT] = { false };
 	bool currentKeys[SDL_SCANCODE_COUNT] = { false };
 	bool previousMouse[BUTTON_COUNT] = { false };

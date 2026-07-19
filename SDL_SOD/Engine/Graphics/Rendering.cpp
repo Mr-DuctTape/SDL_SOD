@@ -5,6 +5,17 @@
 #include "../ECS/Components.h"
 #include "../Debug/Debugger.h"
 
+void RenderingSystem::Initialize(Debugger* debugger)
+{
+	renderTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, renderResX, renderResY);
+	SDL_SetTextureScaleMode(renderTexture, SDL_SCALEMODE_NEAREST);
+	this->debugger = debugger;
+}
+Debugger* RenderingSystem::GetDebugger()
+{
+	return debugger;
+}
+
 // Component rendering
 
 void TileMap::Render(RenderingSystem& renderingSystem, Camera& camera)
@@ -22,9 +33,6 @@ void TileMap::Render(RenderingSystem& renderingSystem, Camera& camera)
 		{
 			// Get the position on screen
 			SDL_FRect dst = WorldToScreen(GetTileBoxCollider2D(x, y).rect, camera);
-
-			dst.x = std::round(dst.x);
-			dst.y = std::round(dst.y);
 
 			if (dst.x + dst.w < 0.0f ||
 				dst.x > renderingSystem.renderResX ||
@@ -44,6 +52,12 @@ void TileMap::Render(RenderingSystem& renderingSystem, Camera& camera)
 
 			// Draw tile onto screen
 			SDL_RenderTexture(renderingSystem.renderer, spriteSheet, &src, &dst);
+			Debugger* debugger = renderingSystem.GetDebugger();
+			if (debugger && debugger->enabled)
+			{
+				debugger->debugStats.tilesRendered++;
+				debugger->debugStats.drawCalls++;
+			}
 		}
 	}
 }
@@ -79,6 +93,33 @@ void Animator::Render(RenderingSystem& renderingSystem, Camera& camera)
 		nullptr,
 		flip
 	);
+
+	int x = static_cast<int>(std::round(dst.x));
+	int y = static_cast<int>(std::round(dst.y));
+
+	Debugger* debugger = renderingSystem.GetDebugger();
+
+	// some debugging for the animator
+	if (debugger && debugger->enabled)
+	{
+		if (destroyOnFinish)
+		{
+			SDL_SetRenderDrawColor(renderingSystem.renderer, 170, 140, 255, 255);
+			SDL_RenderDebugText(renderingSystem.renderer, x, y + 20,
+				("Destroyable"));
+		}
+		else
+		{
+			SDL_SetRenderDrawColor(renderingSystem.renderer, 120, 180, 255, 255);
+			SDL_RenderDebugText(renderingSystem.renderer, x, y - 10,
+				("State: " + currentState).c_str());
+
+			SDL_RenderDebugText(renderingSystem.renderer, x, y,
+				("FlippedX: " + std::string(flippedX ? "true" : "false")).c_str());
+		}
+		debugger->debugStats.spritesRendered++;
+		debugger->debugStats.drawCalls++;
+	}
 }
 
 
@@ -89,8 +130,10 @@ void RenderingSystem::PresentScreen()
 	SDL_RenderPresent(renderer);
 }
 
-void RenderingSystem::RenderFrame(EntityManager& entityManager, Debugger& debugger)
+void RenderingSystem::RenderFrame(EntityManager& entityManager)
 {
+	Uint64 start = SDL_GetPerformanceCounter();
+
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 	SDL_SetRenderTarget(renderer, renderTexture);
 
@@ -110,7 +153,7 @@ void RenderingSystem::RenderFrame(EntityManager& entityManager, Debugger& debugg
 		if (e->HasComponent<Animator>())
 		{
 			Animator* animator = e->GetComponent<Animator>();
-			animator->Render(*this, camera); // Renders pretty much everything needed
+			animator->Render(*this, camera); 
 		}
 		else 
 		{
@@ -138,30 +181,56 @@ void RenderingSystem::RenderFrame(EntityManager& entityManager, Debugger& debugg
 				SDL_RenderFillRect(renderer, &dst);
 				continue;
 			}
+
 			SDL_RenderTexture(renderer, sprt->texture, NULL, &dst);
+			if (debugger && debugger->enabled) {
+				debugger->debugStats.spritesRendered++;
+				debugger->debugStats.drawCalls++;
+			}
 		}
 	}
 
 
 	// --- Debugging ---
-	for (auto& r : debugger.BoxColliders)
+
+	Uint64 end = SDL_GetPerformanceCounter();
+	if (debugger && debugger->enabled)
 	{
-		SDL_RenderRect(renderer, &r);
+		float ms = (end - start) * 1000.0f / SDL_GetPerformanceFrequency();
+		debugger->debugStats.renderMs = ms;
 	}
 
-	for (auto& v : debugger.trajectories)
+	if (debugger && debugger->enabled)
 	{
-		SDL_RenderLine(renderer, v.x1, v.y1, v.x2, v.y2);
+		SDL_SetRenderDrawColor(renderer, 150, 123, 175, 255);
+		for (auto& r : debugger->boxColliders)
+		{
+			SDL_RenderRect(renderer, &r);
+		}
+
+		for (auto& v : debugger->trajectories)
+		{
+			SDL_RenderLine(renderer, v.x1, v.y1, v.x2, v.y2);
+		}
+
+		debugger->DrawPerformanceStats(renderer, entityManager);
+		debugger->trajectories.clear();
+		debugger->boxColliders.clear();
 	}
 
-	debugger.trajectories.clear();
-	debugger.BoxColliders.clear();
 	SDL_SetRenderTarget(renderer, nullptr);
 }
 
 void RenderingSystem::ClearScreen()
 {
 	SDL_Color color;
+	if (debugger && debugger->enabled)
+	{
+		debugger->debugStats.drawCalls = 0;
+		debugger->debugStats.spritesRendered = 0;
+		debugger->debugStats.tilesRendered = 0;
+	}
+
 	SDL_GetRenderDrawColor(renderer, &color.r, &color.g, &color.b, &color.a);
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_SetRenderTarget(renderer, renderTexture);

@@ -4,6 +4,7 @@
 #include <fstream>
 #include "../Macros/DEBUGPRINT.h"
 
+/// ===== ANIMATOR COMPONENT =====
 std::unordered_map<std::string, Animator::Animation> Animator::animations;
 
 void Animator::Update(float dt)
@@ -47,24 +48,102 @@ void Animator::Update(float dt)
 	dst.w = sprite->width;
 	dst.h = sprite->height;
 }
+Animator::Animation Animator::CreateAnimation(const std::string& name, int frames, int pixelWidth, int pixelHeight, SDL_Texture* spriteSheet)
+{
+	static int Increase = 0;
+	Animation anim;
+	anim.frames = frames;
+	anim.pixelHeight = pixelHeight;
+	anim.pixelWidth = pixelWidth;
+	anim.spriteSheet = spriteSheet;
+	anim.ID = Increase++;
 
+	animations.emplace(name, anim);
+	return anim;
+}
+Animator::Animation Animator::GetAnimation(const std::string& anim)
+{
+	auto it = animations.find(anim);
+	return it->second;
+}
+void Animator::SetAnimation(const Animation& animation)
+{
+	if (currentAnimation.ID != animation.ID)
+		currentAnimation = animation;
+
+	finished = false;
+}
+void Animator::SetAnimation(const std::string& name)
+{
+	auto anim = GetAnimation(name);
+	if (currentAnimation.ID != anim.ID)
+		currentAnimation = anim;
+
+	currentState = name;
+	finished = false;
+}
+void Animator::Print() const
+{
+	if (!DEBUGPRINT)
+		return;
+
+	std::cout << "=== Animator Debug ===\n";
+
+	std::cout << "Parent Entity ID: " << parent->ID << "\n";
+
+	std::cout << "Current State: " << currentState << "\n";
+
+	std::cout << "Scale X: " << scaleAnimationX << "\n";
+	std::cout << "Scale Y: " << scaleAnimationY << "\n";
+
+	std::cout << "Timer: " << timer << "\n";
+	std::cout << "Speed: " << speed << "\n";
+
+	std::cout << "Flipped X: " << (flippedX ? "true" : "false") << "\n";
+
+	std::cout << "--- Current Animation ---\n";
+	std::cout << "ID: " << currentAnimation.ID << "\n";
+	std::cout << "Frames: " << currentAnimation.frames << "\n";
+	std::cout << "Current Frame: " << currentAnimation.currentFrame << "\n";
+	std::cout << "Pixel Width: " << currentAnimation.pixelWidth << "\n";
+	std::cout << "Pixel Height: " << currentAnimation.pixelHeight << "\n";
+
+	std::cout << "Src: { "
+		<< currentAnimation.src.x << ", "
+		<< currentAnimation.src.y << ", "
+		<< currentAnimation.src.w << ", "
+		<< currentAnimation.src.h << " }\n";
+
+	std::cout << "Dst: { "
+		<< currentAnimation.dst.x << ", "
+		<< currentAnimation.dst.y << ", "
+		<< currentAnimation.dst.w << ", "
+		<< currentAnimation.dst.h << " }\n";
+
+	std::cout << "SpriteSheet: "
+		<< (currentAnimation.spriteSheet ? "Loaded" : "NULL")
+		<< "\n";
+
+	std::cout << "========================\n";
+}
+
+// ==== PHYSICS2D COMPONENT ====
 void Physics2D::Init()
 {
 	auto transform = parent->GetComponent<Transform>();
 	if (!transform) return;
 }
-
 void Physics2D::Accelerate(Vec2f force)
 {
 	acceleration += force;
 }
-
 void Physics2D::AddForce(Vec2f force)
 {
 	velocity += force;
 }
 
-void BoxCollider2D::Update(float dt)
+// ==== BOXCOLLIDER2D COMPONENT ====
+void BoxCollider2D::UpdatePosition() 
 {
 	if (!parent)
 		return;
@@ -109,41 +188,33 @@ void BoxCollider2D::Update(float dt)
 
 	rect.x = transform->position.x + offsetX;
 	rect.y = transform->position.y + offsetY;
-
-	// TODO: Need to fix this 
+ 
 	rect.w = width;
 	rect.h = height;
 
 	isColliding = false;
 }
-// --- TileMap ---
-SDL_FRect TileMap::GetTileFRect(int x, int y)
+
+void BoxCollider2D::Update(float dt)
 {
-	SDL_FRect rect = {};
-	// Scale from tilespace too screen space
-	rect.x = x * tilePixelWidth * tileScaleX;
-	rect.y = y * tilePixelHeight * tileScaleY;
-	rect.w = tilePixelWidth * tileScaleX;
-	rect.h = tilePixelHeight * tileScaleY;
-	return rect;
+	data.side = CollisionData::Side::None;
 }
 
-BoxCollider2D TileMap::GetTileBoxCollider2D(int x, int y)
+// ==== TILEMAP COMPONENT ====
+TileMap::TileMap(const TileMap& other)
 {
-	Transform* transform = parent->GetComponent<Transform>();
-	if (!transform)
-		return BoxCollider2D{};
+	spriteSheet = other.spriteSheet;
+	SDL_SetTextureScaleMode(spriteSheet, SDL_SCALEMODE_NEAREST);
 
-	BoxCollider2D box;
-	SDL_FRect& rect = box.rect;
+	tiles = other.tiles;
+	tilePixelHeight = other.tilePixelHeight;
+	tilePixelWidth = other.tilePixelWidth;
+	tileScaleX = other.tileScaleX;
+	tileScaleY = other.tileScaleY;
 
-	// Scale from tilespace too screen space
-	rect.x = (x * tilePixelWidth * tileScaleX) + transform->position.x;
-	rect.y = (y * tilePixelHeight * tileScaleY) + transform->position.y;
-	rect.w = (tilePixelWidth * tileScaleX);
-	rect.h = (tilePixelHeight * tileScaleY);
-
-	return box;
+	// Copies raw bytes, very fast for C style arrays, Plain old data structs etc
+	// Ignores constructors
+	memcpy(tileProperties, other.tileProperties, sizeof(other.tileProperties));
 }
 
 void TileMap::SetTilePixelSize(int width, int height) 
@@ -151,19 +222,16 @@ void TileMap::SetTilePixelSize(int width, int height)
 	tilePixelWidth = width;
 	tilePixelHeight = height;
 }
-
 void TileMap::SetTileScale(float scaleX, float scaleY)
 {
 	tileScaleX = scaleX;
 	tileScaleY = scaleY;
 }
-
 void TileMap::SetSpriteSheet(SDL_Texture* spriteSheet)
 {
 	this->spriteSheet = spriteSheet;
 	SDL_SetTextureScaleMode(spriteSheet, SDL_SCALEMODE_NEAREST);
 }
-
 void TileMap::SetTileProperties(int ID, TileProperties properties)
 {
 	GetTileProperties(ID) = properties;
@@ -186,24 +254,33 @@ std::vector<std::vector<int>>& TileMap::GetTiles()
 {
 	return tiles;
 }
-
-TileMap::TileMap(const TileMap& other)
+SDL_FRect TileMap::GetTileFRect(int x, int y)
 {
-	spriteSheet = other.spriteSheet;
-	SDL_SetTextureScaleMode(spriteSheet, SDL_SCALEMODE_NEAREST);
-
-	tiles = other.tiles;
-	tilePixelHeight = other.tilePixelHeight;
-	tilePixelWidth = other.tilePixelWidth;
-	tileScaleX = other.tileScaleX;
-	tileScaleY = other.tileScaleY;
-
-	memcpy(tileProperties, other.tileProperties, sizeof(other.tileProperties));
-	// Copies raw bytes, very fast for C style arrays, Plain old data structs etc
-	// Ignores constructors
+	SDL_FRect rect = {};
+	// Scale from tilespace too screen space
+	rect.x = x * tilePixelWidth * tileScaleX;
+	rect.y = y * tilePixelHeight * tileScaleY;
+	rect.w = tilePixelWidth * tileScaleX;
+	rect.h = tilePixelHeight * tileScaleY;
+	return rect;
 }
+BoxCollider2D TileMap::GetTileBoxCollider2D(int x, int y)
+{
+	Transform* transform = parent->GetComponent<Transform>();
+	if (!transform)
+		return BoxCollider2D{};
 
+	BoxCollider2D box;
+	SDL_FRect& rect = box.rect;
 
+	// Scale from tilespace too screen space
+	rect.x = (x * tilePixelWidth * tileScaleX) + transform->position.x;
+	rect.y = (y * tilePixelHeight * tileScaleY) + transform->position.y;
+	rect.w = (tilePixelWidth * tileScaleX);
+	rect.h = (tilePixelHeight * tileScaleY);
+
+	return box;
+}
 
 TileMap::TileMapData TileMap::GetMapData(const char* file)
 {
@@ -260,49 +337,4 @@ void TileMap::TestPrint()
 		}
 		std::cout << "\n";
 	}
-}
-
-void Animator::Print() const
-{
-	if (!DEBUGPRINT)
-		return;
-
-	std::cout << "=== Animator Debug ===\n";
-
-	std::cout << "Parent Entity ID: " << parent->ID << "\n";
-
-	std::cout << "Current State: " << currentState << "\n";
-
-	std::cout << "Scale X: " << scaleAnimationX << "\n";
-	std::cout << "Scale Y: " << scaleAnimationY << "\n";
-
-	std::cout << "Timer: " << timer << "\n";
-	std::cout << "Speed: " << speed << "\n";
-
-	std::cout << "Flipped X: " << (flippedX ? "true" : "false") << "\n";
-
-	std::cout << "--- Current Animation ---\n";
-	std::cout << "ID: " << currentAnimation.ID << "\n";
-	std::cout << "Frames: " << currentAnimation.frames << "\n";
-	std::cout << "Current Frame: " << currentAnimation.currentFrame << "\n";
-	std::cout << "Pixel Width: " << currentAnimation.pixelWidth << "\n";
-	std::cout << "Pixel Height: " << currentAnimation.pixelHeight << "\n";
-
-	std::cout << "Src: { "
-		<< currentAnimation.src.x << ", "
-		<< currentAnimation.src.y << ", "
-		<< currentAnimation.src.w << ", "
-		<< currentAnimation.src.h << " }\n";
-
-	std::cout << "Dst: { "
-		<< currentAnimation.dst.x << ", "
-		<< currentAnimation.dst.y << ", "
-		<< currentAnimation.dst.w << ", "
-		<< currentAnimation.dst.h << " }\n";
-
-	std::cout << "SpriteSheet: "
-		<< (currentAnimation.spriteSheet ? "Loaded" : "NULL")
-		<< "\n";
-
-	std::cout << "========================\n";
 }

@@ -47,6 +47,19 @@ struct Physics2D : Component
 	}
 };
 
+struct CollisionData
+{
+	enum class Side
+	{
+		None,
+		Left,
+		Right,
+		Top,
+		Bottom
+	};
+	Side side = Side::None;
+};
+
 struct BoxCollider2D : Component
 {
 	SDL_FRect rect = {};
@@ -59,6 +72,8 @@ struct BoxCollider2D : Component
 	float width = 150.0f;
 	float height = 150.0f;
 
+
+	CollisionData data;
 	bool isColliding = false;
 
 private:
@@ -66,6 +81,7 @@ private:
 public:
 
 	void Update(float dt) override;
+	void UpdatePosition();
 	BoxCollider2D* Clone() override
 	{
 		return new BoxCollider2D(*this);
@@ -76,9 +92,43 @@ public:
 	}
 };
 
-inline bool CheckCollision(BoxCollider2D& a, BoxCollider2D& b)
+static CollisionData GetCollision(BoxCollider2D& boxA, BoxCollider2D& boxB)
 {
-	return SDL_HasRectIntersectionFloat(&a.rect, &b.rect);
+	CollisionData data;
+
+	SDL_FRect intersection;
+
+	SDL_FRect& a = boxA.rect;
+	SDL_FRect& b = boxB.rect;
+
+	if (!SDL_GetRectIntersectionFloat(&a, &b, &intersection))
+		return data;
+
+	float leftOverlap = (a.x + a.w) - b.x;
+	float rightOverlap = (b.x + b.w) - a.x;
+	float topOverlap = (a.y + a.h) - b.y;
+	float bottomOverlap = (b.y + b.h) - a.y;
+
+	float xOverlap = std::min(leftOverlap, rightOverlap);
+	float yOverlap = std::min(topOverlap, bottomOverlap);
+
+	if (xOverlap < yOverlap)
+	{
+		if (a.x < b.x)
+			data.side = CollisionData::Side::Right;
+		else
+			data.side = CollisionData::Side::Left;
+	}
+	else
+	{
+		if (a.y < b.y)
+			data.side = CollisionData::Side::Bottom;
+		else
+			data.side = CollisionData::Side::Top;
+	}
+
+	boxA.data = data;
+	return data;
 }
 
 struct Transform : Component
@@ -141,16 +191,6 @@ public:
 	};
 private:
 	TileProperties tileProperties[MAX_TILE_PROPERTIES];
-
-	struct TileMapData
-	{
-		int width{};
-		int height{};
-		int pixelHeight{};
-		int pixelWidth{};
-		std::vector<std::vector<int>> grid;
-	};
-	TileMapData GetMapData(const char* file);
 public:
 	TileMap() { SDL_SetTextureScaleMode(spriteSheet, SDL_SCALEMODE_NEAREST); };
 	TileMap(const TileMap& other);
@@ -160,7 +200,6 @@ public:
 	void SetTileProperties(int ID, TileProperties properties);
 	void SetSpriteSheet(SDL_Texture* spriteSheet);
 
-	std::vector<std::vector<int>>& GetTiles();
 	struct TileScale
 	{
 		int tilePixelHeight = 0;
@@ -172,6 +211,8 @@ public:
 		float scaledY = 0.0f;
 	};
 	TileScale GetTileScale();
+
+	std::vector<std::vector<int>>& GetTiles();
 	SDL_FRect GetTileFRect(int x, int y);
 	BoxCollider2D GetTileBoxCollider2D(int x, int y);
 	inline TileProperties& GetTileProperties(int ID)
@@ -196,6 +237,18 @@ public:
 			return false;
 		return GetTileProperties(GetTileID(x, y)).solid;
 	}
+
+private:
+	struct TileMapData
+	{
+		int width{};
+		int height{};
+		int pixelHeight{};
+		int pixelWidth{};
+		std::vector<std::vector<int>> grid;
+	};
+	TileMapData GetMapData(const char* file);
+public:
 	void LoadTileMap(const std::string& filePath);
 	void Render(RenderingSystem& renderingSystem, Camera& camera); // Defined in Rendering.cpp
 	void TestPrint();
@@ -235,7 +288,6 @@ public:
 
 		int ID = 0;
 	};
-
 	Animation currentAnimation;
 private:
 	static std::unordered_map<std::string, Animator::Animation> animations;
@@ -253,48 +305,16 @@ public:
 	bool finished = false;
 	bool effectBase = false;
 
-
 	bool update = true;
 	bool destroyOnFinish = false;
 	bool flippedX = false;
 
-	Animation CreateAnimation(const std::string& name, int frames, int pixelWidth, int pixelHeight, SDL_Texture* spriteSheet)
-	{
-		static int Increase = 0;
-		Animation anim;
-		anim.frames = frames;
-		anim.pixelHeight = pixelHeight;
-		anim.pixelWidth = pixelWidth;
-		anim.spriteSheet = spriteSheet;
-		anim.ID = Increase++;
-
-		animations.emplace(name, anim);
-		return anim;
-	}
-	Animation GetAnimation(const std::string& anim)
-	{
-		auto it = animations.find(anim);
-		return it->second;
-	}
-	void SetAnimation(const Animation& animation)
-	{
-		if (currentAnimation.ID != animation.ID)
-			currentAnimation = animation;
-
-		finished = false;
-	}
-	void SetAnimation(const std::string& name)
-	{
-		auto anim = GetAnimation(name);
-		if (currentAnimation.ID != anim.ID)
-			currentAnimation = anim;
-
-		currentState = name;
-		finished = false;
-	}
+	Animation CreateAnimation(const std::string& name, int frames, int pixelWidth, int pixelHeight, SDL_Texture* spriteSheet);
+	Animation GetAnimation(const std::string& anim);
+	void SetAnimation(const Animation& animation);
+	void SetAnimation(const std::string& name);
 
 	void Print() const;
-
 	void Update(float dt) override;
 	void Render(RenderingSystem& renderingSystem, Camera& camera); // Defined in Rendering.cpp
 

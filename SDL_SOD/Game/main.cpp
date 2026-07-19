@@ -2,11 +2,11 @@
 #include "../Engine/SOD_Engine.h"
 #include "Components/GameComponents.h"
 
-bool IsCoyoteAvailable(float dt, float cTime, float& cTimer, bool& coyote, bool grounded)
+bool IsCoyoteAvailable(float deltaTime, float cTime, float& cTimer, bool& coyote, bool grounded)
 {
 	if (!grounded)
 	{
-		cTimer += dt;
+		cTimer += deltaTime;
 		if (cTimer < cTime)
 		{
 			coyote = true;
@@ -22,6 +22,22 @@ bool IsCoyoteAvailable(float dt, float cTime, float& cTimer, bool& coyote, bool 
 	}
 
 	return coyote;
+}
+bool IsJumpBufferRunnning(float deltaTime, float jTime, float& jTimer, bool& jumpBuffer)
+{
+	if (jTimer < jTime)
+	{
+		jTimer += deltaTime;
+		jumpBuffer = true;
+	}
+
+	if (jTimer >= jTime)
+	{
+		jumpBuffer = false;
+		jTimer = 0;
+	}
+
+	return jumpBuffer;
 }
 
 void ChangePlayerAnimatorStates(Animator* animator, float speed)
@@ -63,39 +79,40 @@ void ChangePlayerAnimatorStates(Animator* animator, float speed)
 		animator->speed = 0.1f;
 	}
 }
-
-void SpawnRunningEffect(EntityManager& entityManager, Entity* effect, bool isGrounded, float dt, Transform* transform, Animator* animator)
+void SpawnRunningEffect(EntityManager& entityManager, Entity* effect, bool isGrounded, float deltaTime, Transform* transform, Animator* animator)
 {
 	if (!effect || !transform || !animator)
 		return;
 
-	static float fxTimer = 0.0f;
-	float fxTime = 0.30f;
+	static float vfxTimer = 0.0f;
+	float vfxTime = 0.30f;
 
-	// FX timer
-	fxTimer += dt;
-	if (fxTimer >= fxTime && isGrounded)
+	// visual effect timer
+	vfxTimer += deltaTime;
+	if (vfxTimer >= vfxTime && isGrounded)
 	{
-		auto& fx = entityManager.CreateEntity(*effect);
-		auto fxTransform = fx.GetComponent<Transform>();
-		if (!fxTransform) return;
+		// Create visual effect
+		auto& vfxObject = entityManager.CreateEntity(*effect);
+		auto vfxTransform = vfxObject.GetComponent<Transform>();
+
+		if (!vfxTransform) return;
 
 		if (animator->flippedX)
-			fxTransform->position = { transform->position.x + 2.0f, transform->position.y };
+			vfxTransform->position = { transform->position.x + 10.0f, transform->position.y };
 		else
-			fxTransform->position = { transform->position.x - 2.0f, transform->position.y };
+			vfxTransform->position = { transform->position.x - 10.0f, transform->position.y };
 
-		auto fxAnim = fx.GetComponent<Animator>();
-		if (!fxAnim) return;
-		fxAnim->destroyOnFinish = true;
-		fxAnim->update = true;
-		fxAnim->finished = false;
-		fxAnim->flippedX = animator->flippedX;
-		fxTimer = 0.0f;
+		auto vfxAnimator = vfxObject.GetComponent<Animator>();
+		if (!vfxAnimator) return;
+		vfxAnimator->destroyOnFinish = true;
+		vfxAnimator->update = true;
+		vfxAnimator->finished = false;
+		vfxAnimator->flippedX = animator->flippedX;
+		vfxTimer = 0.0f;
 	}
 }
 
-void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Entity* player, Entity* effect, float dt)
+void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Entity* player, Entity* effect, float deltaTime)
 {
 	Transform* transform = player->GetComponent<Transform>();
 	Physics2D* physics = player->GetComponent<Physics2D>();
@@ -106,7 +123,7 @@ void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Enti
 	Vec2f accel = { 0, 0 };
 	Vec2f force = { 0, 0 };
 
-	bool isGrounded = boxCollider2D->isColliding;
+	bool isGrounded = (boxCollider2D->data.side == CollisionData::Side::Bottom);
 	float movementSpeed = 3500.0f;
 
 	if (!isGrounded)
@@ -115,16 +132,16 @@ void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Enti
 	}
 
 	static float coyoteTimer = 0.0f;
-	float coyoteTime = 0.1f;
+	float coyoteTime = 0.18f;
 	bool coyoteAvailable = false;
-	IsCoyoteAvailable(dt, coyoteTime, coyoteTimer, coyoteAvailable, isGrounded);
+	IsCoyoteAvailable(deltaTime, coyoteTime, coyoteTimer, coyoteAvailable, isGrounded);
 
 	float speed = physics->velocity.Magnitude();
 	ChangePlayerAnimatorStates(animator, speed);
 
-	if (animator->currentState == "Run") 
+	if (animator->currentState == "Run")
 	{
-		SpawnRunningEffect(entityManager, effect, isGrounded, dt, transform, animator);
+		SpawnRunningEffect(entityManager, effect, isGrounded, deltaTime, transform, animator);
 	}
 
 	if (inputSystem.GetButton(SDL_SCANCODE_W))
@@ -132,14 +149,34 @@ void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Enti
 		accel.y -= movementSpeed;
 	}
 
-	if (inputSystem.GetButtonDown(SDL_SCANCODE_SPACE))
+	static float jumpBufferTimer = 0.0f;
+	static bool gatherBuffer = false;
+	float jumpBufferTime = 0.12f;
+	bool jumpBuffer = false;
+
+	if (inputSystem.GetButtonDown(SDL_SCANCODE_SPACE) && gatherBuffer) 
 	{
-		if (isGrounded || coyoteAvailable)
-		{
-			animator->SetAnimation("Jump");
-			force.y -= 4000.0f;
-			animator->speed = 0.16f;
-		}
+		gatherBuffer = false;
+	}
+	else if (inputSystem.GetButtonDown(SDL_SCANCODE_SPACE))
+	{
+		gatherBuffer = true;
+		jumpBufferTimer = 0.0f;
+	} 
+
+	if (gatherBuffer)
+	{
+		gatherBuffer = IsJumpBufferRunnning(deltaTime, jumpBufferTime, jumpBufferTimer, jumpBuffer);
+	}
+
+	bool jumpAvailable = isGrounded || coyoteAvailable;
+	if (gatherBuffer && jumpAvailable)
+	{
+		gatherBuffer = false;
+		jumpBufferTimer = 0.0f;
+
+		animator->SetAnimation("Jump");
+		force.y -= 4000.0f;
 	}
 
 	if (inputSystem.GetButton(SDL_SCANCODE_A))
@@ -158,53 +195,6 @@ void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Enti
 	physics->Accelerate(accel);
 	physics->AddForce(force);
 }
-
-void CameraSplitWorld(Entity* player, RenderingSystem& renderingSystem, float deltaTime)
-{
-	auto transform = player->GetComponent<Transform>();
-	if (!transform || transform->position.x <= 0.0f)
-		return;
-
-	deltaTime = (deltaTime > 0.033f) ? 0.033f : deltaTime; // Ensure that deltatime doesnt get too big
-
-	static float cameraMovedX = 0.0f;
-	static float oldMoved = cameraMovedX;
-	static float positionToMove = renderingSystem.renderResX;
-	const float cameraSpeed = 1000.0f;
-
-	Camera& camera = renderingSystem.camera;
-
-	// Moving the camera
-	if (camera.pos.x < positionToMove)
-	{
-		camera.pos.x += cameraSpeed * deltaTime;
-
-		if (camera.pos.x > positionToMove)
-			camera.pos.x = positionToMove;
-	}
-	else if (camera.pos.x > positionToMove)
-	{
-		camera.pos.x -= cameraSpeed * deltaTime;
-
-		if (camera.pos.x < positionToMove)
-			camera.pos.x = positionToMove;
-	}
-
-	// Setting the next position
-	if (transform->position.x >= cameraMovedX)
-	{
-		oldMoved = cameraMovedX;
-		positionToMove = cameraMovedX;
-		cameraMovedX += renderingSystem.renderResX * 2.0f;
-	}
-	else if (transform->position.x <= oldMoved)
-	{
-		oldMoved = cameraMovedX;
-		positionToMove = cameraMovedX;
-		cameraMovedX -= renderingSystem.renderResX * 2.0f;
-	}
-}
-
 void PlayerDeath(Entity& player, Entity* effect, EntityManager& entityManager) {
 
 	Transform* playerTransform = player.GetComponent<Transform>();
@@ -224,7 +214,6 @@ void PlayerDeath(Entity& player, Entity* effect, EntityManager& entityManager) {
 	fxAnim->finished = false;
 	playerTransform->position = Vec2f{ 200.0f, -100.0f };
 }
-
 void PlayerBounds(Entity& player, Entity* effect, RenderingSystem& renderingSystem, EntityManager& entityManager) {
 	Transform* playerTransform = player.GetComponent<Transform>();
 	if (!playerTransform) return;
@@ -232,11 +221,10 @@ void PlayerBounds(Entity& player, Entity* effect, RenderingSystem& renderingSyst
 	if (playerTransform->position.y >= renderingSystem.renderResX * 2)
 		PlayerDeath(player, effect, entityManager);
 }
-
 void PlayerSpikesCollisions(Entity& player, Entity* effect, EntityManager& entityManager)
 {
 	BoxCollider2D* playerBoxCollider = player.GetComponent<BoxCollider2D>();
-	if (!playerBoxCollider) 
+	if (!playerBoxCollider)
 		return;
 
 	bool playerDeath = false;
@@ -254,12 +242,32 @@ void PlayerSpikesCollisions(Entity& player, Entity* effect, EntityManager& entit
 		if (!tag || !entityBoxCollider)
 			continue;
 
-		if (tag->name == "Spikes" && CheckCollision(*playerBoxCollider, *entityBoxCollider)) {
+		if (tag->name == "Spikes" && GetCollision(*playerBoxCollider, *entityBoxCollider).side != CollisionData::Side::None) {
 			playerDeath = true;
 		}
 	}
 	if (playerDeath)
 		PlayerDeath(player, effect, entityManager);
+}
+
+void CameraFollowPlayer(Entity& player, RenderingSystem& renderingSystem, float deltaTime)
+{
+	Transform* playerTransform = player.GetComponent<Transform>();
+	if (!playerTransform)
+		return;
+
+	Vec2f target =
+	{
+		playerTransform->position.x - renderingSystem.renderResX,
+		playerTransform->position.y - renderingSystem.renderResY
+	};
+
+	Camera& camera = renderingSystem.camera;
+
+	constexpr float followSpeed = 3.5f;
+	camera.pos += (target - camera.pos) * followSpeed * deltaTime;
+	camera.pos.x = std::round(camera.pos.x);
+	camera.pos.y = std::round(camera.pos.y);
 }
 
 #define SPRT_HEIGHT 128
@@ -270,7 +278,7 @@ int main()
 	Engine engine;
 	engine.Initialize();
 
-	engine.assetManager.CreateTexture("TileSet", "C:\\Test\\tiles.png");
+	engine.assetManager.CreateTexture("TileSet", "C:\\Test\\tiles3.png");
 	SDL_SetTextureScaleMode(engine.assetManager.GetTexture("TileSet"), SDL_SCALEMODE_NEAREST);
 	engine.assetManager.CreateTexture("PlayerRun", "C:\\Test\\PlayerSheet.png");
 	engine.assetManager.CreateTexture("PlayerIdle", "C:\\Test\\Idle.png");
@@ -280,7 +288,7 @@ int main()
 	obj.AddComponent<Transform>()->position = { 100.0f, 200.0f };
 
 	auto& tileMap = *obj.AddComponent<TileMap>();
-	tileMap.LoadTileMap("C:\\Test\\Testing.sodmap");
+	tileMap.LoadTileMap("C:\\Test\\Plane.sodmap");
 	tileMap.SetTilePixelSize(16, 16);
 	tileMap.SetTileScale(8.0f, 8.0f);
 	tileMap.SetSpriteSheet(engine.assetManager.GetTexture("TileSet"));
@@ -297,7 +305,7 @@ int main()
 	animator->CreateAnimation("Jump", 3, 16, 16, engine.assetManager.GetTexture("PlayerJump"));
 
 	animator->SetAnimation("Idle");
-	animator->speed = 0.1f;
+	animator->speed = 0.15f;
 	animator->scaleAnimationX = 1.0f;
 	animator->scaleAnimationY = 1.0f;
 	animator->Print();
@@ -319,6 +327,20 @@ int main()
 	tileMap.SetTileProperties(10, properties);
 	tileMap.SetTileProperties(11, properties);
 	tileMap.SetTileProperties(12, properties);
+	tileMap.SetTileProperties(13, properties);
+	tileMap.SetTileProperties(14, properties);
+
+	tileMap.SetTileProperties(16, properties);
+	tileMap.SetTileProperties(17, properties);
+	tileMap.SetTileProperties(18, properties);
+	tileMap.SetTileProperties(19, properties);
+	tileMap.SetTileProperties(20, properties);
+	tileMap.SetTileProperties(21, properties);
+	tileMap.SetTileProperties(22, properties);
+	tileMap.SetTileProperties(23, properties);
+	tileMap.SetTileProperties(24, properties);
+	tileMap.SetTileProperties(25, properties);
+	tileMap.SetTileProperties(26, properties);
 
 	auto scale = tileMap.GetTileScale();
 
@@ -329,7 +351,7 @@ int main()
 
 	playerSprite->height = SPRT_HEIGHT;
 	playerSprite->width = SPRT_WIDTH;
-	bool debugger = false;
+	bool enableDebugger = false;
 
 	auto& effectObj = engine.entityManager.CreateEntity();
 	effectObj.AddComponent<Transform>();
@@ -384,37 +406,69 @@ int main()
 	spikeCollider->offsetX = 45;
 	spikeSprite->texture = engine.assetManager.GetTexture("SpikeTexture");
 	spikeTransform->position.x = -700;
+	//engine.entityManager.CreateEntitiesFromObjFile("C:\\Test\\Testing.sodobj", "Spikes", spike);
 
-	engine.entityManager.CreateEntitiesFromObjFile("C:\\Test\\Objects.sodobj", "Spikes", spike);
+	constexpr float targetFrameTime = 1.0f / 1000.0f;
 
+	// Game loop
 	while (engine.isRunning)
 	{
+		Uint64 frameStart = SDL_GetPerformanceCounter();
+
+		engine.DeltaTimeUpdate();
 		engine.inputSystem.Process();
 		engine.renderingSystem.ClearScreen();
 
-		if (debugger)
+		// Debugger stuff, get rid off on release
+		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_0))
 		{
-			engine.debugger.visuals = true;
+			enableDebugger = !enableDebugger;
+			engine.debugger.enabled = enableDebugger;
+			engine.debugger.boxColliders.clear();
+		}
+		if (enableDebugger)
+		{
+			static float fpsTimer = 0.0f;
+			static int frameCount = 0;
+
+			fpsTimer += engine.deltaTime;
+			frameCount++;
+
+			if (fpsTimer >= 0.5f)
+			{
+				engine.debugger.debugStats.fps = frameCount / fpsTimer;
+				engine.debugger.debugStats.ms = (fpsTimer / frameCount) * 1000.0f;
+
+				frameCount = 0;
+				fpsTimer = 0.0f;
+			}
+
+			engine.debugger.enabled = true;
 			engine.debugger.DrawAllColliders(engine.entityManager);
 		}
 
 		PlayerSpikesCollisions(player, &explosion, engine.entityManager);
 		PlayerMovement(engine.inputSystem, engine.entityManager, &player, &effectObj, engine.deltaTime);
 		PlayerBounds(player, &explosion, engine.renderingSystem, engine.entityManager);
-		CameraSplitWorld(&player, engine.renderingSystem, engine.deltaTime);
 
 		engine.Update();
-		engine.renderingSystem.RenderFrame(engine.entityManager, engine.debugger);
-		engine.renderingSystem.PresentScreen();
+		CameraFollowPlayer(player, engine.renderingSystem, engine.deltaTime);
 
-		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_0))
-		{
-			debugger = !debugger;
-			engine.debugger.BoxColliders.clear();
-		}
+		engine.renderingSystem.RenderFrame(engine.entityManager);
+		engine.renderingSystem.PresentScreen();
 
 		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_ESCAPE))
 			engine.Quit();
+
+		float frameTime =
+			(float)(SDL_GetPerformanceCounter() - frameStart) /
+			SDL_GetPerformanceFrequency();
+
+		if (frameTime < targetFrameTime)
+		{
+			float delay = (targetFrameTime - frameTime) * 1000.0f;
+			SDL_Delay((Uint32)delay);
+		}
 	}
 
 	return 0;

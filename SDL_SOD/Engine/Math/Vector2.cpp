@@ -102,7 +102,23 @@ Vec2i operator* (const int scalar, const Vec2i& v)
 	return { v.x * scalar, v.y * scalar };
 }
 
-
+bool Vec2i::operator== (const Vec2i& other) const
+{
+	return (x == other.x && y == other.y);
+}
+bool Vec2i::operator >= (const Vec2i& other) const {
+	return (x >= other.x && y >= other.y);
+}
+bool Vec2i::operator <= (const Vec2i& other) const {
+	return (x <= other.x && y <= other.y);
+}
+bool Vec2i::operator > (const Vec2i& other) const
+{
+	return (x > other.x && y > other.y);
+}
+bool Vec2i::operator < (const Vec2i& other) const {
+	return (x < other.x && y < other.y);
+}
 
 // Vec2f
 
@@ -225,9 +241,23 @@ Vec2f operator* (const float scalar, const Vec2f& v)
 	return { v.x * scalar, v.y * scalar };
 }
 
+// comparisons
 bool Vec2f::operator== (const Vec2f& other) const
 {
 	return (x == other.x && y == other.y);
+}
+bool Vec2f::operator >= (const Vec2f& other) const {
+	return (x >= other.x && y >= other.y);
+}
+bool Vec2f::operator <= (const Vec2f& other) const {
+	return (x <= other.x && y <= other.y);
+}
+bool Vec2f::operator > (const Vec2f& other) const
+{
+	return (x > other.x && y > other.y);
+}
+bool Vec2f::operator < (const Vec2f& other) const {
+	return (x < other.x && y < other.y);
 }
 
 std::ostream& operator<<(std::ostream& os, const Vec2f& vec)

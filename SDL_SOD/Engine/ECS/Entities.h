@@ -129,11 +129,6 @@ private:
 		std::string name{ "T" };
 		std::string textureName{};
 		Vec2f pos;
-
-		bool operator== (const ParsedObject& other) const
-		{
-			return (pos == other.pos && name == other.name && textureName == other.textureName);
-		}
 	};
 	std::vector<ParsedObject> LoadObjectFile(const std::string& path);
 public:
@@ -141,7 +136,6 @@ public:
 	Entity& CreateEntity(Entity& prefab);
 	Entity* CreateEntity(Entity* prefab);
 	Entity& CreateEntity();
-
 
 	void CreateEntitiesFromObjFile(const std::string& path, const std::string& prefabName, Entity& prefab);
 	void DestroyEntity(Entity& entity);
