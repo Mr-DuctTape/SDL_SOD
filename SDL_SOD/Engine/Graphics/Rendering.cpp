@@ -37,7 +37,7 @@ void TileMap::Render(RenderingSystem& renderingSystem, Camera& camera)
 			if (dst.x + dst.w < 0.0f ||
 				dst.x > renderingSystem.renderResX ||
 				dst.y + dst.h < 0.0f ||
-				dst.y > renderingSystem.renderResY)
+				dst.y > renderingSystem.renderResY || !isTileSolid(x,y))
 			{
 				continue;
 			}
@@ -111,10 +111,12 @@ void Animator::Render(RenderingSystem& renderingSystem, Camera& camera)
 		else
 		{
 			SDL_SetRenderDrawColor(renderingSystem.renderer, 120, 180, 255, 255);
-			SDL_RenderDebugText(renderingSystem.renderer, x, y - 10,
+			SDL_RenderDebugText(renderingSystem.renderer, x - 10, y - 20,
+				("Animator: "));
+			SDL_RenderDebugText(renderingSystem.renderer, x - 10, y - 10,
 				("State: " + currentState).c_str());
 
-			SDL_RenderDebugText(renderingSystem.renderer, x, y,
+			SDL_RenderDebugText(renderingSystem.renderer, x - 10, y,
 				("FlippedX: " + std::string(flippedX ? "true" : "false")).c_str());
 		}
 		debugger->debugStats.spritesRendered++;
@@ -202,10 +204,10 @@ void RenderingSystem::RenderFrame(EntityManager& entityManager)
 
 	if (debugger && debugger->enabled)
 	{
-		SDL_SetRenderDrawColor(renderer, 150, 123, 175, 255);
 		for (auto& r : debugger->boxColliders)
 		{
-			SDL_RenderRect(renderer, &r);
+			SDL_SetRenderDrawColor(renderer, r.color.r, r.color.g, r.color.b, r.color.a);
+			SDL_RenderRect(renderer, &r.rect);
 		}
 
 		for (auto& v : debugger->trajectories)

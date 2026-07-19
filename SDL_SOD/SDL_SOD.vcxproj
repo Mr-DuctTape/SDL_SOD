@@ -31,8 +31,7 @@
     <ClCompile Include="Engine\Input\Input.cpp" />
     <ClCompile Include="Engine\Math\Vector2.cpp" />
     <ClCompile Include="Engine\SOD_Engine.cpp" />
-    <ClCompile Include="Game\Components\GameComponents.cpp" />
-    <ClCompile Include="Game\main.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\Physics\System.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -49,7 +48,6 @@
     <ClInclude Include="Engine\Math\Vector2.h" />
     <ClInclude Include="Engine\SOD_Engine.h" />
     <ClInclude Include="Engine\Physics\System.h" />
-    <ClInclude Include="Game\Components\GameComponents.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SDL3.dll" />
@@ -121,6 +119,7 @@
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(ProjectDir)\Engine\Macros;C:\SDL3_image\include;C:\SDL3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>C:\SDL3_image\lib\x64;C:\SDL3\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -134,6 +133,7 @@
       <Optimization>MaxSpeed</Optimization>
       <AdditionalIncludeDirectories>C:\SDL3_image\include;C:\SDL3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>C:\SDL3_image\lib\x64;C:\SDL3\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

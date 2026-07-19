@@ -1,6 +1,8 @@
 #include <iostream>
-#include "../Engine/SOD_Engine.h"
-#include "Components/GameComponents.h"
+#include "Engine/SOD_Engine.h"
+
+#define SPRT_HEIGHT 128
+#define SPRT_WIDTH 128
 
 bool IsCoyoteAvailable(float deltaTime, float cTime, float& cTimer, bool& coyote, bool grounded)
 {
@@ -270,25 +272,22 @@ void CameraFollowPlayer(Entity& player, RenderingSystem& renderingSystem, float 
 	camera.pos.y = std::round(camera.pos.y);
 }
 
-#define SPRT_HEIGHT 128
-#define SPRT_WIDTH 128
-
 int main()
 {
 	Engine engine;
 	engine.Initialize();
 
-	engine.assetManager.CreateTexture("TileSet", "C:\\Test\\tiles3.png");
-	SDL_SetTextureScaleMode(engine.assetManager.GetTexture("TileSet"), SDL_SCALEMODE_NEAREST);
-	engine.assetManager.CreateTexture("PlayerRun", "C:\\Test\\PlayerSheet.png");
-	engine.assetManager.CreateTexture("PlayerIdle", "C:\\Test\\Idle.png");
-	engine.assetManager.CreateTexture("PlayerJump", "C:\\Test\\Jump.png");
+	engine.assetManager.CreateTexture("TileSet", "Assets/Textures/tiles.png");
+	engine.assetManager.CreateTexture("PlayerRun", "Assets/Textures/Run.png");
+	engine.assetManager.CreateTexture("PlayerIdle", "Assets/Textures/Idle.png");
+	engine.assetManager.CreateTexture("PlayerJump", "Assets/Textures/Jump.png");
+
 
 	auto& obj = engine.entityManager.CreateEntity();
 	obj.AddComponent<Transform>()->position = { 100.0f, 200.0f };
 
 	auto& tileMap = *obj.AddComponent<TileMap>();
-	tileMap.LoadTileMap("C:\\Test\\Plane.sodmap");
+	tileMap.LoadTileMap("Assets/Maps/Testing.sodmap");
 	tileMap.SetTilePixelSize(16, 16);
 	tileMap.SetTileScale(8.0f, 8.0f);
 	tileMap.SetSpriteSheet(engine.assetManager.GetTexture("TileSet"));
@@ -298,6 +297,7 @@ int main()
 
 	player.AddComponent<Transform>()->position = { 200.0f, -100.0f };
 	player.AddComponent<Physics2D>();
+	player.AddComponent<EntityTag>()->name = "Player";
 	auto playerColl = player.AddComponent<BoxCollider2D>();
 	auto animator = player.AddComponent<Animator>();
 	animator->CreateAnimation("Run", 4, 16, 16, engine.assetManager.GetTexture("PlayerRun"));
@@ -359,7 +359,7 @@ int main()
 	s->height = SPRT_HEIGHT;
 	s->width = SPRT_WIDTH;
 	auto anim = effectObj.AddComponent<Animator>();
-	auto texture = engine.assetManager.CreateTexture("EffectSheet", "C:\\Test\\Effect.png");
+	auto texture = engine.assetManager.CreateTexture("EffectSheet", "Assets/Textures/Effect.png");
 	anim->CreateAnimation("Effect", 5, 16, 16, texture);
 	anim->SetAnimation(anim->GetAnimation("Effect"));
 	anim->speed = 0.15f;
@@ -372,14 +372,14 @@ int main()
 	Uint64 lastTime = SDL_GetTicksNS();
 	int frameCount = 0;
 
-	engine.assetManager.CreateTexture("DoorTexture", "C:\\Test\\Door.png");
+	engine.assetManager.CreateTexture("DoorTexture", "Assets/Textures/Door.png");
 	auto& door = engine.entityManager.CreateEntity();
 	auto doorTransform = door.AddComponent<Transform>();
 	auto doorSprite = door.AddComponent<Sprite>();
 	doorSprite->texture = engine.assetManager.GetTexture("DoorTexture");
 	doorTransform->position.x = -700;
 
-	engine.assetManager.CreateTexture("ExplosionFX", "C:\\Test\\Explosion.png");
+	engine.assetManager.CreateTexture("ExplosionFX", "Assets/Textures/Explosion.png");
 	auto& explosion = engine.entityManager.CreateEntity();
 	auto explosionTransform = explosion.AddComponent<Transform>();
 	auto explosionSprite = explosion.AddComponent<Sprite>();
@@ -393,7 +393,7 @@ int main()
 	explosionAnim->scaleAnimationX = 1.0f;
 	explosionAnim->scaleAnimationY = 1.0f;
 
-	engine.assetManager.CreateTexture("SpikeTexture", "C:\\Test\\Spike.png");
+	engine.assetManager.CreateTexture("SpikeTexture", "Assets/Textures/Spike.png");
 
 	auto& spike = engine.entityManager.CreateEntity();
 	auto spikeTransform = spike.AddComponent<Transform>();
@@ -406,9 +406,9 @@ int main()
 	spikeCollider->offsetX = 45;
 	spikeSprite->texture = engine.assetManager.GetTexture("SpikeTexture");
 	spikeTransform->position.x = -700;
-	//engine.entityManager.CreateEntitiesFromObjFile("C:\\Test\\Testing.sodobj", "Spikes", spike);
+	engine.entityManager.CreateEntitiesFromObjFile("Assets/Maps/Testing.sodobj", "Spikes", spike);
 
-	constexpr float targetFrameTime = 1.0f / 1000.0f;
+	constexpr float targetFrameTime = 1.0f / 100000.0f;
 
 	// Game loop
 	while (engine.isRunning)

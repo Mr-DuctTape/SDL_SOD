@@ -18,6 +18,21 @@ struct Component // Base component you can create any component u want as long a
 	virtual Component* Clone() { return nullptr; };
 };
 
+struct EntityTag : Component
+{
+	std::string name;
+
+	EntityTag* Clone() override
+	{
+		return new EntityTag(*this);
+	}
+	size_t Size() override
+	{
+		return sizeof(*this);
+	}
+};
+
+
 struct Physics2D : Component
 {
 	Vec2f acceleration = { 0.0f, 0.0f };
