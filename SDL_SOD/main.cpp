@@ -81,9 +81,9 @@ void ChangePlayerAnimatorStates(Animator* animator, float speed)
 		animator->speed = 0.1f;
 	}
 }
-void SpawnRunningEffect(EntityManager& entityManager, Entity* effect, bool isGrounded, float deltaTime, Transform* transform, Animator* animator)
+void SpawnRunningEffect(EntityManager& entityManager, Entity* effect, bool isGrounded, float deltaTime, Transform* transform, bool flippedX)
 {
-	if (!effect || !transform || !animator)
+	if (!effect || !transform)
 		return;
 
 	static float vfxTimer = 0.0f;
@@ -99,7 +99,7 @@ void SpawnRunningEffect(EntityManager& entityManager, Entity* effect, bool isGro
 
 		if (!vfxTransform) return;
 
-		if (animator->flippedX)
+		if (flippedX)
 			vfxTransform->position = { transform->position.x + 10.0f, transform->position.y };
 		else
 			vfxTransform->position = { transform->position.x - 10.0f, transform->position.y };
@@ -109,12 +109,64 @@ void SpawnRunningEffect(EntityManager& entityManager, Entity* effect, bool isGro
 		vfxAnimator->destroyOnFinish = true;
 		vfxAnimator->update = true;
 		vfxAnimator->finished = false;
-		vfxAnimator->flippedX = animator->flippedX;
+		vfxAnimator->flippedX = flippedX;
 		vfxTimer = 0.0f;
 	}
 }
+void SpawnJumpingEffect(EntityManager& entityManager, Entity* effect, Vec2f transform, bool flippedX)
+{
+	if (!effect)
+		return;
 
-void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Entity* player, Entity* effect, float deltaTime)
+	Entity* fx = entityManager.CreateEntity(effect);
+	if (!fx)
+	{
+		std::cout << "Unable to create entity!\n";
+	}
+
+	Animator* fxAnimator = fx->GetComponent<Animator>();
+	Transform* fxTransform = fx->GetComponent<Transform>();
+
+	if (!fxAnimator || !fxTransform)
+		return;
+
+	fxTransform->position = { transform.x - 10, transform.y };
+
+	fxAnimator->update = true;
+	fxAnimator->destroyOnFinish = true;
+	fxAnimator->finished = false;
+	fxAnimator->flippedX = flippedX;
+	fxAnimator->timer = 0.0f;
+}
+void SpawnLandingEffect(EntityManager& entityManager, Physics2D* physics, Entity* effect, Vec2f transform, BoxCollider2D* collider, bool flippedX)
+{
+	if (!effect || !collider)
+		return;
+
+	if (collider->wasColliding != collider->isColliding && collider->data.side == CollisionData::Side::Bottom)
+	{
+		Entity* fx = entityManager.CreateEntity(effect);
+		if (!fx)
+		{
+			std::cout << "Unable to create entity!\n";
+		}
+
+		Animator* fxAnimator = fx->GetComponent<Animator>();
+		Transform* fxTransform = fx->GetComponent<Transform>();
+
+		if (!fxAnimator || !fxTransform)
+			return;
+
+		fxTransform->position = { transform.x - 10, transform.y };
+		fxAnimator->update = true;
+		fxAnimator->destroyOnFinish = true;
+		fxAnimator->finished = false;
+		fxAnimator->flippedX = flippedX;
+		fxAnimator->timer = 0.0f;
+	}
+}
+
+void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Entity* player, Entity* effect, Entity* jumpEffect, Entity* landEffect, float deltaTime)
 {
 	Transform* transform = player->GetComponent<Transform>();
 	Physics2D* physics = player->GetComponent<Physics2D>();
@@ -143,7 +195,7 @@ void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Enti
 
 	if (animator->currentState == "Run")
 	{
-		SpawnRunningEffect(entityManager, effect, isGrounded, deltaTime, transform, animator);
+		SpawnRunningEffect(entityManager, effect, isGrounded, deltaTime, transform, animator->flippedX);
 	}
 
 	if (inputSystem.GetButton(SDL_SCANCODE_W))
@@ -156,7 +208,7 @@ void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Enti
 	float jumpBufferTime = 0.12f;
 	bool jumpBuffer = false;
 
-	if (inputSystem.GetButtonDown(SDL_SCANCODE_SPACE) && gatherBuffer) 
+	if (inputSystem.GetButtonDown(SDL_SCANCODE_SPACE) && gatherBuffer)
 	{
 		gatherBuffer = false;
 	}
@@ -164,7 +216,7 @@ void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Enti
 	{
 		gatherBuffer = true;
 		jumpBufferTimer = 0.0f;
-	} 
+	}
 
 	if (gatherBuffer)
 	{
@@ -178,6 +230,7 @@ void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Enti
 		jumpBufferTimer = 0.0f;
 
 		animator->SetAnimation("Jump");
+		SpawnJumpingEffect(entityManager, jumpEffect, transform->position, animator->flippedX);
 		force.y -= 4000.0f;
 	}
 
@@ -268,8 +321,8 @@ void CameraFollowPlayer(Entity& player, RenderingSystem& renderingSystem, float 
 
 	constexpr float followSpeed = 3.5f;
 	camera.pos += (target - camera.pos) * followSpeed * deltaTime;
-	camera.pos.x = std::round(camera.pos.x);
-	camera.pos.y = std::round(camera.pos.y);
+	/*camera.pos.x = std::round(camera.pos.x);
+	camera.pos.y = std::round(camera.pos.y);*/
 }
 
 int main()
@@ -316,31 +369,13 @@ int main()
 
 	TileMap::TileProperties properties;
 	properties.solid = true;
-	tileMap.SetTileProperties(0, properties);
-	tileMap.SetTileProperties(1, properties);
-	tileMap.SetTileProperties(2, properties);
-	tileMap.SetTileProperties(5, properties);
-	tileMap.SetTileProperties(6, properties);
-	tileMap.SetTileProperties(7, properties);
-	tileMap.SetTileProperties(8, properties);
-	tileMap.SetTileProperties(9, properties);
-	tileMap.SetTileProperties(10, properties);
-	tileMap.SetTileProperties(11, properties);
-	tileMap.SetTileProperties(12, properties);
-	tileMap.SetTileProperties(13, properties);
-	tileMap.SetTileProperties(14, properties);
+	for (int i = 0; i < 26; i++)
+	{
+		if (i == 3 || i == 4 || i == 15)
+			continue;
 
-	tileMap.SetTileProperties(16, properties);
-	tileMap.SetTileProperties(17, properties);
-	tileMap.SetTileProperties(18, properties);
-	tileMap.SetTileProperties(19, properties);
-	tileMap.SetTileProperties(20, properties);
-	tileMap.SetTileProperties(21, properties);
-	tileMap.SetTileProperties(22, properties);
-	tileMap.SetTileProperties(23, properties);
-	tileMap.SetTileProperties(24, properties);
-	tileMap.SetTileProperties(25, properties);
-	tileMap.SetTileProperties(26, properties);
+		tileMap.SetTileProperties(i, properties);
+	}
 
 	auto scale = tileMap.GetTileScale();
 
@@ -408,12 +443,48 @@ int main()
 	spikeTransform->position.x = -700;
 	engine.entityManager.CreateEntitiesFromObjFile("Assets/Maps/Testing.sodobj", "Spikes", spike);
 
-	constexpr float targetFrameTime = 1.0f / 100000.0f;
+	SDL_Texture* jumpfxTexture = engine.assetManager.CreateTexture("JumpFxTexture", "Assets/Textures/JumpFX.png");
+
+	Entity& jumpFxObj = engine.entityManager.CreateEntity();
+	jumpFxObj.AddComponent<Transform>()->position = { -200, 200 };
+
+	Sprite* jmpFxSprt = jumpFxObj.AddComponent<Sprite>();
+	jmpFxSprt->height = SPRT_HEIGHT;
+	jmpFxSprt->width = SPRT_WIDTH;
+
+	Animator* jmpfxAnimator = jumpFxObj.AddComponent<Animator>();
+	jmpfxAnimator->CreateAnimation("JumpFX", 6, 16, 16, jumpfxTexture);
+	jmpfxAnimator->SetAnimation("JumpFX");
+	jmpfxAnimator->update = false;
+	jmpfxAnimator->effectBase = true;
+	jmpfxAnimator->speed = 0.1f;
+	jmpfxAnimator->scaleAnimationX = 1.0f;
+	jmpfxAnimator->scaleAnimationY = 1.0f;
+
+	SDL_Texture* landfxTexture = engine.assetManager.CreateTexture("LandFxTexture", "Assets/Textures/LandEffect.png");
+
+	Entity& landFxObj = engine.entityManager.CreateEntity();
+	landFxObj.AddComponent<Transform>()->position = { -200, 200 };
+
+	Sprite* landFxSprt = landFxObj.AddComponent<Sprite>();
+	landFxSprt->height = SPRT_HEIGHT;
+	landFxSprt->width = SPRT_WIDTH;
+
+	Animator* landfxAnimator = landFxObj.AddComponent<Animator>();
+	landfxAnimator->CreateAnimation("landFX", 6, 16, 16, landfxTexture);
+	landfxAnimator->SetAnimation("landFX");
+	landfxAnimator->update = false;
+	landfxAnimator->effectBase = true;
+	landfxAnimator->speed = 0.1f;
+	landfxAnimator->scaleAnimationX = 1.0f;
+	landfxAnimator->scaleAnimationY = 1.0f;
+
+	constexpr float targetFrameTime = 1.0f / 60.0f;
 
 	// Game loop
 	while (engine.isRunning)
 	{
-		Uint64 frameStart = SDL_GetPerformanceCounter();
+		engine.debugger.DebuggerStartTime();
 
 		engine.DeltaTimeUpdate();
 		engine.inputSystem.Process();
@@ -428,40 +499,25 @@ int main()
 		}
 		if (enableDebugger)
 		{
-			static float fpsTimer = 0.0f;
-			static int frameCount = 0;
-
-			fpsTimer += engine.deltaTime;
-			frameCount++;
-
-			if (fpsTimer >= 0.5f)
-			{
-				engine.debugger.debugStats.fps = frameCount / fpsTimer;
-				engine.debugger.debugStats.ms = (fpsTimer / frameCount) * 1000.0f;
-
-				frameCount = 0;
-				fpsTimer = 0.0f;
-			}
-
 			engine.debugger.enabled = true;
 			engine.debugger.DrawAllColliders(engine.entityManager);
 		}
 
 		PlayerSpikesCollisions(player, &explosion, engine.entityManager);
-		PlayerMovement(engine.inputSystem, engine.entityManager, &player, &effectObj, engine.deltaTime);
+		PlayerMovement(engine.inputSystem, engine.entityManager, &player, &effectObj, &jumpFxObj, &landFxObj, engine.deltaTime);
 		PlayerBounds(player, &explosion, engine.renderingSystem, engine.entityManager);
 
 		engine.Update();
 		CameraFollowPlayer(player, engine.renderingSystem, engine.deltaTime);
 
-		engine.renderingSystem.RenderFrame(engine.entityManager);
-		engine.renderingSystem.PresentScreen();
-
 		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_ESCAPE))
 			engine.Quit();
 
+		engine.renderingSystem.RenderScreen(engine.entityManager);
+
+		// IGNORE BELOW THIS IS NOT IMPORTANT ONLY FPS LIMITER
 		float frameTime =
-			(float)(SDL_GetPerformanceCounter() - frameStart) /
+			(float)(SDL_GetPerformanceCounter() - engine.debugger.GetStartTime()) /
 			SDL_GetPerformanceFrequency();
 
 		if (frameTime < targetFrameTime)
@@ -469,6 +525,7 @@ int main()
 			float delay = (targetFrameTime - frameTime) * 1000.0f;
 			SDL_Delay((Uint32)delay);
 		}
+		engine.debugger.DebuggerEndTime();
 	}
 
 	return 0;

@@ -36,9 +36,8 @@ void Engine::Physics()
 
 void Engine::Update()
 {
-	// Before or after destroyable calculation idk???
-	Uint64 start = SDL_GetPerformanceCounter();
-
+	// Update all components 
+	Uint64 componentMsStart = SDL_GetPerformanceCounter();
 	std::vector<Entity*> destroyables;
 	for (auto& entity : entityManager.entities)
 	{
@@ -63,12 +62,21 @@ void Engine::Update()
 		entityManager.DestroyEntity(*destroyables[i]);
 	}
 
-	// Update physics
-	Physics();
+	Uint64 componentMsEnd = SDL_GetPerformanceCounter();
+	if (debugger.enabled)
+	{
+		float ms = (componentMsEnd - componentMsStart) * 1000.0f / SDL_GetPerformanceFrequency();
+		debugger.debugStats.componentMs = ms;
+	}
 
-	Uint64 end = SDL_GetPerformanceCounter();
-	if (debugger.enabled) {
-		float ms = (end - start) * 1000.0f / SDL_GetPerformanceFrequency();
-		debugger.debugStats.updateMs = ms;
+	// Update physics
+	Uint64 physicsStart = SDL_GetPerformanceCounter();
+	Physics();
+	Uint64 physicsEnd = SDL_GetPerformanceCounter();
+	if (debugger.enabled)
+	{
+		float ms = (physicsEnd - physicsStart) * 1000.0f / SDL_GetPerformanceFrequency();
+		debugger.debugStats.physicsMs = ms;
+		debugger.debugStats.updateMs = (SDL_GetPerformanceCounter() - componentMsStart) * 1000.0f / SDL_GetPerformanceFrequency();
 	}
 }

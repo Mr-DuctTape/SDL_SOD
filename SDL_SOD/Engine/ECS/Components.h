@@ -37,6 +37,8 @@ struct Physics2D : Component
 {
 	Vec2f acceleration = { 0.0f, 0.0f };
 	Vec2f velocity = { 0.0f, 0.0f };
+	Vec2f last_velocity = { 0.0f, 0.0f };
+
 	Vec2f last_position = { 0.0f, 0.0f };
 
 	Physics2D()
@@ -90,6 +92,7 @@ struct BoxCollider2D : Component
 
 	CollisionData data;
 	bool isColliding = false;
+	bool wasColliding = false;
 
 private:
 	bool errorDisplayed = false;

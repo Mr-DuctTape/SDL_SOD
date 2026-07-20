@@ -25,7 +25,7 @@ public:
 	Debugger* GetDebugger();
 	void PresentScreen();
 	void Initialize(Debugger* debugger);
-	void RenderFrame(EntityManager& entityManager);
+	void RenderScreen(EntityManager& entityManager);
 	void ClearScreen();
 
 	RenderingSystem() {};

@@ -197,6 +197,7 @@ void BoxCollider2D::UpdatePosition()
 
 void BoxCollider2D::Update(float dt)
 {
+	wasColliding = isColliding;
 	data.side = CollisionData::Side::None;
 }
 

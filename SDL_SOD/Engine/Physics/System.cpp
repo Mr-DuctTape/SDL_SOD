@@ -147,6 +147,7 @@ void Physics::TileMapCollision(Entity* entity, TileMap* tileMap)
 
 			if (debugger && debugger->enabled)
 				debugger->debugStats.resolvedCollisions++;
+
 			boxCollider->UpdatePosition();
 		}
 	}
@@ -185,8 +186,6 @@ void Physics::Movement(Entity* entity, float deltaTime)
 void Physics::Update(EntityManager& entityManager, float deltaTime)
 {
 	// Calculate movement and gravity
-	Uint64 start = SDL_GetPerformanceCounter();
-
 	for (auto& entity : entityManager.entities)
 	{
 		Gravity(entity, deltaTime);
@@ -218,12 +217,5 @@ void Physics::Update(EntityManager& entityManager, float deltaTime)
 			TileMap* tileMap = mapEntity->GetComponent<TileMap>();
 			TileMapCollision(entity, tileMap);
 		}
-	}
-
-	Uint64 end = SDL_GetPerformanceCounter();
-	if (debugger && debugger->enabled) 
-	{
-		float ms = (end - start) * 1000.0f / SDL_GetPerformanceFrequency();
-		debugger->debugStats.physicsMs = ms;
 	}
 }

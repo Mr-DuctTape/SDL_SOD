@@ -37,14 +37,14 @@ void TileMap::Render(RenderingSystem& renderingSystem, Camera& camera)
 			if (dst.x + dst.w < 0.0f ||
 				dst.x > renderingSystem.renderResX ||
 				dst.y + dst.h < 0.0f ||
-				dst.y > renderingSystem.renderResY || !isTileSolid(x,y))
+				dst.y > renderingSystem.renderResY || !isTileSolid(x, y))
 			{
 				continue;
 			}
 
 			// Get the correct tile on texture
 			SDL_FRect src{};
-			int ID = GetTileID(x, y); 
+			int ID = GetTileID(x, y);
 			src.h = tilePixelHeight;
 			src.w = tilePixelWidth;
 			src.x = ID * tilePixelWidth;
@@ -132,9 +132,9 @@ void RenderingSystem::PresentScreen()
 	SDL_RenderPresent(renderer);
 }
 
-void RenderingSystem::RenderFrame(EntityManager& entityManager)
+void RenderingSystem::RenderScreen(EntityManager& entityManager)
 {
-	Uint64 start = SDL_GetPerformanceCounter();
+	Uint64 startDraw = SDL_GetPerformanceCounter();
 
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 	SDL_SetRenderTarget(renderer, renderTexture);
@@ -148,16 +148,17 @@ void RenderingSystem::RenderFrame(EntityManager& entityManager)
 			continue;
 		}
 
-		if (!e->HasComponent<Transform>() || 
+		if (!e->HasComponent<Transform>() ||
 			!e->HasComponent<Sprite>())
 			continue;
 
 		if (e->HasComponent<Animator>())
 		{
 			Animator* animator = e->GetComponent<Animator>();
-			animator->Render(*this, camera); 
+			animator->Render(*this, camera);
+			continue;
 		}
-		else 
+		else
 		{
 			auto sprt = e->GetComponent<Sprite>();
 			auto transform = e->GetComponent<Transform>();
@@ -185,25 +186,27 @@ void RenderingSystem::RenderFrame(EntityManager& entityManager)
 			}
 
 			SDL_RenderTexture(renderer, sprt->texture, NULL, &dst);
-			if (debugger && debugger->enabled) {
-				debugger->debugStats.spritesRendered++;
-				debugger->debugStats.drawCalls++;
-			}
+		}
+
+		if (debugger && debugger->enabled)
+		{
+			Transform* transform = e->GetComponent<Transform>();
+			std::string entity = "ID: " + std::to_string(e->ID);
+
+			SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+			Vec2f screenPos = WorldToScreen(transform->position.x - 20, transform->position.y + 30, camera);
+			SDL_RenderDebugText(renderer, screenPos.x, screenPos.y, entity.c_str());
 		}
 	}
 
+	Uint64 endDraw = SDL_GetPerformanceCounter();
+	if (debugger)
+		debugger->debugStats.drawingMs = (endDraw - startDraw) * 1000.0f / SDL_GetPerformanceFrequency();
 
 	// --- Debugging ---
-
-	Uint64 end = SDL_GetPerformanceCounter();
 	if (debugger && debugger->enabled)
 	{
-		float ms = (end - start) * 1000.0f / SDL_GetPerformanceFrequency();
-		debugger->debugStats.renderMs = ms;
-	}
-
-	if (debugger && debugger->enabled)
-	{
+		Uint64 startDebugDraw = SDL_GetPerformanceCounter();
 		for (auto& r : debugger->boxColliders)
 		{
 			SDL_SetRenderDrawColor(renderer, r.color.r, r.color.g, r.color.b, r.color.a);
@@ -214,24 +217,28 @@ void RenderingSystem::RenderFrame(EntityManager& entityManager)
 		{
 			SDL_RenderLine(renderer, v.x1, v.y1, v.x2, v.y2);
 		}
-
-		debugger->DrawPerformanceStats(renderer, entityManager);
 		debugger->trajectories.clear();
 		debugger->boxColliders.clear();
+
+		debugger->DrawPerformanceStats(renderer, entityManager);
+		Uint64 endDebugDraw = SDL_GetPerformanceCounter();
+		debugger->debugStats.debugMs = (endDebugDraw - startDebugDraw) * 1000.0f / SDL_GetPerformanceFrequency();
 	}
 
+	Uint64 presentScreenStart = SDL_GetPerformanceCounter();
 	SDL_SetRenderTarget(renderer, nullptr);
+	PresentScreen();
+	Uint64 presentScreenEnd = SDL_GetPerformanceCounter();
+	if (debugger && debugger->enabled) 
+	{
+		debugger->debugStats.presentScreenMs = (presentScreenEnd - presentScreenStart) * 1000.0f / SDL_GetPerformanceFrequency();
+	}
 }
 
 void RenderingSystem::ClearScreen()
 {
+	Uint64 start = SDL_GetPerformanceCounter();
 	SDL_Color color;
-	if (debugger && debugger->enabled)
-	{
-		debugger->debugStats.drawCalls = 0;
-		debugger->debugStats.spritesRendered = 0;
-		debugger->debugStats.tilesRendered = 0;
-	}
 
 	SDL_GetRenderDrawColor(renderer, &color.r, &color.g, &color.b, &color.a);
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -240,4 +247,17 @@ void RenderingSystem::ClearScreen()
 	SDL_SetRenderTarget(renderer, nullptr);
 	SDL_RenderClear(renderer);
 	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+
+	if (debugger)
+	{
+		debugger->debugStats.drawCalls = 0;
+		debugger->debugStats.spritesRendered = 0;
+		debugger->debugStats.tilesRendered = 0;
+
+		Uint64 end = SDL_GetPerformanceCounter();
+		debugger->debugStats.clearScreenMs = 
+			(end - start) * 1000.0f / SDL_GetPerformanceFrequency();
+
+		debugger->debugStats.renderMs = debugger->debugStats.clearScreenMs + debugger->debugStats.drawingMs + debugger->debugStats.debugMs;
+	}
 }
