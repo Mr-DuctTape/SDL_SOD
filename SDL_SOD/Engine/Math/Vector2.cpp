@@ -125,7 +125,7 @@ bool Vec2i::operator < (const Vec2i& other) const {
 Vec2f Vec2f::normalized() const
 {
 	const float len = Magnitude();
-	if (len == 0)
+	if (len < 0.0001f)
 		return Vec2f{ 0,0 };
 	const float inv = 1.0f / len;
 	return Vec2f{ x * inv, y * inv };

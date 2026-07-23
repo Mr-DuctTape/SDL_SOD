@@ -8,7 +8,7 @@
 void RenderingSystem::Initialize(Debugger* debugger)
 {
 	renderTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, renderResX, renderResY);
-	SDL_SetTextureScaleMode(renderTexture, SDL_SCALEMODE_NEAREST);
+	SDL_SetTextureScaleMode(renderTexture, SDL_SCALEMODE_PIXELART);
 	this->debugger = debugger;
 }
 Debugger* RenderingSystem::GetDebugger()
@@ -37,7 +37,7 @@ void TileMap::Render(RenderingSystem& renderingSystem, Camera& camera)
 			if (dst.x + dst.w < 0.0f ||
 				dst.x > renderingSystem.renderResX ||
 				dst.y + dst.h < 0.0f ||
-				dst.y > renderingSystem.renderResY || !isTileSolid(x, y))
+				dst.y > renderingSystem.renderResY || tiles[y][x] == 3)
 			{
 				continue;
 			}
@@ -164,8 +164,8 @@ void RenderingSystem::RenderScreen(EntityManager& entityManager)
 			auto transform = e->GetComponent<Transform>();
 
 			SDL_FRect rect{};
-			rect.h = sprt->height;
-			rect.w = sprt->width;
+			rect.h = static_cast<float>(sprt->height);
+			rect.w = static_cast<float>(sprt->width);
 			rect.x = transform->position.x;
 			rect.y = transform->position.y;
 

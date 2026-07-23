@@ -22,7 +22,7 @@ public:
 	InputSystem inputSystem;
 	EntityManager entityManager;
 	AssetManager assetManager;
-	Physics physics;
+	PhysicsSystem physics;
 
 	float deltaTime = 0.0;
 	bool isRunning = true;

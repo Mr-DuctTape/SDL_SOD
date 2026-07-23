@@ -8,31 +8,25 @@
 
 // --- EntityManager --- 
 
-Entity* EntityManager::CreateEntity(Entity* prefab)
+Entity& EntityManager::CreateEntity(Entity* prefab)
 {
 	IDManager++;
-	Entity* entity = new Entity(*prefab);
-	entity->ID = IDManager;
-	entities.push_back(entity);
-	return entity;
+	entities.emplace_back(new Entity(*prefab))->ID = IDManager;
+	return *entities.back();
 }
 
 Entity& EntityManager::CreateEntity(Entity& prefab)
 {
 	IDManager++;
-	Entity* entity = new Entity(prefab);
-	entity->ID = IDManager;
-	entities.push_back(entity);
-	return *entity;
+	entities.emplace_back(new Entity(prefab))->ID = IDManager;
+	return *entities.back();
 }
 
 Entity& EntityManager::CreateEntity()
 {
 	IDManager++;
-	Entity* entity = new Entity();
-	entity->ID = IDManager;
-	entities.push_back(entity);
-	return *entity;
+	entities.emplace_back(new Entity())->ID = IDManager;
+	return *entities.back();
 }
 
 void EntityManager::DestroyEntity(Entity& entity)
@@ -50,18 +44,7 @@ void EntityManager::DestroyEntity(Entity& entity)
 
 		delete entities[i];
 		entities.erase(entities.begin() + i);
-	}
-}
-
-EntityManager::~EntityManager()
-{
-	for (auto& entity : entities)
-	{
-		if (!entity) continue;
-		
-		std::cout << "(EntityManager) Destroying entity " << entity->ID << " : " << entity << "\n";
-
-		delete entity;
+		break;
 	}
 }
 
@@ -138,14 +121,13 @@ void EntityManager::CreateEntitiesFromObjFile(const std::string& path, const std
 		if (obj.name == prefabName)
 		{
 			// Create the entitiy
-			auto entity = CreateEntity(&prefab);
-			if (!entity)
-				return;
-			auto transform = entity->GetComponent<Transform>();
+			Entity& entity = CreateEntity(&prefab);
+			Transform* transform = entity.GetComponent<Transform>();
 			if (!transform)
 				continue;
 
-			std::cout << obj.pos << "\n";
+			if(DEBUGPRINT)
+				std::cout << obj.pos << "\n";
 			transform->position = obj.pos;
 		}
 	}

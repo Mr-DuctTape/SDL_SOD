@@ -1,8 +1,10 @@
 #pragma once
 #include <SDL3/SDL.h>
 #include <unordered_map>
+#include <vector>
 #include <string>
 #include "../Math/Vector2.h"
+#include "../Macros/DEBUGPRINT.h"
 
 using EntityID = uint32_t;
 
@@ -32,7 +34,6 @@ struct EntityTag : Component
 	}
 };
 
-
 struct Physics2D : Component
 {
 	Vec2f acceleration = { 0.0f, 0.0f };
@@ -43,7 +44,8 @@ struct Physics2D : Component
 
 	Physics2D()
 	{
-		std::cout << "Physics2D created: "
+		if (DEBUGPRINT)
+			std::cout << "Physics2D created: "
 			<< velocity.x << ", "
 			<< velocity.y << std::endl;
 	}
@@ -64,19 +66,6 @@ struct Physics2D : Component
 	}
 };
 
-struct CollisionData
-{
-	enum class Side
-	{
-		None,
-		Left,
-		Right,
-		Top,
-		Bottom
-	};
-	Side side = Side::None;
-};
-
 struct BoxCollider2D : Component
 {
 	SDL_FRect rect = {};
@@ -89,11 +78,13 @@ struct BoxCollider2D : Component
 	float width = 150.0f;
 	float height = 150.0f;
 
-
-	CollisionData data;
 	bool isColliding = false;
 	bool wasColliding = false;
 
+	bool wallCollision = false;
+	bool groundCollision = false;
+
+	Vec2f collisionVector;
 private:
 	bool errorDisplayed = false;
 public:
@@ -110,43 +101,9 @@ public:
 	}
 };
 
-static CollisionData GetCollision(BoxCollider2D& boxA, BoxCollider2D& boxB)
+inline bool IsColliding(BoxCollider2D& boxA, BoxCollider2D& boxB)
 {
-	CollisionData data;
-
-	SDL_FRect intersection;
-
-	SDL_FRect& a = boxA.rect;
-	SDL_FRect& b = boxB.rect;
-
-	if (!SDL_GetRectIntersectionFloat(&a, &b, &intersection))
-		return data;
-
-	float leftOverlap = (a.x + a.w) - b.x;
-	float rightOverlap = (b.x + b.w) - a.x;
-	float topOverlap = (a.y + a.h) - b.y;
-	float bottomOverlap = (b.y + b.h) - a.y;
-
-	float xOverlap = std::min(leftOverlap, rightOverlap);
-	float yOverlap = std::min(topOverlap, bottomOverlap);
-
-	if (xOverlap < yOverlap)
-	{
-		if (a.x < b.x)
-			data.side = CollisionData::Side::Right;
-		else
-			data.side = CollisionData::Side::Left;
-	}
-	else
-	{
-		if (a.y < b.y)
-			data.side = CollisionData::Side::Bottom;
-		else
-			data.side = CollisionData::Side::Top;
-	}
-
-	boxA.data = data;
-	return data;
+	return SDL_HasRectIntersectionFloat(&boxA.rect, &boxB.rect);
 }
 
 struct Transform : Component
@@ -249,7 +206,7 @@ public:
 			return nullptr;
 		return &tiles[y][x];
 	}
-	inline bool isTileSolid(int x, int y)
+	inline bool IsTileSolid(int x, int y)
 	{
 		if (!CheckBounds(x, y))
 			return false;

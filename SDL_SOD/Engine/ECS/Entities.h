@@ -6,26 +6,26 @@
 
 class Entity
 {
+private:
+	void DestroyComponents() {
+		if (DEBUGPRINT) {
+			std::cout << "~Entity " << this
+				<< " id=" << ID
+				<< std::endl;
+		}
+		for (auto comp : components)
+		{
+			if (DEBUGPRINT)
+				std::cout << " deleting " << comp << std::endl;
+			delete comp;
+		}
+		components.clear();
+	}
 public:
 	EntityID ID = 0;
 	std::vector<Component*> components{};
 
 	Entity() {};
-	Entity(const Entity& other)
-	{
-		ID = other.ID;
-		for (auto* component : other.components)
-		{
-			if (!component)
-			{
-				components.push_back(nullptr);
-				continue;
-			}
-
-			Component* clone = component->Clone();
-			Push_Back(clone);
-		}
-	}
 	inline void Push_Back(Component* component)
 	{
 		component->parent = this;
@@ -104,18 +104,71 @@ public:
 	}
 	~Entity()
 	{
-		if (DEBUGPRINT) {
-			std::cout << "~Entity " << this
-				<< " id=" << ID
-				<< std::endl;
-		}
+		DestroyComponents();
+	}
 
-		for (auto comp : components)
+	Entity(Entity&& other) noexcept
+		: components(std::move(other.components)),
+		ID(other.ID)
+	{
+		other.ID = -1;
+		for (Component* c : components)
+			c->parent = this;
+	}
+	Entity(const Entity& other)
+	{
+		ID = other.ID;
+
+		// Create copies
+		for (auto* component : other.components)
 		{
-			if(DEBUGPRINT)
-				std::cout << " deleting " << comp << std::endl;
-			delete comp;
+			if (!component)
+				continue;
+
+			Component* clone = component->Clone();
+			Push_Back(clone);
 		}
+	}
+	Entity& operator=(Entity&& other) noexcept
+	{
+		if (this == &other)
+			return *this;
+
+		// Free any memory already in use
+		DestroyComponents();
+
+		ID = other.ID;
+		other.ID = -1;
+
+		// Move the pointers
+		this->components = std::move(other.components);
+		other.components.clear();
+
+		for (Component* c : components)
+			c->parent = this;
+
+		return *this;
+	}
+	Entity& operator=(const Entity& other) 
+	{
+		if (&other == this)
+			return *this;
+
+		ID = other.ID;
+
+		// Free any memory already in use
+		DestroyComponents();
+
+		// Create copies
+		for (Component* component : other.components)
+		{
+			if (!component)
+				continue;
+
+			Component* clone = component->Clone();
+			Push_Back(clone);
+		}
+		return *this;
 	}
 };
 
@@ -131,13 +184,14 @@ private:
 		Vec2f pos;
 	};
 	std::vector<ParsedObject> LoadObjectFile(const std::string& path);
+
 public:
 	std::vector<Entity*> entities;
+
 	Entity& CreateEntity(Entity& prefab);
-	Entity* CreateEntity(Entity* prefab);
+	Entity& CreateEntity(Entity* prefab);
 	Entity& CreateEntity();
 
 	void CreateEntitiesFromObjFile(const std::string& path, const std::string& prefabName, Entity& prefab);
 	void DestroyEntity(Entity& entity);
-	~EntityManager();
 };

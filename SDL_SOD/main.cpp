@@ -113,19 +113,15 @@ void SpawnRunningEffect(EntityManager& entityManager, Entity* effect, bool isGro
 		vfxTimer = 0.0f;
 	}
 }
-void SpawnJumpingEffect(EntityManager& entityManager, Entity* effect, Vec2f transform, bool flippedX)
+void SpawnEffect(EntityManager& entityManager, Entity* effect, Vec2f transform, bool flippedX)
 {
 	if (!effect)
 		return;
 
-	Entity* fx = entityManager.CreateEntity(effect);
-	if (!fx)
-	{
-		std::cout << "Unable to create entity!\n";
-	}
+	Entity& fxObj = entityManager.CreateEntity(effect);
 
-	Animator* fxAnimator = fx->GetComponent<Animator>();
-	Transform* fxTransform = fx->GetComponent<Transform>();
+	Animator* fxAnimator = fxObj.GetComponent<Animator>();
+	Transform* fxTransform = fxObj.GetComponent<Transform>();
 
 	if (!fxAnimator || !fxTransform)
 		return;
@@ -138,35 +134,9 @@ void SpawnJumpingEffect(EntityManager& entityManager, Entity* effect, Vec2f tran
 	fxAnimator->flippedX = flippedX;
 	fxAnimator->timer = 0.0f;
 }
-void SpawnLandingEffect(EntityManager& entityManager, Physics2D* physics, Entity* effect, Vec2f transform, BoxCollider2D* collider, bool flippedX)
-{
-	if (!effect || !collider)
-		return;
 
-	if (collider->wasColliding != collider->isColliding && collider->data.side == CollisionData::Side::Bottom)
-	{
-		Entity* fx = entityManager.CreateEntity(effect);
-		if (!fx)
-		{
-			std::cout << "Unable to create entity!\n";
-		}
-
-		Animator* fxAnimator = fx->GetComponent<Animator>();
-		Transform* fxTransform = fx->GetComponent<Transform>();
-
-		if (!fxAnimator || !fxTransform)
-			return;
-
-		fxTransform->position = { transform.x - 10, transform.y };
-		fxAnimator->update = true;
-		fxAnimator->destroyOnFinish = true;
-		fxAnimator->finished = false;
-		fxAnimator->flippedX = flippedX;
-		fxAnimator->timer = 0.0f;
-	}
-}
-
-void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Entity* player, Entity* effect, Entity* jumpEffect, Entity* landEffect, float deltaTime)
+void PlayerWallJump(EntityManager& entityManager, InputSystem& inputSystem, Entity* effect, BoxCollider2D* boxCollider, Transform* transform, bool& gatherBuffer, Physics2D* physics, float deltaTime);
+void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Entity* player, Entity* runningEffect, Entity* jumpEffect, Entity* wallJumpEffect, float deltaTime)
 {
 	Transform* transform = player->GetComponent<Transform>();
 	Physics2D* physics = player->GetComponent<Physics2D>();
@@ -177,7 +147,7 @@ void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Enti
 	Vec2f accel = { 0, 0 };
 	Vec2f force = { 0, 0 };
 
-	bool isGrounded = (boxCollider2D->data.side == CollisionData::Side::Bottom);
+	bool isGrounded = boxCollider2D->groundCollision;
 	float movementSpeed = 3500.0f;
 
 	if (!isGrounded)
@@ -186,7 +156,7 @@ void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Enti
 	}
 
 	static float coyoteTimer = 0.0f;
-	float coyoteTime = 0.18f;
+	float coyoteTime = 0.10f;
 	bool coyoteAvailable = false;
 	IsCoyoteAvailable(deltaTime, coyoteTime, coyoteTimer, coyoteAvailable, isGrounded);
 
@@ -195,7 +165,7 @@ void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Enti
 
 	if (animator->currentState == "Run")
 	{
-		SpawnRunningEffect(entityManager, effect, isGrounded, deltaTime, transform, animator->flippedX);
+		SpawnRunningEffect(entityManager, runningEffect, isGrounded, deltaTime, transform, animator->flippedX);
 	}
 
 	if (inputSystem.GetButton(SDL_SCANCODE_W))
@@ -205,7 +175,7 @@ void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Enti
 
 	static float jumpBufferTimer = 0.0f;
 	static bool gatherBuffer = false;
-	float jumpBufferTime = 0.12f;
+	float jumpBufferTime = 0.2f;
 	bool jumpBuffer = false;
 
 	if (inputSystem.GetButtonDown(SDL_SCANCODE_SPACE) && gatherBuffer)
@@ -230,7 +200,7 @@ void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Enti
 		jumpBufferTimer = 0.0f;
 
 		animator->SetAnimation("Jump");
-		SpawnJumpingEffect(entityManager, jumpEffect, transform->position, animator->flippedX);
+		SpawnEffect(entityManager, jumpEffect, transform->position, animator->flippedX);
 		force.y -= 4000.0f;
 	}
 
@@ -249,6 +219,8 @@ void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Enti
 
 	physics->Accelerate(accel);
 	physics->AddForce(force);
+
+	PlayerWallJump(entityManager, inputSystem, jumpEffect, boxCollider2D, transform, gatherBuffer, physics, deltaTime);
 }
 void PlayerDeath(Entity& player, Entity* effect, EntityManager& entityManager) {
 
@@ -267,7 +239,7 @@ void PlayerDeath(Entity& player, Entity* effect, EntityManager& entityManager) {
 	fxAnim->destroyOnFinish = true;
 	fxAnim->update = true;
 	fxAnim->finished = false;
-	playerTransform->position = Vec2f{ 200.0f, -100.0f };
+	playerTransform->position = Vec2f{ 7500.0f, 700.0f };
 }
 void PlayerBounds(Entity& player, Entity* effect, RenderingSystem& renderingSystem, EntityManager& entityManager) {
 	Transform* playerTransform = player.GetComponent<Transform>();
@@ -297,12 +269,65 @@ void PlayerSpikesCollisions(Entity& player, Entity* effect, EntityManager& entit
 		if (!tag || !entityBoxCollider)
 			continue;
 
-		if (tag->name == "Spikes" && GetCollision(*playerBoxCollider, *entityBoxCollider).side != CollisionData::Side::None) {
+		if (tag->name == "Spikes" && IsColliding(*playerBoxCollider, *entityBoxCollider))
+		{
 			playerDeath = true;
 		}
 	}
 	if (playerDeath)
 		PlayerDeath(player, effect, entityManager);
+}
+
+void PlayerWallJump(EntityManager& entityManager, InputSystem& inputSystem, Entity* effect, BoxCollider2D* boxCollider, Transform* transform, bool& gatherBuffer, Physics2D* physics, float deltaTime)
+{
+	if (!boxCollider->wallCollision || boxCollider->groundCollision)
+		return;
+
+	static bool leftWallJumped = false;
+	static bool rightWallJumped = false;
+
+	static float timer = 0.0f;
+	constexpr float timeBetweenValidJumps = 0.1f;
+
+	if (rightWallJumped || leftWallJumped)
+	{
+		timer += deltaTime;
+		if (timer >= timeBetweenValidJumps)
+		{
+			rightWallJumped = false;
+			leftWallJumped = false;
+			timer = 0.0f;
+		}
+	}
+
+	if (gatherBuffer)
+	{
+		Vec2f collisonVec = boxCollider->collisionVector.normalized();
+		float direction = (collisonVec.x < 0.0f) ? -1.0f : 1.0f;
+
+		if (direction > 0.0f)
+		{
+			if (leftWallJumped)
+				return;
+			leftWallJumped = true;
+			rightWallJumped = false;
+		}
+		else
+		{
+			if (rightWallJumped)
+				return;
+			rightWallJumped = true;
+			leftWallJumped = false;
+		}
+
+		physics->velocity = {
+			direction * 1500.0f,
+			-4000.0f
+		};
+		Vec2f pos = transform->position;
+		pos.y -= 50.0f;
+		SpawnEffect(entityManager, effect, pos, false);
+	}
 }
 
 void CameraFollowPlayer(Entity& player, RenderingSystem& renderingSystem, float deltaTime)
@@ -321,51 +346,39 @@ void CameraFollowPlayer(Entity& player, RenderingSystem& renderingSystem, float 
 
 	constexpr float followSpeed = 3.5f;
 	camera.pos += (target - camera.pos) * followSpeed * deltaTime;
-	/*camera.pos.x = std::round(camera.pos.x);
-	camera.pos.y = std::round(camera.pos.y);*/
+}
+
+void TorchChangeStates(Entity& torch, Animator* animator)
+{
+	if (animator->currentState == "TorchLit" && animator->finished)
+	{
+		animator->SetAnimation("TorchFire");
+		animator->finished = false;
+	}
+	if (animator->currentState == "TorchFire" && animator->finished)
+	{
+		animator->SetAnimation("TorchLit");
+		animator->finished = false;
+	}
 }
 
 int main()
 {
 	Engine engine;
 	engine.Initialize();
+	bool enableDebugger = false;
 
+#pragma region TileMap
 	engine.assetManager.CreateTexture("TileSet", "Assets/Textures/tiles.png");
-	engine.assetManager.CreateTexture("PlayerRun", "Assets/Textures/Run.png");
-	engine.assetManager.CreateTexture("PlayerIdle", "Assets/Textures/Idle.png");
-	engine.assetManager.CreateTexture("PlayerJump", "Assets/Textures/Jump.png");
+	
+	Entity& tilemapObj = engine.entityManager.CreateEntity();
+	tilemapObj.AddComponent<Transform>()->position = { 100.0f, 200.0f };
 
-
-	auto& obj = engine.entityManager.CreateEntity();
-	obj.AddComponent<Transform>()->position = { 100.0f, 200.0f };
-
-	auto& tileMap = *obj.AddComponent<TileMap>();
+	auto& tileMap = *tilemapObj.AddComponent<TileMap>();
 	tileMap.LoadTileMap("Assets/Maps/Testing.sodmap");
 	tileMap.SetTilePixelSize(16, 16);
 	tileMap.SetTileScale(8.0f, 8.0f);
 	tileMap.SetSpriteSheet(engine.assetManager.GetTexture("TileSet"));
-
-	auto& player = engine.entityManager.CreateEntity();
-	auto playerSprite = player.AddComponent<Sprite>();
-
-	player.AddComponent<Transform>()->position = { 200.0f, -100.0f };
-	player.AddComponent<Physics2D>();
-	player.AddComponent<EntityTag>()->name = "Player";
-	auto playerColl = player.AddComponent<BoxCollider2D>();
-	auto animator = player.AddComponent<Animator>();
-	animator->CreateAnimation("Run", 4, 16, 16, engine.assetManager.GetTexture("PlayerRun"));
-	animator->CreateAnimation("Idle", 4, 16, 16, engine.assetManager.GetTexture("PlayerIdle"));
-	animator->CreateAnimation("Jump", 3, 16, 16, engine.assetManager.GetTexture("PlayerJump"));
-
-	animator->SetAnimation("Idle");
-	animator->speed = 0.15f;
-	animator->scaleAnimationX = 1.0f;
-	animator->scaleAnimationY = 1.0f;
-	animator->Print();
-
-	auto& entity2 = engine.entityManager.CreateEntity();
-	auto& t = *entity2.AddComponent<Transform>();
-	entity2.AddComponent<BoxCollider2D>();
 
 	TileMap::TileProperties properties;
 	properties.solid = true;
@@ -377,43 +390,117 @@ int main()
 		tileMap.SetTileProperties(i, properties);
 	}
 
-	auto scale = tileMap.GetTileScale();
+	TileMap::TileScale tilemapScale = tileMap.GetTileScale();
+#pragma endregion TileMap
 
-	playerColl->width = 72;
-	playerColl->height = 64;
-	playerColl->offsetX = 28;
-	playerColl->offsetY = 64;
+#pragma region Torch
+	Entity& torchObj = engine.entityManager.CreateEntity();
+	
+	torchObj.AddComponent<Transform>()->position = { 7200.0f, 700.0f };
 
+	Sprite* torchSprite = torchObj.AddComponent<Sprite>();
+	torchSprite->height = SPRT_HEIGHT;
+	torchSprite->width = SPRT_WIDTH;
+
+	Animator* torchAnimator = torchObj.AddComponent<Animator>();
+	torchAnimator->effectBase = true;
+	torchAnimator->update = true;
+	torchAnimator->scaleAnimationX = 1.0f;
+	torchAnimator->scaleAnimationY = 1.0f;
+	torchAnimator->speed = 0.15f;
+
+	SDL_Texture* torchLitTexture = engine.assetManager.CreateTexture("TorchLitFX", "Assets/Textures/TorchLit.png");
+	SDL_Texture* torchFireTexture = engine.assetManager.CreateTexture("TorchFireFX", "Assets/Textures/TorchFire.png");
+
+	torchAnimator->CreateAnimation("TorchLit", 4, 16, 16, torchLitTexture);
+	torchAnimator->CreateAnimation("TorchFire", 4, 16, 16, torchFireTexture);
+	torchAnimator->SetAnimation("TorchFire");
+
+	Entity& otherTorch = engine.entityManager.CreateEntity(torchObj);
+	otherTorch.GetComponent<Transform>()->position = { 100, 100 };
+
+	Animator* otherTorchAnimator = otherTorch.GetComponent<Animator>();
+	otherTorchAnimator->update = true;
+	otherTorchAnimator->SetAnimation("TorchLit");
+
+#pragma endregion Torch
+
+#pragma region Player
+	Entity& playerObject = engine.entityManager.CreateEntity();
+
+	Sprite* playerSprite = playerObject.AddComponent<Sprite>();
 	playerSprite->height = SPRT_HEIGHT;
 	playerSprite->width = SPRT_WIDTH;
-	bool enableDebugger = false;
 
-	auto& effectObj = engine.entityManager.CreateEntity();
-	effectObj.AddComponent<Transform>();
-	auto s = effectObj.AddComponent<Sprite>();
-	s->height = SPRT_HEIGHT;
-	s->width = SPRT_WIDTH;
-	auto anim = effectObj.AddComponent<Animator>();
-	auto texture = engine.assetManager.CreateTexture("EffectSheet", "Assets/Textures/Effect.png");
-	anim->CreateAnimation("Effect", 5, 16, 16, texture);
-	anim->SetAnimation(anim->GetAnimation("Effect"));
-	anim->speed = 0.15f;
-	anim->scaleAnimationX = 1.0f;
-	anim->scaleAnimationY = 1.0f;
-	anim->update = false;
-	anim->Print();
+	Transform* playerTransform = playerObject.AddComponent<Transform>();
+	playerTransform->position = {7500.0f, 700.0f};
+	playerObject.AddComponent<Physics2D>();
+	playerObject.AddComponent<EntityTag>()->name = "Player";
 
-	float fps = 0.0f;
-	Uint64 lastTime = SDL_GetTicksNS();
-	int frameCount = 0;
+	Animator* playerAnimator = playerObject.AddComponent<Animator>();
+	engine.assetManager.CreateTexture("PlayerRun", "Assets/Textures/Run.png");
+	engine.assetManager.CreateTexture("PlayerIdle", "Assets/Textures/Idle.png");
+	engine.assetManager.CreateTexture("PlayerJump", "Assets/Textures/Jump.png");
 
-	engine.assetManager.CreateTexture("DoorTexture", "Assets/Textures/Door.png");
-	auto& door = engine.entityManager.CreateEntity();
-	auto doorTransform = door.AddComponent<Transform>();
-	auto doorSprite = door.AddComponent<Sprite>();
-	doorSprite->texture = engine.assetManager.GetTexture("DoorTexture");
-	doorTransform->position.x = -700;
+	playerAnimator->CreateAnimation("Run", 4, 16, 16, engine.assetManager.GetTexture("PlayerRun"));
+	playerAnimator->CreateAnimation("Idle", 4, 16, 16, engine.assetManager.GetTexture("PlayerIdle"));
+	playerAnimator->CreateAnimation("Jump", 3, 16, 16, engine.assetManager.GetTexture("PlayerJump"));
 
+	playerAnimator->SetAnimation("Idle");
+	playerAnimator->speed = 0.15f;
+	playerAnimator->scaleAnimationX = 1.0f;
+	playerAnimator->scaleAnimationY = 1.0f;
+
+	BoxCollider2D* playerCollider = playerObject.AddComponent<BoxCollider2D>();
+	playerCollider->width = 72;
+	playerCollider->height = 64;
+	playerCollider->offsetX = 28;
+	playerCollider->offsetY = 64;
+#pragma endregion Player
+
+#pragma region Spikes
+	engine.assetManager.CreateTexture("SpikeTexture", "Assets/Textures/Spike.png");
+
+	Entity& spike = engine.entityManager.CreateEntity();
+	spike.AddComponent<EntityTag>()->name = "Spikes";
+
+	Transform* spikeTransform = spike.AddComponent<Transform>();
+	BoxCollider2D* spikeCollider = spike.AddComponent<BoxCollider2D>();
+
+	Sprite* spikeSprite = spike.AddComponent<Sprite>();
+	spikeCollider->height = 32;
+	spikeCollider->width = 70;
+	spikeCollider->offsetY = 128;
+	spikeCollider->offsetX = 45;
+	spikeSprite->texture = engine.assetManager.GetTexture("SpikeTexture");
+	spikeTransform->position.x = -700;
+
+	engine.entityManager.CreateEntitiesFromObjFile("Assets/Maps/Testing.sodobj", "Spikes", spike);
+#pragma endregion Spikes
+
+#pragma region EFFECTS
+
+#pragma region RUNNING_FX
+	Entity& runningEffectObj = engine.entityManager.CreateEntity();
+	runningEffectObj.AddComponent<Transform>();
+
+	Sprite* runningEffectSprite = runningEffectObj.AddComponent<Sprite>();
+	runningEffectSprite->height = SPRT_HEIGHT;
+	runningEffectSprite->width = SPRT_WIDTH;
+
+	SDL_Texture* texture = engine.assetManager.CreateTexture("EffectSheet", "Assets/Textures/Effect.png");
+
+	Animator* runningObjAnimator = runningEffectObj.AddComponent<Animator>();
+	runningObjAnimator->CreateAnimation("Effect", 5, 16, 16, texture);
+	runningObjAnimator->SetAnimation(runningObjAnimator->GetAnimation("Effect"));
+	runningObjAnimator->speed = 0.15f;
+	runningObjAnimator->scaleAnimationX = 1.0f;
+	runningObjAnimator->scaleAnimationY = 1.0f;
+	runningObjAnimator->update = false;
+
+#pragma endregion RUNNING_FX
+
+#pragma region EXPLOSION_FX
 	engine.assetManager.CreateTexture("ExplosionFX", "Assets/Textures/Explosion.png");
 	auto& explosion = engine.entityManager.CreateEntity();
 	auto explosionTransform = explosion.AddComponent<Transform>();
@@ -427,26 +514,13 @@ int main()
 	explosionAnim->update = false;
 	explosionAnim->scaleAnimationX = 1.0f;
 	explosionAnim->scaleAnimationY = 1.0f;
+#pragma endregion EXPLOSION_FX
 
-	engine.assetManager.CreateTexture("SpikeTexture", "Assets/Textures/Spike.png");
-
-	auto& spike = engine.entityManager.CreateEntity();
-	auto spikeTransform = spike.AddComponent<Transform>();
-	auto spikeCollider = spike.AddComponent<BoxCollider2D>();
-	spike.AddComponent<EntityTag>()->name = "Spikes";
-	auto spikeSprite = spike.AddComponent<Sprite>();
-	spikeCollider->height = 32;
-	spikeCollider->width = 70;
-	spikeCollider->offsetY = 128;
-	spikeCollider->offsetX = 45;
-	spikeSprite->texture = engine.assetManager.GetTexture("SpikeTexture");
-	spikeTransform->position.x = -700;
-	engine.entityManager.CreateEntitiesFromObjFile("Assets/Maps/Testing.sodobj", "Spikes", spike);
-
+#pragma region JUMP_FX
 	SDL_Texture* jumpfxTexture = engine.assetManager.CreateTexture("JumpFxTexture", "Assets/Textures/JumpFX.png");
 
 	Entity& jumpFxObj = engine.entityManager.CreateEntity();
-	jumpFxObj.AddComponent<Transform>()->position = { -200, 200 };
+	jumpFxObj.AddComponent<Transform>()->position = { 7500.0f, 700.0f };
 
 	Sprite* jmpFxSprt = jumpFxObj.AddComponent<Sprite>();
 	jmpFxSprt->height = SPRT_HEIGHT;
@@ -461,25 +535,15 @@ int main()
 	jmpfxAnimator->scaleAnimationX = 1.0f;
 	jmpfxAnimator->scaleAnimationY = 1.0f;
 
-	SDL_Texture* landfxTexture = engine.assetManager.CreateTexture("LandFxTexture", "Assets/Textures/LandEffect.png");
+#pragma endregion JUMP_FX
 
-	Entity& landFxObj = engine.entityManager.CreateEntity();
-	landFxObj.AddComponent<Transform>()->position = { -200, 200 };
+#pragma endregion EFFECTS
 
-	Sprite* landFxSprt = landFxObj.AddComponent<Sprite>();
-	landFxSprt->height = SPRT_HEIGHT;
-	landFxSprt->width = SPRT_WIDTH;
+	float fps = 0.0f;
+	Uint64 lastTime = SDL_GetTicksNS();
+	int frameCount = 0;
 
-	Animator* landfxAnimator = landFxObj.AddComponent<Animator>();
-	landfxAnimator->CreateAnimation("landFX", 6, 16, 16, landfxTexture);
-	landfxAnimator->SetAnimation("landFX");
-	landfxAnimator->update = false;
-	landfxAnimator->effectBase = true;
-	landfxAnimator->speed = 0.1f;
-	landfxAnimator->scaleAnimationX = 1.0f;
-	landfxAnimator->scaleAnimationY = 1.0f;
-
-	constexpr float targetFrameTime = 1.0f / 60.0f;
+	constexpr float targetFrameTime = 1.0f / 6000.0f;
 
 	// Game loop
 	while (engine.isRunning)
@@ -503,16 +567,17 @@ int main()
 			engine.debugger.DrawAllColliders(engine.entityManager);
 		}
 
-		PlayerSpikesCollisions(player, &explosion, engine.entityManager);
-		PlayerMovement(engine.inputSystem, engine.entityManager, &player, &effectObj, &jumpFxObj, &landFxObj, engine.deltaTime);
-		PlayerBounds(player, &explosion, engine.renderingSystem, engine.entityManager);
+		PlayerSpikesCollisions(playerObject, &explosion, engine.entityManager);
+		PlayerBounds(playerObject, &explosion, engine.renderingSystem, engine.entityManager);
+		CameraFollowPlayer(playerObject, engine.renderingSystem, engine.deltaTime);
+		PlayerMovement(engine.inputSystem, engine.entityManager, &playerObject, &runningEffectObj, &jumpFxObj, nullptr, engine.deltaTime);
+
+		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_1))
+		{
+			PlayerDeath(playerObject, &explosion, engine.entityManager);
+		}
 
 		engine.Update();
-		CameraFollowPlayer(player, engine.renderingSystem, engine.deltaTime);
-
-		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_ESCAPE))
-			engine.Quit();
-
 		engine.renderingSystem.RenderScreen(engine.entityManager);
 
 		// IGNORE BELOW THIS IS NOT IMPORTANT ONLY FPS LIMITER
@@ -525,6 +590,9 @@ int main()
 			float delay = (targetFrameTime - frameTime) * 1000.0f;
 			SDL_Delay((Uint32)delay);
 		}
+		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_ESCAPE))
+			engine.Quit();
+
 		engine.debugger.DebuggerEndTime();
 	}
 

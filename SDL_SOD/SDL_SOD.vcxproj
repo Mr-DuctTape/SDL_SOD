@@ -33,6 +33,7 @@
     <ClCompile Include="Engine\SOD_Engine.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\Physics\System.cpp" />
+    <ClCompile Include="Game\Entities\Player.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Graphics\Camera.h" />
@@ -48,6 +49,7 @@
     <ClInclude Include="Engine\Math\Vector2.h" />
     <ClInclude Include="Engine\SOD_Engine.h" />
     <ClInclude Include="Engine\Physics\System.h" />
+    <ClInclude Include="Game\Entities\Player.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SDL3.dll" />

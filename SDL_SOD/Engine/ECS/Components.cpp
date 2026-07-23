@@ -13,8 +13,8 @@ void Animator::Update(float dt)
 		return;
 
 	SDL_FRect& frame = currentAnimation.src;
-	frame.w = currentAnimation.pixelWidth;
-	frame.h = currentAnimation.pixelHeight;
+	frame.w = static_cast<float>(currentAnimation.pixelWidth);
+	frame.h = static_cast<float>(currentAnimation.pixelHeight);
 
 	timer += dt;
 	if (timer >= speed)
@@ -29,7 +29,7 @@ void Animator::Update(float dt)
 		finished = true;
 	}
 
-	frame.x = currentAnimation.currentFrame * currentAnimation.pixelWidth;
+	frame.x = static_cast<float>(currentAnimation.currentFrame * currentAnimation.pixelWidth);
 	frame.y = 0;
 
 	SDL_FRect& dst = currentAnimation.dst;
@@ -45,8 +45,8 @@ void Animator::Update(float dt)
 	dst.x = transform->position.x;
 	dst.y = transform->position.y;
 
-	dst.w = sprite->width;
-	dst.h = sprite->height;
+	dst.w = static_cast<float>(sprite->width);
+	dst.h = static_cast<float>(sprite->height);
 }
 Animator::Animation Animator::CreateAnimation(const std::string& name, int frames, int pixelWidth, int pixelHeight, SDL_Texture* spriteSheet)
 {
@@ -198,7 +198,8 @@ void BoxCollider2D::UpdatePosition()
 void BoxCollider2D::Update(float dt)
 {
 	wasColliding = isColliding;
-	data.side = CollisionData::Side::None;
+	groundCollision = false;
+	wallCollision = false;
 }
 
 // ==== TILEMAP COMPONENT ====
