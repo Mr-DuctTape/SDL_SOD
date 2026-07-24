@@ -3,7 +3,7 @@
 #include "../Debug/Debugger.h"
 #include <algorithm>
 
-void PhysicsSystem::TileMapCollision(Entity* entity, TileMap* tileMap)
+void PhysicSystem::TileMapCollision(Entity* entity, TileMap* tileMap)
 {
 	if (!entity || !tileMap) { std::cout << "Entity || tileMap == nullptr\n";  return; }
 
@@ -201,7 +201,7 @@ void PhysicsSystem::TileMapCollision(Entity* entity, TileMap* tileMap)
 }
 
 
-void PhysicsSystem::Gravity(Entity* entity, float deltaTime)
+void PhysicSystem::Gravity(Entity* entity, float deltaTime)
 {
 	if (!entity) return;
 
@@ -213,7 +213,7 @@ void PhysicsSystem::Gravity(Entity* entity, float deltaTime)
 	physics->acceleration.y += gravity;
 }
 
-void PhysicsSystem::Movement(Entity* entity, float deltaTime)
+void PhysicSystem::Movement(Entity* entity, float deltaTime)
 {
 	if (!entity) return;
 
@@ -230,7 +230,7 @@ void PhysicsSystem::Movement(Entity* entity, float deltaTime)
 	physics->acceleration = { 0.0f, 0.0f };
 }
 
-void PhysicsSystem::Update(EntityManager& entityManager, float deltaTime)
+void PhysicSystem::Update(EntityManager& entityManager, float deltaTime)
 {
 	// Calculate movement and gravity
 	for (auto& entity : entityManager.entities)

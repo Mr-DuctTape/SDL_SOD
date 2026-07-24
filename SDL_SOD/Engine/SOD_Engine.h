@@ -6,6 +6,7 @@
 #include "../Engine/Physics/System.h"
 #include "../Engine/Textures/AssetManager.h"
 #include "../Engine/Debug/Debugger.h"
+#include "../Engine/Audio/AudioSystem.h"
 
 class Engine
 {
@@ -16,13 +17,16 @@ public:
 	Engine() {};
 
 	Application application;
+
+	InputSystem inputSystem;
+	AudioManager audioManager;
+
 	RenderingSystem renderingSystem;
 	Debugger debugger;
 
-	InputSystem inputSystem;
 	EntityManager entityManager;
 	AssetManager assetManager;
-	PhysicsSystem physics;
+	PhysicSystem physics;
 
 	float deltaTime = 0.0;
 	bool isRunning = true;

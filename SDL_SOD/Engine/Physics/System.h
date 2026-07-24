@@ -6,7 +6,7 @@ class Entity;
 class Debugger;
 class TileMap;
 
-class PhysicsSystem
+class PhysicSystem
 {
 private:
 	Debugger* debugger = nullptr;

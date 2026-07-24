@@ -4,6 +4,13 @@
 
 void Application::Initialize(SDL_Renderer*& renderer, int windowWidth, int windowHeight)
 {
+	if(!SDL_Init(SDL_INIT_VIDEO))
+	{
+		std::cout << "(CRITICAL ERROR) Unable to initailize SDL_Video: ";
+		std::cout << SDL_GetError();
+		return;
+	}
+
 	window = SDL_CreateWindow("Window: Ignis", windowWidth, windowHeight, SDL_WINDOW_RESIZABLE);
 	renderer = SDL_CreateRenderer(window, NULL);
 

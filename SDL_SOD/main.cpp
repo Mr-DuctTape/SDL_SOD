@@ -134,9 +134,40 @@ void SpawnEffect(EntityManager& entityManager, Entity* effect, Vec2f transform, 
 	fxAnimator->flippedX = flippedX;
 	fxAnimator->timer = 0.0f;
 }
+void PlayerDash(EntityManager& entityManager, InputSystem& inputSystem, Entity* dashEffect, Transform* transform, Animator* animator, Physics2D* physics, Vec2f accel, float deltaTime)
+{
+	static bool dashing = false;
+	static float dashCoolDownTimer = 0.0f;
+	constexpr float dashCoolDownTime = 1.5f;
 
+	if (dashing && dashCoolDownTimer < dashCoolDownTime)
+	{
+		dashCoolDownTimer += deltaTime;
+		if (dashCoolDownTimer >= dashCoolDownTime)
+		{
+			dashing = false;
+			dashCoolDownTimer = 0.0f;
+		}
+	}
+
+	if (inputSystem.GetButtonDown(SDL_SCANCODE_LSHIFT) && !dashing)
+	{
+		float dirX = (accel.normalized().x > 0.0f) ? 1.0f : -1.0f;
+		Vec2f force = { dirX * 4000.0f, 0.0f };
+		physics->AddForce(force);
+		dashing = true;
+		Vec2f spawnPos = transform->position;
+		spawnPos.y += 25.0f;
+		if (dirX >= 1.0f)
+			spawnPos.x += 100.0f;
+		else
+			spawnPos.x -= 100.0f;
+
+		SpawnEffect(entityManager, dashEffect, spawnPos, animator->flippedX);
+	}
+}
 void PlayerWallJump(EntityManager& entityManager, InputSystem& inputSystem, Entity* effect, BoxCollider2D* boxCollider, Transform* transform, bool& gatherBuffer, Physics2D* physics, float deltaTime);
-void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Entity* player, Entity* runningEffect, Entity* jumpEffect, Entity* wallJumpEffect, float deltaTime)
+void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Entity* player, Entity* runningEffect, Entity* jumpEffect, Entity* dashEffect, float deltaTime)
 {
 	Transform* transform = player->GetComponent<Transform>();
 	Physics2D* physics = player->GetComponent<Physics2D>();
@@ -175,7 +206,7 @@ void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Enti
 
 	static float jumpBufferTimer = 0.0f;
 	static bool gatherBuffer = false;
-	float jumpBufferTime = 0.2f;
+	float jumpBufferTime = 0.2f; 
 	bool jumpBuffer = false;
 
 	if (inputSystem.GetButtonDown(SDL_SCANCODE_SPACE) && gatherBuffer)
@@ -217,10 +248,11 @@ void PlayerMovement(InputSystem& inputSystem, EntityManager& entityManager, Enti
 		accel.x += movementSpeed;
 	}
 
+	PlayerDash(entityManager, inputSystem, dashEffect, transform, animator, physics, accel, deltaTime);;
+	PlayerWallJump(entityManager, inputSystem, jumpEffect, boxCollider2D, transform, gatherBuffer, physics, deltaTime);
+
 	physics->Accelerate(accel);
 	physics->AddForce(force);
-
-	PlayerWallJump(entityManager, inputSystem, jumpEffect, boxCollider2D, transform, gatherBuffer, physics, deltaTime);
 }
 void PlayerDeath(Entity& player, Entity* effect, EntityManager& entityManager) {
 
@@ -366,6 +398,7 @@ int main()
 {
 	Engine engine;
 	engine.Initialize();
+
 	bool enableDebugger = false;
 
 #pragma region TileMap
@@ -537,6 +570,27 @@ int main()
 
 #pragma endregion JUMP_FX
 
+#pragma region DASH_FX
+
+	Entity& dashFxObj = engine.entityManager.CreateEntity();
+	dashFxObj.AddComponent<Transform>()->position = { 7200.0f, 800.0f };
+
+	Sprite* dashFxSprite = dashFxObj.AddComponent<Sprite>();
+	dashFxSprite->height = SPRT_HEIGHT;
+	dashFxSprite->width = SPRT_WIDTH;
+
+	SDL_Texture* dashFxSpriteSheet = engine.assetManager.CreateTexture("DashFX", "Assets/Textures/Dash.png");
+	Animator* dashFxAnimator = dashFxObj.AddComponent<Animator>();
+	dashFxAnimator->CreateAnimation("Dash", 6, 16, 16, dashFxSpriteSheet);
+	dashFxAnimator->SetAnimation("Dash");
+	dashFxAnimator->update = false;
+	dashFxAnimator->effectBase = true;
+	dashFxAnimator->speed = 0.1f;
+	dashFxAnimator->scaleAnimationX = 1.0f;
+	dashFxAnimator->scaleAnimationY = 1.0f;
+
+#pragma endregion DASH_FX
+
 #pragma endregion EFFECTS
 
 	float fps = 0.0f;
@@ -544,6 +598,11 @@ int main()
 	int frameCount = 0;
 
 	constexpr float targetFrameTime = 1.0f / 6000.0f;
+
+
+	auto clip = engine.audioManager.CreateAudioClip("Sample", "Assets/Audio/sample.wav");
+	engine.audioManager.m_audioClips.find("Sample");
+	engine.audioManager.PlayAudioClip(*clip);
 
 	// Game loop
 	while (engine.isRunning)
@@ -570,7 +629,7 @@ int main()
 		PlayerSpikesCollisions(playerObject, &explosion, engine.entityManager);
 		PlayerBounds(playerObject, &explosion, engine.renderingSystem, engine.entityManager);
 		CameraFollowPlayer(playerObject, engine.renderingSystem, engine.deltaTime);
-		PlayerMovement(engine.inputSystem, engine.entityManager, &playerObject, &runningEffectObj, &jumpFxObj, nullptr, engine.deltaTime);
+		PlayerMovement(engine.inputSystem, engine.entityManager, &playerObject, &runningEffectObj, &jumpFxObj, &dashFxObj, engine.deltaTime);
 
 		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_1))
 		{

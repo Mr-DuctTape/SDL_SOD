@@ -129,6 +129,7 @@ public:
 			Push_Back(clone);
 		}
 	}
+
 	Entity& operator=(Entity&& other) noexcept
 	{
 		if (this == &other)
