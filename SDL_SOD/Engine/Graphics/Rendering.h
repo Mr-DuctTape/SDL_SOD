@@ -28,7 +28,7 @@ public:
 	void RenderScreen(EntityManager& entityManager);
 	void ClearScreen();
 
-	RenderingSystem() {};
+	RenderingSystem() = default;
 	~RenderingSystem()
 	{
 		if(DEBUGPRINT)

@@ -173,7 +173,6 @@ public:
 	}
 };
 
-
 class EntityManager
 {
 private:

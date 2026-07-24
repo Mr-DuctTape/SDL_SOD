@@ -125,7 +125,7 @@ struct Transform : Component
 struct Sprite : Component
 {
 	SDL_Texture* texture = nullptr;
-	SDL_FColor color;
+	SDL_FColor color{};
 	int width = 150, height = 150;
 	Sprite* Clone() override
 	{

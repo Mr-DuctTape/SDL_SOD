@@ -40,6 +40,8 @@ SDL_Texture* AssetManager::CreateTexture(std::string name, const std::string& fi
 SDL_Texture* AssetManager::GetTexture(std::string name)
 {
     auto it = textures.find(name);
+    if (it == textures.end())
+        return nullptr;
     return it->second;
 }
 

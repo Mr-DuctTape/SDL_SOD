@@ -5,6 +5,8 @@
 #include <string>
 #include <iostream>
 #include <filesystem>
+#include "../Macros/DEBUGPRINT.h"
+#include <random>
 
 class AudioManager
 {
@@ -15,6 +17,7 @@ private:
 		std::cout << SDL_GetError() << "\n";
 	}
 public:
+
 	struct AudioClip
 	{
 		SDL_AudioStream* stream = nullptr;
@@ -50,7 +53,7 @@ public:
 		}
 		for (int i = 0; i < count; i++)
 		{
-			if (SDL_IsAudioDevicePhysical(array[i]) && SDL_IsAudioDevicePlayback(array[i]));
+			if (SDL_IsAudioDevicePhysical(array[i]) && SDL_IsAudioDevicePlayback(array[i]))
 			{
 				return array[i];
 			}
@@ -62,8 +65,6 @@ public:
 
 	AudioClip* CreateAudioClip(const std::string& name, const std::string& filePath)
 	{
-		AudioClip clip;
-
 		std::filesystem::path working_dir = std::filesystem::current_path();
 		std::filesystem::path wav_path = working_dir.string() + "/" + filePath;
 		if (!std::filesystem::exists(wav_path))
@@ -75,29 +76,26 @@ public:
 		SDL_AudioSpec deviceFormat;
 		if (!SDL_GetAudioDeviceFormat(m_playBackDevice, &deviceFormat, nullptr))
 		{
-			std::cout << "(ERROR) Unable to get Device format: ";
-			std::cout << SDL_GetError() << "\n";
+			PrintError();
 			return nullptr;
 		}
 
+		AudioClip clip;
 		SDL_AudioSpec wavFormat;
 		if (!SDL_LoadWAV(wav_path.string().c_str(), &wavFormat, &clip.data, &clip.length))
 		{
-			std::cout << "(ERROR) Unable to load WAV file: " << wav_path.string() << "\n";
-			std::cout << SDL_GetError() << "\n";
+			PrintError();
 			return nullptr;
 		}
 
 		clip.stream = SDL_CreateAudioStream(&wavFormat, &deviceFormat);
 		if (!clip.stream) {
-			std::cout << "(ERROR) Unable to create SDL_AudioStream: " << name << "\n";
-			std::cout << SDL_GetError() << "\n";
+			PrintError();
 			return nullptr;
 		}
 		if (!SDL_PutAudioStreamData(clip.stream, clip.data, clip.length))
 		{
-			std::cout << "(ERROR) Unable to load data into stream: " << name << "\n";
-			std::cout << SDL_GetError() << "\n";
+			PrintError();
 			return nullptr;
 		}
 
@@ -105,26 +103,70 @@ public:
 		return &m_audioClips.find(name)->second;
 	}
 
+	void PlayAudioClip(const std::string& name)
+	{
+		AudioClip& audioClip = m_audioClips.find(name)->second;
+
+		static std::random_device rd;
+		static std::mt19937 rng(rd()); // Random number generator
+
+		std::uniform_real_distribution<float> dist(1.0f, 1.5f);
+
+		float randomFloat = dist(rng);
+		ChangePitch(audioClip, randomFloat);
+
+		if (!SDL_ClearAudioStream(audioClip.stream) && DEBUGPRINT)
+		{
+			PrintError();
+		}
+
+		if (!SDL_PutAudioStreamData(audioClip.stream, audioClip.data, audioClip.length) && DEBUGPRINT)
+		{
+			PrintError();
+		}
+
+		if (!SDL_BindAudioStream(m_playBackDevice, audioClip.stream) && DEBUGPRINT)
+		{
+			PrintError();
+		}
+		if (!SDL_ResumeAudioDevice(m_playBackDevice) && DEBUGPRINT)
+		{
+			PrintError();
+		}
+	}
+
 	void PlayAudioClip(AudioClip& audioClip)
 	{
-		if (!SDL_ClearAudioStream(audioClip.stream))
+		static std::random_device rd;
+		static std::mt19937 rng(rd()); // Random number generator
+
+		std::uniform_real_distribution<float> dist(1.0f, 1.5f);
+
+		float randomFloat = dist(rng);
+		ChangePitch(audioClip, randomFloat);
+		if (!SDL_ClearAudioStream(audioClip.stream) && DEBUGPRINT)
 		{
 			PrintError();
 		}
 
-		if (!SDL_PutAudioStreamData(audioClip.stream, audioClip.data, audioClip.length))
+		if (!SDL_PutAudioStreamData(audioClip.stream, audioClip.data, audioClip.length) && DEBUGPRINT)
 		{
 			PrintError();
 		}
 
-		if (!SDL_BindAudioStream(m_playBackDevice, audioClip.stream))
+		if (!SDL_BindAudioStream(m_playBackDevice, audioClip.stream) && DEBUGPRINT)
 		{
 			PrintError();
 		}
-		if (!SDL_ResumeAudioDevice(m_playBackDevice))
+		/*if (!SDL_ResumeAudioDevice(m_playBackDevice) && DEBUGPRINT)
 		{
 			PrintError();
-		}
+		}*/
+	}
+
+	void ChangePitch(AudioClip& clip, float pitch)
+	{
+		SDL_SetAudioStreamFrequencyRatio(clip.stream, pitch);
 	}
 
 	~AudioManager()
