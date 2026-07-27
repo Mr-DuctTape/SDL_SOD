@@ -3,13 +3,15 @@
 #include "Rendering.h"
 #include "../ECS/Entities.h"
 #include "../ECS/Components.h"
-#include "../Debug/Debugger.h"
+#include "../Debugger/Debugger.h"
+#include "../UI/UIManager.h"
 
-void RenderingSystem::Initialize(Debugger* debugger)
+void RenderingSystem::Initialize(Debugger& debugger, UIManager& uiManager)
 {
 	renderTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, renderResX, renderResY);
 	SDL_SetTextureScaleMode(renderTexture, SDL_SCALEMODE_PIXELART);
-	this->debugger = debugger;
+	this->debugger = &debugger;
+	this->uiManager = &uiManager;
 }
 Debugger* RenderingSystem::GetDebugger()
 {
@@ -224,6 +226,9 @@ void RenderingSystem::RenderScreen(EntityManager& entityManager)
 		Uint64 endDebugDraw = SDL_GetPerformanceCounter();
 		debugger->debugStats.debugMs = (endDebugDraw - startDebugDraw) * 1000.0f / SDL_GetPerformanceFrequency();
 	}
+
+	// Render UI
+	uiManager->RenderButtons(renderer);
 
 	Uint64 presentScreenStart = SDL_GetPerformanceCounter();
 	SDL_SetRenderTarget(renderer, nullptr);

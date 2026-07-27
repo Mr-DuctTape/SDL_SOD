@@ -21,7 +21,7 @@
   <ItemGroup>
     <ClCompile Include="Engine\Graphics\Camera.cpp" />
     <ClCompile Include="Engine\Audio\AudioSystem.cpp" />
-    <ClCompile Include="Engine\Debug\Debugger.cpp" />
+    <ClCompile Include="Engine\Debugger\Debugger.cpp" />
     <ClCompile Include="Engine\ECS\EntityManager.cpp" />
     <ClCompile Include="Engine\Textures\AssetManager.cpp" />
     <ClCompile Include="Engine\Core\Application.cpp" />
@@ -35,12 +35,13 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\Physics\System.cpp" />
     <ClCompile Include="Game\Entities\Player.cpp" />
+    <ClCompile Include="Engine\UI\UIManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Graphics\Camera.h" />
     <ClInclude Include="Engine\Audio\AudioSystem.h" />
     <ClInclude Include="Engine\Macros\DEBUGPRINT.h" />
-    <ClInclude Include="Engine\Debug\Debugger.h" />
+    <ClInclude Include="Engine\Debugger\Debugger.h" />
     <ClInclude Include="Engine\Textures\AssetManager.h" />
     <ClInclude Include="Engine\Core\Application.h" />
     <ClInclude Include="Engine\ECS\Components.h" />
@@ -52,6 +53,7 @@
     <ClInclude Include="Engine\Physics\System.h" />
     <ClInclude Include="Game\Game.h" />
     <ClInclude Include="Game\Entities\Player.h" />
+    <ClInclude Include="Engine\UI\UIManager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SDL3.dll" />

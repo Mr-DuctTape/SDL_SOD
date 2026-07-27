@@ -89,26 +89,15 @@ public:
 		}
 	}
 
-	void Play(const std::string& audioClip)
+	void Play(const std::string& audioClip, float volume)
 	{
 		auto it = m_audioClips.find(audioClip);
 		if (it == m_audioClips.end())
 			return;
 
-		if (audioClip == "Step")
-		{
-			PlayerHelper(it->second, 0.02f);
-		}
-		else if(audioClip == "Jump")
-		{
-			
-			PlayerHelper(it->second, 0.5f);
-		}
-		else
-		{
-			PlayerHelper(it->second, 0.3f);
-		}
+		PlayerHelper(it->second, volume);
 	}
+private:
 	void PlayerHelper(AudioClip& audioClip, float volume)
 	{
 		AudioSource* audioSource = nullptr;
@@ -138,7 +127,7 @@ public:
 		}
 		audioSource->isPlaying = true;
 	}
-
+public:
 	SDL_AudioDeviceID GetAudioDevice()
 	{
 		int count;
@@ -167,13 +156,13 @@ public:
 		{
 			std::cout << "Device " << device << " :" << SDL_GetAudioDeviceName(device) << "\n";
 		}
-	
+
 		uint32_t device = 0;
 		std::cout << "Choose device: ";
 		std::cin >> device;
 		std::cout << "\n";
 
-		if(!device)
+		if (!device)
 			std::cout << "(ERROR) Unable to find any PlayBackDevices: ";
 		return device;
 	}

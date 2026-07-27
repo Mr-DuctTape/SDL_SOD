@@ -37,8 +37,9 @@ void Engine::Initialize()
 	// creates the window and renderer
 	application.Initialize(renderingSystem.renderer);
 
-	// Initialize rendering system, give references or pointers to others
-	renderingSystem.Initialize(&debugger);
+	// Initialize rendering system, give references/pointers to others
+	renderingSystem.Initialize(debugger, uiManager);
+	uiManager.Initiailze(inputSystem, audioManager, renderingSystem.camera);
 	debugger.Initialize(&renderingSystem.camera);
 	assetManager.Initialize(renderingSystem.renderer);
 	physics.Intialize(&debugger);
@@ -69,6 +70,7 @@ void Engine::Physics()
 void Engine::Update()
 {
 	audioManager.Update();
+	uiManager.Update();
 
 	// Update all components 
 	Uint64 componentMsStart = SDL_GetPerformanceCounter();

@@ -9,10 +9,11 @@ public:
 	float zoom = 0.4f;
 };
 
-static Vec2f WorldToScreen(float x, float y, const Camera& camera) {
+static Vec2f WorldToScreen(float x, float y, const Camera& camera)
+{
     return Vec2f{ x - camera.pos.x, y - camera.pos.y } * camera.zoom;
 }
-static SDL_FRect WorldToScreen(SDL_FRect rect, const Camera& camera)
+static SDL_FRect WorldToScreen(SDL_FRect rect, const Camera& camera) 
 {
     return
     {

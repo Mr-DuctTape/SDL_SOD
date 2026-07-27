@@ -1,17 +1,19 @@
 #pragma once
 #include <iostream>
 #include "../Macros/DEBUGPRINT.h"
-#include "../Debug/Debugger.h"
+#include "../Debugger/Debugger.h"
 #include "Camera.h"
 
 struct SDL_Renderer;
 class EntityManager;
 class Debugger;
+class UIManager;
 
 class RenderingSystem
 {
 private:
 	Debugger* debugger = nullptr;
+	UIManager* uiManager = nullptr;
 
 public:
 	Camera camera;
@@ -24,7 +26,7 @@ public:
 
 	Debugger* GetDebugger();
 	void PresentScreen();
-	void Initialize(Debugger* debugger);
+	void Initialize(Debugger& debugger, UIManager& uiManager);
 	void RenderScreen(EntityManager& entityManager);
 	void ClearScreen();
 

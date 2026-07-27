@@ -5,8 +5,9 @@
 #include "../Engine/ECS/Entities.h"
 #include "../Engine/Physics/System.h"
 #include "../Engine/Textures/AssetManager.h"
-#include "../Engine/Debug/Debugger.h"
+#include "../Engine/Debugger/Debugger.h"
 #include "../Engine/Audio/AudioSystem.h"
+#include "../Engine/UI/UIManager.h"
 
 class Engine
 {
@@ -22,6 +23,7 @@ public:
 	AudioManager audioManager;
 
 	RenderingSystem renderingSystem;
+	UIManager uiManager;
 	Debugger debugger;
 
 	EntityManager entityManager;

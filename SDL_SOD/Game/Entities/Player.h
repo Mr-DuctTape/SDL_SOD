@@ -35,12 +35,26 @@ private:
 	Physics2D* m_physics2D;
 	BoxCollider2D* m_boxCollider2D;
 
+	float m_cameraFollowSpeed = 4.0f;
+	float m_movementSpeed = 3500.0f;
+	float m_jumpForce = 4000.0f;
+
+	float m_dashVolume = 0.1f;
+	float m_jumpVolume = 0.5f;
+	float m_stepVolume = 0.02f;
+
 	// Animator
-	void PlaySoundOnAnimation(AudioManager& audioManager, const std::string& audioClip, const std::string& animationName, Animator* m_animator, const std::vector<int>& framesToPlayON);
+	void PlaySoundOnAnimation
+	(  
+		AudioManager& audioManager, const std::string& audioClip, 
+		const std::string& animationName, float volume, 
+		Animator* m_animator, const std::vector<int>& framesToPlayON
+	);
+
 	void ChangeAnimatorStates(float playerMovingSpeed);
 
 	// Spawning effects
-	void SpawnEffect(EntityManager& entityManager, Entity& effect, Vec2f transform, bool flippedX);
+	void SpawnEffect(EntityManager& entityManager, Entity& effect, Vec2f pos, bool flippedX);
 	void SpawnRunningEffect(EntityManager& entityManager, Entity& effect, bool isGrounded, bool flippedX, float deltaTime);
 	void SpawnJumpEffect(EntityManager& entityManager, Entity& prefab, Vec2f pos, bool flippedX);
 
@@ -48,10 +62,25 @@ private:
 	bool IsCoyoteAvailable(float deltaTime, float cTime, float& cTimer, bool& coyote, bool grounded);
 	bool IsJumpBufferRunnning(float deltaTime, float jTime, float& jTimer, bool& jumpBuffer);
 
-	void WallJump(EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem, Entity& effect, bool& gatherBuffer, float deltaTime);
+	void WallJump
+	(   
+		EntityManager& entityManager, AudioManager& audioManager,
+		InputSystem& inputSystem, Entity& effect, 
+		bool& gatherBuffer, float deltaTime
+	);
+	void Dash
+	(   
+		EntityManager& entityManager, AudioManager& audioManager,
+		InputSystem& inputSystem, Entity& dashEffect, 
+		Vec2f accel, float deltaTime
+	);
+	void Movement
+	(   
+		EntityManager& entityManager, AudioManager& audioManager, 
+		InputSystem& inputSystem, Entity& runningEffect, 
+		Entity& jumpEffect, Entity& dashEffect, float deltaTime
+	);
 
-	void Dash(EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem, Entity& dashEffect, Vec2f accel, float deltaTime);
-	void Movement(EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem, Entity& runningEffect, Entity& jumpEffect, Entity& dashEffect, float deltaTime);
 	void Death(Entity& effect, EntityManager& entityManager);
 	void Bounds(RenderingSystem& renderingSystem, EntityManager& entityManager, Entity& effect);
 	void SpikesCollisions(EntityManager& entityManager, Entity& effect);
@@ -62,8 +91,13 @@ public:
 	{
 		return m_entity;
 	}
-	void Update(RenderingSystem& renderingSystem, EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem,
-		Entity& deathEffect, Entity& runningEffect, Entity& jumpingEffect, Entity& dashingEffect, float deltaTime);
+	void Update
+	(
+		RenderingSystem& renderingSystem, EntityManager& entityManager, 
+		AudioManager& audioManager, InputSystem& inputSystem,
+		Entity& deathEffect, Entity& runningEffect,
+		Entity& jumpingEffect, Entity& dashingEffect, float deltaTime
+	);
 
 	Player(Entity& entity) : m_entity(entity) 
 	{

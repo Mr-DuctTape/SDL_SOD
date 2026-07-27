@@ -11,6 +11,8 @@ enum Mouse
 	BUTTON_COUNT = 5
 };
 
+struct Vec2f;
+
 class InputSystem
 {
 private:
@@ -28,5 +30,6 @@ public:
 	const bool GetMouseButtonDown(Mouse button);
 	const bool GetMouseButton(Mouse button);
 	const bool GetMouseButtonUp(Mouse button);
+	const Vec2f GetMousePosition() const;
 	void Process();
 };

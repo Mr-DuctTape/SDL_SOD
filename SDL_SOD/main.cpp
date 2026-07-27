@@ -4,7 +4,7 @@
 
 int main()
 {
-	Uint64 initStart = SDL_GetPerformanceCounter();
+	/*Uint64 initStart = SDL_GetPerformanceCounter();*/
 
 	Engine engine;
 	engine.Initialize();
@@ -17,18 +17,18 @@ int main()
 
 	constexpr float targetFrameTime = 1.0f / 6000.0f;
 
-	AudioManager::AudioClip* clip = engine.audioManager.CreateAudioClip("Dash", "Assets/Audio/Dash.wav");
-	AudioManager::AudioClip* clip2 = engine.audioManager.CreateAudioClip("Step", "Assets/Audio/Step.wav");
-	AudioManager::AudioClip* clip3 = engine.audioManager.CreateAudioClip("Jump", "Assets/Audio/Jump2.wav");
+	//AudioManager::AudioClip* clip = engine.audioManager.CreateAudioClip("Dash", "Assets/Audio/Dash.wav");
+	//AudioManager::AudioClip* clip2 = engine.audioManager.CreateAudioClip("Step", "Assets/Audio/Step.wav");
+	//AudioManager::AudioClip* clip3 = engine.audioManager.CreateAudioClip("Jump", "Assets/Audio/Jump2.wav");
 
-	Game game;
-	game.LoadTexturesAndPrefabs(engine.entityManager, engine.assetManager);
-	game.LoadLevel(engine.entityManager, engine.assetManager, "Assets/Levels/Level1");
+	//Game game;
+	//game.LoadTexturesAndPrefabs(engine.entityManager, engine.assetManager);
+	//game.LoadLevel(engine.entityManager, engine.assetManager, "Assets/Levels/Level1");
+	// 
+	//Uint64 initEnd = SDL_GetPerformanceCounter();
 
-	Uint64 initEnd = SDL_GetPerformanceCounter();
-
-	float ms = (initEnd - initStart) * 1000.0f / SDL_GetPerformanceFrequency();
-	std::cout << "It took " << ms << "ms to init the game & engine \n";
+	//float ms = (initEnd - initStart) * 1000.0f / SDL_GetPerformanceFrequency();
+	//std::cout << "It took " << ms << "ms to init the game & engine \n";
 
 	// Game loop
 	while (engine.isRunning)
@@ -52,7 +52,7 @@ int main()
 			engine.debugger.DrawAllColliders(engine.entityManager);
 		}
 
-		game.Update(engine.renderingSystem, engine.entityManager, engine.audioManager, engine.inputSystem, engine.deltaTime);
+		/*game.Update(engine.renderingSystem, engine.entityManager, engine.audioManager, engine.inputSystem, engine.deltaTime);*/
 
 
 		engine.Update();

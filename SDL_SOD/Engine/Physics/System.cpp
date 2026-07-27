@@ -1,6 +1,6 @@
 #include "System.h"
 #include "../ECS/Entities.h"
-#include "../Debug/Debugger.h"
+#include "../Debugger/Debugger.h"
 #include <algorithm>
 
 void PhysicSystem::TileMapCollision(Entity* entity, TileMap* tileMap)

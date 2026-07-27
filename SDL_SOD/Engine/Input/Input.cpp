@@ -1,4 +1,12 @@
 #include "Input.h"
+#include "../Math/Vector2.h"
+
+const Vec2f InputSystem::GetMousePosition() const
+{
+	float x, y;
+	SDL_GetMouseState(&x, &y);
+	return { x,y };
+}
 
 void InputSystem::Process()
 {

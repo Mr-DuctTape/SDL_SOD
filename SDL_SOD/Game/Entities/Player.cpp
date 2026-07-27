@@ -7,6 +7,7 @@ void Player::PlaySoundOnAnimation(
 	AudioManager& audioManager,
 	const std::string& audioClip,
 	const std::string& animationName,
+	float volume,
 	Animator* animator,
 	const std::vector<int>& framesToPlayOn)
 {
@@ -27,7 +28,7 @@ void Player::PlaySoundOnAnimation(
 	{
 		if (frame == currentFrame)
 		{
-			audioManager.Play(audioClip);
+			audioManager.Play(audioClip, volume);
 			break;
 		}
 	}
@@ -75,7 +76,7 @@ void Player::ChangeAnimatorStates(float playerMovingSpeed)
 }
 
 // Spawning effects
-void Player::SpawnEffect(EntityManager& entityManager, Entity& effect, Vec2f transform, bool flippedX)
+void Player::SpawnEffect(EntityManager& entityManager, Entity& effect, Vec2f pos, bool flippedX)
 {
 	Entity& fxObj = entityManager.CreateEntity(effect);
 
@@ -85,7 +86,7 @@ void Player::SpawnEffect(EntityManager& entityManager, Entity& effect, Vec2f tra
 	if (!fxAnimator || !fxTransform)
 		return;
 
-	fxTransform->position = { transform.x - 10, transform.y };
+	fxTransform->position = { pos.x, pos.y };
 
 	fxAnimator->update = true;
 	fxAnimator->destroyOnFinish = true;
@@ -207,8 +208,8 @@ void Player::WallJump(EntityManager& entityManager, AudioManager& audioManager, 
 		Vec2f pos = m_transform->position;
 		pos.y -= 50.0f;
 		SpawnJumpEffect(entityManager, effect, pos, m_animator->flippedX);
-		audioManager.Play("Jump");
-		audioManager.Play("Step");
+		audioManager.Play("Jump", m_jumpVolume);
+		audioManager.Play("Step", m_stepVolume);
 	}
 }
 
@@ -241,7 +242,7 @@ void Player::Dash(EntityManager& entityManager, AudioManager& audioManager, Inpu
 		else
 			spawnPos.x -= 100.0f;
 
-		audioManager.Play("Dash");
+		audioManager.Play("Dash", m_dashVolume);
 		SpawnEffect(entityManager, dashEffect, spawnPos, m_animator->flippedX);
 	}
 }
@@ -251,11 +252,11 @@ void Player::Movement(EntityManager& entityManager, AudioManager& audioManager, 
 	Vec2f force = { 0, 0 };
 
 	bool isGrounded = m_boxCollider2D->groundCollision;
-	float movementSpeed = 3500.0f;
+	float m_movementSpeed = this->m_movementSpeed;
 
 	if (!isGrounded)
 	{
-		movementSpeed = movementSpeed * 1.25f;
+		m_movementSpeed = m_movementSpeed * 1.25f;
 	}
 
 	static float coyoteTimer = 0.0f;
@@ -273,7 +274,7 @@ void Player::Movement(EntityManager& entityManager, AudioManager& audioManager, 
 
 	if (inputSystem.GetButton(SDL_SCANCODE_W))
 	{
-		accel.y -= movementSpeed;
+		accel.y -= m_movementSpeed;
 	}
 
 	static float jumpBufferTimer = 0.0f;
@@ -304,26 +305,26 @@ void Player::Movement(EntityManager& entityManager, AudioManager& audioManager, 
 
 		m_animator->SetAnimation("Jump");
 		SpawnJumpEffect(entityManager, jumpEffect, m_transform->position, m_animator->flippedX);
-		audioManager.Play("Jump");
-		audioManager.Play("Step");
-		force.y -= 4000.0f;
+		audioManager.Play("Jump", m_jumpVolume);
+		audioManager.Play("Step", m_stepVolume);
+		force.y -= m_jumpForce;
 	}
 
 	if (inputSystem.GetButton(SDL_SCANCODE_A))
 	{
 		m_animator->flippedX = true;
-		accel.x -= movementSpeed;
+		accel.x -= m_movementSpeed;
 	}
 
 	if (inputSystem.GetButton(SDL_SCANCODE_D))
 	{
 
 		m_animator->flippedX = false;
-		accel.x += movementSpeed;
+		accel.x += m_movementSpeed;
 	}
 
 	if (isGrounded)
-		PlaySoundOnAnimation(audioManager, "Step", "Run", m_animator, { 1 });
+		PlaySoundOnAnimation(audioManager, "Step", "Run", m_stepVolume, m_animator, { 1 });
 
 	Dash(entityManager, audioManager, inputSystem, dashEffect, accel, deltaTime);
 	WallJump(entityManager, audioManager, inputSystem, jumpEffect, gatherBuffer, deltaTime);
@@ -399,8 +400,7 @@ void Player::CameraFollow(RenderingSystem& renderingSystem, float deltaTime)
 
 	Camera& camera = renderingSystem.camera;
 
-	constexpr float followSpeed = 3.5f;
-	camera.pos += (target - camera.pos) * followSpeed * deltaTime;
+	camera.pos += (target - camera.pos) * m_cameraFollowSpeed * deltaTime;
 }
 void Player::Update(RenderingSystem& renderingSystem, EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem,
 	Entity& deathEffect, Entity& runningEffect, Entity& jumpingEffect, Entity& dashingEffect, float deltaTime)
