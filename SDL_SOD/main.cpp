@@ -4,6 +4,8 @@
 
 int main()
 {
+	Uint64 initStart = SDL_GetPerformanceCounter();
+
 	Engine engine;
 	engine.Initialize();
 
@@ -15,14 +17,18 @@ int main()
 
 	constexpr float targetFrameTime = 1.0f / 6000.0f;
 
-	AudioManager::AudioClip* clip = engine.audioManager.CreateAudioClip("Dash", "Assets/Audio/DashSound.wav");
+	AudioManager::AudioClip* clip = engine.audioManager.CreateAudioClip("Dash", "Assets/Audio/Dash.wav");
 	AudioManager::AudioClip* clip2 = engine.audioManager.CreateAudioClip("Step", "Assets/Audio/Step.wav");
-	AudioManager::AudioClip* clip3 = engine.audioManager.CreateAudioClip("Jump", "Assets/Audio/Jumo.wav");
-	AudioManager::AudioClip* clip4 = engine.audioManager.CreateAudioClip("Music", "Assets/Audio/sample.wav");
+	AudioManager::AudioClip* clip3 = engine.audioManager.CreateAudioClip("Jump", "Assets/Audio/Jump2.wav");
 
 	Game game;
 	game.LoadTexturesAndPrefabs(engine.entityManager, engine.assetManager);
 	game.LoadLevel(engine.entityManager, engine.assetManager, "Assets/Levels/Level1");
+
+	Uint64 initEnd = SDL_GetPerformanceCounter();
+
+	float ms = (initEnd - initStart) * 1000.0f / SDL_GetPerformanceFrequency();
+	std::cout << "It took " << ms << "ms to init the game & engine \n";
 
 	// Game loop
 	while (engine.isRunning)
@@ -40,9 +46,6 @@ int main()
 			engine.debugger.enabled = enableDebugger;
 			engine.debugger.boxColliders.clear();
 		}
-		if(engine.inputSystem.GetButtonDown(SDL_SCANCODE_B))
-			engine.audioManager.PlayAudioClip(*clip2);
-
 		if (enableDebugger)
 		{
 			engine.debugger.enabled = true;

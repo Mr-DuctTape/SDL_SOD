@@ -31,6 +31,7 @@ public:
 	float deltaTime = 0.0;
 	bool isRunning = true;
 
+	void PrintCLIProgress();
 	void DeltaTimeUpdate();
 	void Update();
 	void Physics();

@@ -3,21 +3,36 @@
 
 
 // Animator
-void Player::PlaySoundOnAnimation(AudioManager& audioManager, AudioManager::AudioClip* audioClip, const std::string& animationName, Animator* m_animator, const std::vector<int>& framesToPlayON)
+void Player::PlaySoundOnAnimation(
+	AudioManager& audioManager,
+	const std::string& audioClip,
+	const std::string& animationName,
+	Animator* animator,
+	const std::vector<int>& framesToPlayOn)
 {
-	if (!audioClip || !m_animator)
+	static int lastFrame = -1;
+
+	if (!animator)
 		return;
 
-	if (animationName != m_animator->currentState)
+	if (animationName != animator->currentState)
 		return;
 
-	for (const int frame : framesToPlayON)
+	int currentFrame = animator->currentAnimation.currentFrame;
+
+	if (currentFrame == lastFrame)
+		return;
+
+	for (int frame : framesToPlayOn)
 	{
-		if (frame == m_animator->currentAnimation.currentFrame)
+		if (frame == currentFrame)
 		{
-			audioManager.PlayAudioClip(*audioClip);
+			audioManager.Play(audioClip);
+			break;
 		}
 	}
+
+	lastFrame = currentFrame;
 }
 void Player::ChangeAnimatorStates(float playerMovingSpeed)
 {
@@ -192,7 +207,8 @@ void Player::WallJump(EntityManager& entityManager, AudioManager& audioManager, 
 		Vec2f pos = m_transform->position;
 		pos.y -= 50.0f;
 		SpawnJumpEffect(entityManager, effect, pos, m_animator->flippedX);
-		audioManager.PlayAudioClip("Jump");
+		audioManager.Play("Jump");
+		audioManager.Play("Step");
 	}
 }
 
@@ -225,7 +241,7 @@ void Player::Dash(EntityManager& entityManager, AudioManager& audioManager, Inpu
 		else
 			spawnPos.x -= 100.0f;
 
-		audioManager.PlayAudioClip("Dash");
+		audioManager.Play("Dash");
 		SpawnEffect(entityManager, dashEffect, spawnPos, m_animator->flippedX);
 	}
 }
@@ -288,7 +304,8 @@ void Player::Movement(EntityManager& entityManager, AudioManager& audioManager, 
 
 		m_animator->SetAnimation("Jump");
 		SpawnJumpEffect(entityManager, jumpEffect, m_transform->position, m_animator->flippedX);
-		audioManager.PlayAudioClip("Jump");
+		audioManager.Play("Jump");
+		audioManager.Play("Step");
 		force.y -= 4000.0f;
 	}
 
@@ -306,7 +323,7 @@ void Player::Movement(EntityManager& entityManager, AudioManager& audioManager, 
 	}
 
 	if (isGrounded)
-		PlaySoundOnAnimation(audioManager, &audioManager.m_audioClips.find("Step")->second, "Run", m_animator, { 1 });
+		PlaySoundOnAnimation(audioManager, "Step", "Run", m_animator, { 1 });
 
 	Dash(entityManager, audioManager, inputSystem, dashEffect, accel, deltaTime);
 	WallJump(entityManager, audioManager, inputSystem, jumpEffect, gatherBuffer, deltaTime);
@@ -390,6 +407,6 @@ void Player::Update(RenderingSystem& renderingSystem, EntityManager& entityManag
 {
 	Movement(entityManager, audioManager, inputSystem, runningEffect, jumpingEffect, dashingEffect, deltaTime);
 	SpikesCollisions(entityManager, deathEffect);
+	Bounds(renderingSystem, entityManager, deathEffect);
 	CameraFollow(renderingSystem, deltaTime);
-
 }

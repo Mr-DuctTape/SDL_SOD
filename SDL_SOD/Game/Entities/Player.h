@@ -36,7 +36,7 @@ private:
 	BoxCollider2D* m_boxCollider2D;
 
 	// Animator
-	void PlaySoundOnAnimation(AudioManager& audioManager, AudioManager::AudioClip* audioClip, const std::string& animationName, Animator* m_animator, const std::vector<int>& framesToPlayON);
+	void PlaySoundOnAnimation(AudioManager& audioManager, const std::string& audioClip, const std::string& animationName, Animator* m_animator, const std::vector<int>& framesToPlayON);
 	void ChangeAnimatorStates(float playerMovingSpeed);
 
 	// Spawning effects
@@ -45,7 +45,6 @@ private:
 	void SpawnJumpEffect(EntityManager& entityManager, Entity& prefab, Vec2f pos, bool flippedX);
 
 	// Movement 
-
 	bool IsCoyoteAvailable(float deltaTime, float cTime, float& cTimer, bool& coyote, bool grounded);
 	bool IsJumpBufferRunnning(float deltaTime, float jTime, float& jTimer, bool& jumpBuffer);
 
