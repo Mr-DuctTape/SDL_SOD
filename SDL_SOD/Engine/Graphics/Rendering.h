@@ -33,8 +33,8 @@ public:
 	RenderingSystem() = default;
 	~RenderingSystem()
 	{
-		if(DEBUGPRINT)
-			std::cout << "(RenderingSystem) Destroying Renderer: " << renderer << "\n";
+		if (DEBUGPRINT)
+			std::cout << "[" << "\033[33m" << "RENDERINGSYSTEM" << "\033[37m" << "] " << " Destroying Renderer: " << renderer << "\n";
 		SDL_DestroyRenderer(renderer);
 	}
 };

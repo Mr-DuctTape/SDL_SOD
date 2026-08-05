@@ -52,8 +52,8 @@ AssetManager::~AssetManager()
         if (!texture)
             continue;
 
-        if(DEBUGPRINT)
-            std::cout << "(AssetManager) Destroying texture " << name << ": " << texture << "\n";
+        if (DEBUGPRINT)
+            std::cout << "[" << "\033[36m" << "ASSETMANAGER" << "\033[37m" << "] " << " Destroying Texture: " << name << " : " << texture << "\n";
 
         SDL_DestroyTexture(texture);
     }

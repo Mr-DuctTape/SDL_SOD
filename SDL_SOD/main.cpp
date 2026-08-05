@@ -4,7 +4,7 @@
 
 int main()
 {
-	/*Uint64 initStart = SDL_GetPerformanceCounter();*/
+	Uint64 initStart = SDL_GetPerformanceCounter();
 
 	Engine engine;
 	engine.Initialize();
@@ -17,18 +17,38 @@ int main()
 
 	constexpr float targetFrameTime = 1.0f / 6000.0f;
 
-	//AudioManager::AudioClip* clip = engine.audioManager.CreateAudioClip("Dash", "Assets/Audio/Dash.wav");
-	//AudioManager::AudioClip* clip2 = engine.audioManager.CreateAudioClip("Step", "Assets/Audio/Step.wav");
-	//AudioManager::AudioClip* clip3 = engine.audioManager.CreateAudioClip("Jump", "Assets/Audio/Jump2.wav");
+	AudioManager::AudioClip* clip = engine.audioManager.CreateAudioClip("Dash", "Assets/Audio/Dash.wav");
+	AudioManager::AudioClip* clip2 = engine.audioManager.CreateAudioClip("Step", "Assets/Audio/Step.wav");
+	AudioManager::AudioClip* clip3 = engine.audioManager.CreateAudioClip("Jump", "Assets/Audio/Jump2.wav");
 
-	//Game game;
-	//game.LoadTexturesAndPrefabs(engine.entityManager, engine.assetManager);
-	//game.LoadLevel(engine.entityManager, engine.assetManager, "Assets/Levels/Level1");
-	// 
-	//Uint64 initEnd = SDL_GetPerformanceCounter();
+	Uint64 initEnd = SDL_GetPerformanceCounter();
 
-	//float ms = (initEnd - initStart) * 1000.0f / SDL_GetPerformanceFrequency();
-	//std::cout << "It took " << ms << "ms to init the game & engine \n";
+	float ms = (initEnd - initStart) * 1000.0f / SDL_GetPerformanceFrequency();
+	std::cout << "It took " << ms << "ms to initialize the game & engine \n";
+
+	Button button1;
+	button1.screenPosition = { 200, 200 };
+	button1.text = "I AM A BUTTON!!!";
+	button1.stationaryColor = { 124, 200, 100, 255 };
+	button1.width = 200;
+	button1.height = 100;
+	button1.highlightedColor = { 124, 200, 100, 150 };
+	button1.pressedColor = { 124, 200, 100, 100 };
+	engine.uiManager.AddButton("Button1", button1);
+
+	Button button2;
+	button2.screenPosition = { 1000, 200 };
+	button2.text = "I AM A BUTTON TOO!!";
+	button2.stationaryColor = { 200, 255, 0, 255 };
+	button2.width = 100;
+	button2.height = 50;
+	button2.highlightedColor = { 200, 255, 0, 150 };
+	button2.pressedColor = { 200, 255, 0, 100 };
+	engine.uiManager.AddButton("Button2", button2);
+
+	Game game;
+	game.LoadTexturesAndPrefabs(engine.entityManager, engine.assetManager);
+	game.LoadLevel(engine.entityManager, engine.assetManager, "Assets/Levels/Tutorial");
 
 	// Game loop
 	while (engine.isRunning)
@@ -38,6 +58,7 @@ int main()
 		engine.DeltaTimeUpdate();
 		engine.inputSystem.Process();
 		engine.renderingSystem.ClearScreen();
+
 
 		// Debugger stuff, get rid off on release
 		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_0))
@@ -52,8 +73,7 @@ int main()
 			engine.debugger.DrawAllColliders(engine.entityManager);
 		}
 
-		/*game.Update(engine.renderingSystem, engine.entityManager, engine.audioManager, engine.inputSystem, engine.deltaTime);*/
-
+		game.Update(engine.renderingSystem, engine.entityManager, engine.audioManager, engine.inputSystem, engine.deltaTime);
 
 		engine.Update();
 		engine.renderingSystem.RenderScreen(engine.entityManager);

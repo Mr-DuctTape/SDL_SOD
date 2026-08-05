@@ -29,6 +29,15 @@ Entity& EntityManager::CreateEntity()
 	return *entities.back();
 }
 
+void SwapAndPop(std::vector<Entity*>& entities, int index)
+{
+	Entity* temp = entities[index];
+	entities[index] = entities.back();
+	entities.back() = temp;
+
+	entities.pop_back();
+}
+
 void EntityManager::DestroyEntity(Entity& entity)
 {
 	for (size_t i = 0; i < entities.size(); )
@@ -40,10 +49,10 @@ void EntityManager::DestroyEntity(Entity& entity)
 		}
 
 		if(DEBUGPRINT)
-			std::cout << "Destroying entity: " << &entity << "\n";
+			std::cout << "[" << "\033[32m" << "ENTITYMANAGER" << "\033[37m" << "] " << "Destroying entity : " << &entity << "\n";
 
 		delete entities[i];
-		entities.erase(entities.begin() + i);
+		SwapAndPop(entities, i);
 		break;
 	}
 }

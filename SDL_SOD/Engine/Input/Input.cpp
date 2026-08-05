@@ -1,11 +1,22 @@
 #include "Input.h"
 #include "../Math/Vector2.h"
+#include "../Graphics/Rendering.h"
 
 const Vec2f InputSystem::GetMousePosition() const
 {
-	float x, y;
-	SDL_GetMouseState(&x, &y);
-	return { x,y };
+	float mX, mY;
+	SDL_GetMouseState(&mX, &mY);
+	int wX, wY;
+	SDL_GetWindowSize(window, &wX, &wY);
+	float X = mX * (static_cast<float>(renderingSystem->renderResX) / wX);
+	float Y = mY * (static_cast<float>(renderingSystem->renderResY) / wY);
+	return { X,Y };
+}
+
+void InputSystem::Initialize(SDL_Window& window, RenderingSystem& renderingSystem)
+{
+	this->window = &window;
+	this->renderingSystem = &renderingSystem;
 }
 
 void InputSystem::Process()

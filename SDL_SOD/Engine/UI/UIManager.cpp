@@ -2,42 +2,57 @@
 #include "../Input/Input.h"
 #include "../Audio/AudioSystem.h"
 #include "../Graphics/Camera.h"
+#include "../Graphics/Rendering.h"
 
-void UIManager::Initiailze(InputSystem& inputSystem, AudioManager& audioManager, Camera& camera)
+void UIManager::Initialize(InputSystem& inputSystem, RenderingSystem& renderingSystem, AudioManager& audioManager, Camera& camera)
 {
 	this->inputSystem = &inputSystem;
 	this->audioManager = &audioManager;
 	this->camera = &camera;
+	this->renderingSystem = &renderingSystem;
 }
 
 void UIManager::RenderText(SDL_Renderer* renderer)
 {
-	for (auto& [key, val] : m_buttons)
+	for (auto& [key, button] : m_buttons)
 	{
-		Vec2f scaledPosition = WorldToScreen(val.screenPosition.x, val.screenPosition.y, *camera);
+		SDL_FRect rect{};
+		rect.w = button.width;
+		rect.h = button.height;
+
+		int offset = button.text.size();
+		Vec2f scaledPosition{ button.screenPosition.x, button.screenPosition.y};
 		SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-		SDL_RenderDebugText(renderer, scaledPosition.x, scaledPosition.y, val.text.c_str());
+		SDL_RenderDebugText(renderer, scaledPosition.x, scaledPosition.y, button.text.c_str());
 	}
+}
+
+void UIManager::BindFunctionToButton(void(*func)(), const std::string& name)
+{
+	auto it = m_buttons.find(name);
+	if (it == m_buttons.end())
+		return;
+
+	it->second.binnedFunction = func;
 }
 
 void UIManager::RenderButtons(SDL_Renderer* renderer)
 {
-	for (auto& [key, val] : m_buttons)
+	for (auto& [key, button] : m_buttons)
 	{
 		SDL_FRect rect{};
-		Vec2f scaledPosition = WorldToScreen(val.screenPosition.x, val.screenPosition.y, *camera);
-		rect.x = scaledPosition.x;
-		rect.y = scaledPosition.y;
-		rect.w = val.width;
-		rect.h = val.height;
+		rect.x = button.screenPosition.x;
+		rect.y = button.screenPosition.y;
+		rect.w = button.width;
+		rect.h = button.height;
 
-		if (val.texture)
+		if (button.texture)
 		{
-			SDL_RenderTexture(renderer, val.texture, NULL, &rect);
+			SDL_RenderTexture(renderer, button.texture, NULL, &rect);
 		}
 		else
 		{
-			SDL_SetRenderDrawColor(renderer, val.color.r, val.color.g, val.color.b, val.color.a);
+			SDL_SetRenderDrawColor(renderer, button.currentColor.r, button.currentColor.g, button.currentColor.b, button.currentColor.a);
 			SDL_RenderFillRect(renderer, &rect);
 		}
 	}
@@ -51,20 +66,25 @@ bool UIManager::MouseHoverOver(const std::string& name)
 
 	Button& button = m_buttons.at(name);
 	SDL_FRect buttonRect{};
-	Vec2f scaledPosition = WorldToScreen(button.screenPosition.x, button.screenPosition.y, *camera);
-	buttonRect.x = scaledPosition.x;
-	buttonRect.y = scaledPosition.y;
+	buttonRect.x = button.screenPosition.x;
+	buttonRect.y = button.screenPosition.y;
 	buttonRect.w = button.width;
 	buttonRect.h = button.height;
 
 	SDL_FRect mouseRect{};
-	const Vec2f mousePos = inputSystem->GetMousePosition();
-	mouseRect.x = mousePos.x;
-	mouseRect.y = mousePos.y;
-	mouseRect.h = 50;
-	mouseRect.w = 50;
+	Vec2f mousePos = inputSystem->GetMousePosition();
+	SDL_FPoint point{ mousePos.x, mousePos.y };
 
-	return SDL_HasRectIntersectionFloat(&buttonRect, &mouseRect);
+	if (SDL_PointInRectFloat(&point, &buttonRect))
+	{
+		button.currentColor = button.highlightedColor;
+		return true;
+	}
+	else
+	{
+		button.currentColor = button.stationaryColor;
+		return false;
+	}
 }
 
 bool UIManager::IsButtonPressed(const std::string& name)
@@ -95,13 +115,20 @@ void UIManager::Update()
 {
 	for (auto& [key, val] : m_buttons)
 	{
-		if (MouseHoverOver(key) && inputSystem->GetMouseButton(Mouse::LEFT_BUTTON))
+		if (MouseHoverOver(key) && inputSystem->GetMouseButtonDown(Mouse::LEFT_BUTTON))
 		{
+			val.currentColor = val.pressedColor;
 			val.pressed = true;
+
+			if (val.binnedFunction) {
+				val.binnedFunction();
+				val.pressed = false;
+			}
 		}
 		else
 		{
 			val.pressed = false;
+			continue;
 		}
 	}
 }

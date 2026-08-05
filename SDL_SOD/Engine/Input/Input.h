@@ -12,11 +12,14 @@ enum Mouse
 };
 
 struct Vec2f;
+class RenderingSystem;
 
 class InputSystem
 {
 private:
 	// Possible improvement for less memory usage on stack, by using bits to represent booleans
+	RenderingSystem* renderingSystem;
+	SDL_Window* window;
 
 	bool previousKeys[SDL_SCANCODE_COUNT] = { false };
 	bool currentKeys[SDL_SCANCODE_COUNT] = { false };
@@ -24,6 +27,7 @@ private:
 	bool currentMouse[BUTTON_COUNT] = { false };
 
 public:
+	void Initialize(SDL_Window& window, RenderingSystem& renderingSystem);
 	const bool GetButton(SDL_Scancode key);
 	const bool GetButtonDown(SDL_Scancode key);
 	const bool GetButtonUp(SDL_Scancode key);

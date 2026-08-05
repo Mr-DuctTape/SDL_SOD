@@ -14,6 +14,7 @@ constexpr int SPRT_WIDTH= 128;
 
 class Game
 {
+	// All entities are managed/destroyed by the Engine's EntityManager
 private:
 	std::vector<Player> m_players;
 	std::vector<Torch> m_torches;
@@ -28,13 +29,13 @@ private:
 	void CreateExplosionFXPrefab(EntityManager& entityManager, AssetManager& assetManager);
 	void CreateAllEffectPrefabs(EntityManager& entityManager, AssetManager& assetManager);
 
-	// Object prefabs creation
+	// Prefabs creation
 	void CreateSpikePrefab(EntityManager& entityManager, AssetManager& assetManager);
 	void CreatePlayerPrefab(EntityManager& entityManager, AssetManager& assetManager);
 	void CreateTorchPrefab(EntityManager& entityManager, AssetManager& assetManager);
 	void CreateAllPrefabs(EntityManager& entityManager, AssetManager& assetManager);
 
-	// Loading and spawning
+	// Loading & spawning
 	void LoadAllTextures(AssetManager& assetManager);
 	void LoadTilemap(EntityManager& entityManager, AssetManager& assetManager, const std::string& level);
 	void LoadObjects(EntityManager& entityManager, const std::string& level);

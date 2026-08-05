@@ -10,6 +10,7 @@ void RenderingSystem::Initialize(Debugger& debugger, UIManager& uiManager)
 {
 	renderTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, renderResX, renderResY);
 	SDL_SetTextureScaleMode(renderTexture, SDL_SCALEMODE_PIXELART);
+	//SDL_SetRenderLogicalPresentation(renderer, 1280, 720, SDL_LOGICAL_PRESENTATION_STRETCH);
 	this->debugger = &debugger;
 	this->uiManager = &uiManager;
 }
@@ -126,7 +127,6 @@ void Animator::Render(RenderingSystem& renderingSystem, Camera& camera)
 	}
 }
 
-
 // Global rendering
 void RenderingSystem::PresentScreen()
 {
@@ -228,7 +228,6 @@ void RenderingSystem::RenderScreen(EntityManager& entityManager)
 	}
 
 	// Render UI
-	uiManager->RenderButtons(renderer);
 
 	Uint64 presentScreenStart = SDL_GetPerformanceCounter();
 	SDL_SetRenderTarget(renderer, nullptr);

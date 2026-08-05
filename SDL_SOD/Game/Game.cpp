@@ -174,7 +174,7 @@ void Game::CreateTorchPrefab(EntityManager& entityManager, AssetManager& assetMa
 {
 	Entity& torchObject = entityManager.CreateEntity();
 	torchObject.AddComponent<EntityTag>()->name = "Torch";
-	torchObject.AddComponent<Transform>()->position = { 7200.0f, 700.0f };
+	torchObject.AddComponent<Transform>()->position = { -99999.0f, -9999.0f };
 
 	Sprite* torchSprite = torchObject.AddComponent<Sprite>();
 	torchSprite->height = SPRT_HEIGHT;

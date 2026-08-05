@@ -208,7 +208,7 @@ void PhysicSystem::Gravity(Entity* entity, float deltaTime)
 	Physics2D* physics = entity->GetComponent<Physics2D>();
 	if (!physics) return;
 
-	float gravity = 9000.0f;
+	float gravity = 10000.0f;
 
 	physics->acceleration.y += gravity;
 }

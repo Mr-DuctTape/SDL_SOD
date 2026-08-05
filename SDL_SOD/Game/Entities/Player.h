@@ -43,7 +43,7 @@ private:
 	float m_jumpVolume = 0.5f;
 	float m_stepVolume = 0.02f;
 
-	// Animator
+	// Sounds
 	void PlaySoundOnAnimation
 	(  
 		AudioManager& audioManager, const std::string& audioClip, 
@@ -51,6 +51,7 @@ private:
 		Animator* m_animator, const std::vector<int>& framesToPlayON
 	);
 
+	// Animator
 	void ChangeAnimatorStates(float playerMovingSpeed);
 
 	// Spawning effects
@@ -74,7 +75,7 @@ private:
 		InputSystem& inputSystem, Entity& dashEffect, 
 		Vec2f accel, float deltaTime
 	);
-	void Movement
+	void AllMovement
 	(   
 		EntityManager& entityManager, AudioManager& audioManager, 
 		InputSystem& inputSystem, Entity& runningEffect, 
@@ -83,9 +84,10 @@ private:
 
 	void Death(Entity& effect, EntityManager& entityManager);
 	void Bounds(RenderingSystem& renderingSystem, EntityManager& entityManager, Entity& effect);
-	void SpikesCollisions(EntityManager& entityManager, Entity& effect);
+	void SpikeCollision(EntityManager& entityManager, Entity& effect);
 
 	void CameraFollow(RenderingSystem& renderingSystem, float deltaTime);
+
 public:
 	Entity& GetEntity()
 	{

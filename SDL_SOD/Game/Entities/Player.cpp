@@ -106,9 +106,9 @@ void Player::SpawnRunningEffect(EntityManager& entityManager, Entity& effect, bo
 		// Create visual effect
 		Vec2f pos;
 		if (flippedX)
-			pos = { m_transform->position.x + 10.0f, m_transform->position.y };
+			pos = { m_transform->position.x, m_transform->position.y };
 		else
-			pos = { m_transform->position.x - 10.0f, m_transform->position.y };
+			pos = { m_transform->position.x, m_transform->position.y };
 
 		SpawnEffect(entityManager, effect, pos, flippedX);
 		vfxTimer = 0;
@@ -246,7 +246,7 @@ void Player::Dash(EntityManager& entityManager, AudioManager& audioManager, Inpu
 		SpawnEffect(entityManager, dashEffect, spawnPos, m_animator->flippedX);
 	}
 }
-void Player::Movement(EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem, Entity& runningEffect, Entity& jumpEffect, Entity& dashEffect, float deltaTime)
+void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem, Entity& runningEffect, Entity& jumpEffect, Entity& dashEffect, float deltaTime)
 {
 	Vec2f accel = { 0, 0 };
 	Vec2f force = { 0, 0 };
@@ -349,17 +349,17 @@ void Player::Death(Entity& effect, EntityManager& entityManager)
 	fxAnim->destroyOnFinish = true;
 	fxAnim->update = true;
 	fxAnim->finished = false;
-	playerTransform->position = Vec2f{ 7500.0f, 700.0f };
+	playerTransform->position = Vec2f{ 200.0f, 0.0f };
 }
 void Player::Bounds(RenderingSystem& renderingSystem, EntityManager& entityManager, Entity& effect)
 {
 	Transform* playerTransform = m_entity.GetComponent<Transform>();
 	if (!playerTransform) return;
 
-	if (playerTransform->position.y >= renderingSystem.renderResX * 2)
+	if (playerTransform->position.y >= renderingSystem.renderResX * 4)
 		Death(effect, entityManager);
 }
-void Player::SpikesCollisions(EntityManager& entityManager, Entity& effect)
+void Player::SpikeCollision(EntityManager& entityManager, Entity& effect)
 {
 	bool playerDeath = false;
 
@@ -385,7 +385,6 @@ void Player::SpikesCollisions(EntityManager& entityManager, Entity& effect)
 		Death(effect, entityManager);
 }
 
-
 void Player::CameraFollow(RenderingSystem& renderingSystem, float deltaTime)
 {
 	Transform* playerTransform = m_entity.GetComponent<Transform>();
@@ -405,8 +404,8 @@ void Player::CameraFollow(RenderingSystem& renderingSystem, float deltaTime)
 void Player::Update(RenderingSystem& renderingSystem, EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem,
 	Entity& deathEffect, Entity& runningEffect, Entity& jumpingEffect, Entity& dashingEffect, float deltaTime)
 {
-	Movement(entityManager, audioManager, inputSystem, runningEffect, jumpingEffect, dashingEffect, deltaTime);
-	SpikesCollisions(entityManager, deathEffect);
+	AllMovement(entityManager, audioManager, inputSystem, runningEffect, jumpingEffect, dashingEffect, deltaTime);
+	SpikeCollision(entityManager, deathEffect);
 	Bounds(renderingSystem, entityManager, deathEffect);
 	CameraFollow(renderingSystem, deltaTime);
 }
