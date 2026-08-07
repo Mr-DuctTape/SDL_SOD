@@ -317,3 +317,8 @@ void Game::Update(RenderingSystem& renderingSystem, EntityManager& entityManager
 	for (auto& torch : m_torches)
 		torch.Update();
 }
+
+void Game::Update()
+{
+	Update(m_engine.renderingSystem, m_engine.entityManager, m_engine.audioManager, m_engine.inputSystem, m_engine.deltaTime);
+}

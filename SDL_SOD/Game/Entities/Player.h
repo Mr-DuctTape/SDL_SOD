@@ -48,8 +48,10 @@ private:
 	(  
 		AudioManager& audioManager, const std::string& audioClip, 
 		const std::string& animationName, float volume, 
-		Animator* m_animator, const std::vector<int>& framesToPlayON
+		Animator* animator, const std::vector<int>& framesToPlayON
 	);
+
+	bool AnimationKeyFrame(const std::string& animationName, Animator* animator, const std::vector<int>& frames);
 
 	// Animator
 	void ChangeAnimatorStates(float playerMovingSpeed);

@@ -10,7 +10,9 @@ void RenderingSystem::Initialize(Debugger& debugger, UIManager& uiManager)
 {
 	renderTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, renderResX, renderResY);
 	SDL_SetTextureScaleMode(renderTexture, SDL_SCALEMODE_PIXELART);
-	//SDL_SetRenderLogicalPresentation(renderer, 1280, 720, SDL_LOGICAL_PRESENTATION_STRETCH);
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+	SDL_SetTextureBlendMode(renderTexture, SDL_BLENDMODE_BLEND);
+
 	this->debugger = &debugger;
 	this->uiManager = &uiManager;
 }
@@ -228,6 +230,7 @@ void RenderingSystem::RenderScreen(EntityManager& entityManager)
 	}
 
 	// Render UI
+	uiManager->RenderWindows(renderer);
 
 	Uint64 presentScreenStart = SDL_GetPerformanceCounter();
 	SDL_SetRenderTarget(renderer, nullptr);
@@ -242,14 +245,19 @@ void RenderingSystem::RenderScreen(EntityManager& entityManager)
 void RenderingSystem::ClearScreen()
 {
 	Uint64 start = SDL_GetPerformanceCounter();
-	SDL_Color color;
+	SDL_Color color{};
 
 	SDL_GetRenderDrawColor(renderer, &color.r, &color.g, &color.b, &color.a);
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+
+	// clear renderTexture
 	SDL_SetRenderTarget(renderer, renderTexture);
 	SDL_RenderClear(renderer);
+
+	// clear renderer
 	SDL_SetRenderTarget(renderer, nullptr);
 	SDL_RenderClear(renderer);
+
 	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 
 	if (debugger)

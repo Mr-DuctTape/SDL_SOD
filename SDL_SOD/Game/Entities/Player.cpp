@@ -3,6 +3,27 @@
 
 
 // Animator
+bool Player::AnimationKeyFrame(const std::string& animationName, Animator* animator, const std::vector<int>& frames)
+{
+	if (!animator)
+		return false;
+
+	if (animationName != animator->currentState)
+		return false;
+
+	int currentFrame = animator->currentAnimation.currentFrame;
+
+	for (int frame : frames)
+	{
+		if (frame == currentFrame)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void Player::PlaySoundOnAnimation(
 	AudioManager& audioManager,
 	const std::string& audioClip,
@@ -97,7 +118,7 @@ void Player::SpawnEffect(EntityManager& entityManager, Entity& effect, Vec2f pos
 void Player::SpawnRunningEffect(EntityManager& entityManager, Entity& effect, bool isGrounded, bool flippedX, float deltaTime)
 {
 	static float vfxTimer = 0.0f;
-	float vfxTime = 0.30f;
+	float vfxTime = 0.1f;
 
 	// visual effect timer
 	vfxTimer += deltaTime;
@@ -269,7 +290,10 @@ void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManage
 
 	if (m_animator->currentState == "Run")
 	{
-		SpawnRunningEffect(entityManager, runningEffect, isGrounded, m_animator->flippedX, deltaTime);
+		if(AnimationKeyFrame("Run", m_animator, {1}))
+		{
+			SpawnRunningEffect(entityManager, runningEffect, isGrounded, m_animator->flippedX, deltaTime);
+		}
 	}
 
 	if (inputSystem.GetButton(SDL_SCANCODE_W))
@@ -323,8 +347,9 @@ void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManage
 		accel.x += m_movementSpeed;
 	}
 
-	if (isGrounded)
+	if (isGrounded) {
 		PlaySoundOnAnimation(audioManager, "Step", "Run", m_stepVolume, m_animator, { 1 });
+	}
 
 	Dash(entityManager, audioManager, inputSystem, dashEffect, accel, deltaTime);
 	WallJump(entityManager, audioManager, inputSystem, jumpEffect, gatherBuffer, deltaTime);
