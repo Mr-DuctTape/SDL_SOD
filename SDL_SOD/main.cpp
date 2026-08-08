@@ -2,6 +2,57 @@
 #include "Engine/SOD_Engine.h"
 #include "Game/Game.h"
 
+int frameLimit = 144;
+
+void UpdateSettings(Game& game, Engine& engine)
+{
+	Settings& settings = game.GetSettings();
+
+	switch (settings.frameLimit)
+	{
+	case Settings::FrameLimit::F30:
+		frameLimit = 30;
+		break;
+	case Settings::FrameLimit::F60:
+		frameLimit = 60;
+		break;
+	case Settings::FrameLimit::F90:
+		frameLimit = 90;
+		break;
+	case Settings::FrameLimit::F120:
+		frameLimit = 120;
+		break;
+	case Settings::FrameLimit::F144:
+		frameLimit = 144;
+		break;
+	case Settings::FrameLimit::F200:
+		frameLimit = 200;
+		break;
+	case Settings::FrameLimit::F240:
+		frameLimit = 240;
+		break;
+	case Settings::FrameLimit::F360:
+		frameLimit = 360;
+		break;
+	case Settings::FrameLimit::UNLIMITED:
+		frameLimit = 99999;
+		break;
+	}
+
+	SDL_SetRenderVSync(engine.renderingSystem.renderer, settings.vsync);
+
+	switch (settings.displayMode)
+	{
+	case Settings::DisplayMode::FULLSCREEN:
+		SDL_SetWindowFullscreen(engine.application.GetWindow(), true);
+		break;
+	case Settings::DisplayMode::WINDOWED:
+		SDL_SetWindowFullscreen(engine.application.GetWindow(), false);
+		break;
+	}
+
+}
+
 int main()
 {
 	Uint64 initStart = SDL_GetPerformanceCounter();
@@ -10,12 +61,6 @@ int main()
 	engine.Initialize();
 
 	bool enableDebugger = false;
-
-	float fps = 0.0f;
-	Uint64 lastTime = SDL_GetTicksNS();
-	int frameCount = 0;
-
-	constexpr float targetFrameTime = 1.0f / 6000000.0f;
 
 	AudioManager::AudioClip* clip = engine.audioManager.CreateAudioClip("Dash", "Assets/Audio/Dash.wav");
 	AudioManager::AudioClip* clip2 = engine.audioManager.CreateAudioClip("Step", "Assets/Audio/Step.wav");
@@ -29,8 +74,11 @@ int main()
 	Game game(engine);
 
 	// Game loop
+
 	while (engine.isRunning)
 	{
+		float targetFrameTime = 1.0f / (float)frameLimit;
+
 		engine.debugger.DebuggerStartTime();
 
 		engine.DeltaTimeUpdate();
@@ -50,13 +98,14 @@ int main()
 			engine.debugger.DrawAllColliders(engine.entityManager);
 		}
 
-		if (game.playing) 
+		if (game.playing)
 		{
 			game.Update();
 		}
-		else 
+		else
 		{
-			game.Menu();
+			game.MainMenu();
+			UpdateSettings(game, engine);
 		}
 
 		engine.Update();

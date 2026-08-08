@@ -97,6 +97,10 @@ public:
 
 		PlayerHelper(it->second, volume);
 	}
+	void Play(AudioManager::AudioClip& audioClip, float volume)
+	{
+		PlayerHelper(audioClip, volume);
+	}
 private:
 	void PlayerHelper(AudioClip& audioClip, float volume)
 	{
@@ -112,7 +116,7 @@ private:
 		if (!audioSource)
 			return;
 
-		RandomizePitch(*audioSource, audioSource->pitch);
+		//RandomizePitch(*audioSource, audioSource->pitch);
 		ChangeVolume(*audioSource, volume);
 
 		SDL_ClearAudioStream(audioSource->stream);

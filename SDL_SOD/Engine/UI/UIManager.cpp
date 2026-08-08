@@ -16,16 +16,19 @@ void UIElement::RenderButtonText(SDL_Renderer* renderer, UIElement& element)
 	constexpr float charWidth = 8.0f;
 	constexpr float charHeight = 8.0f;
 
-	const float textWidth = static_cast<float>(element.text.size()) * charWidth;
+	const float textWidth = static_cast<float>(element.displayText.size()) * charWidth;
 
 	const float x = element.screenPos.x + (element.width - textWidth) * 0.5f;
 
 	const float y = element.screenPos.y + (element.height - charHeight) * 0.5f;
 
 
-	SDL_SetRenderDrawColor(renderer, 105, 255, 105, 255);
+	SDL_SetRenderDrawColor(renderer, 234, 204, 183, 255);
 
-	SDL_RenderDebugText(renderer, x, y, element.text.c_str());
+	if (element.displayName) {
+		SDL_RenderDebugText(renderer, element.screenPos.x, y, element.name.c_str());
+	}
+	SDL_RenderDebugText(renderer, x, y, element.displayText.c_str());
 }
 
 void UIManager::RenderDropdowns(std::vector<UIDropDown>& dropDowns, SDL_Renderer* renderer)
@@ -33,20 +36,24 @@ void UIManager::RenderDropdowns(std::vector<UIDropDown>& dropDowns, SDL_Renderer
 	for (UIDropDown& dropDown : dropDowns)
 	{
 		UIElement::RenderButton(renderer, dropDown);
+		UIElement::RenderButtonText(renderer, dropDown);
 
-		size_t elementIndex = 0;
-		for (auto& element : dropDown.elements)
+		if (dropDown.pressed) 
 		{
-			float offsetY = dropDown.height * (elementIndex + 1);
+			size_t elementIndex = 0;
+			for (auto& element : dropDown.elements)
+			{
+				float offsetY = dropDown.height * (elementIndex + 1);
 
-			element.height = dropDown.height;
-			element.width = dropDown.width;
-			element.screenPos = { dropDown.screenPos.x, dropDown.screenPos.y + offsetY };
+				element.height = dropDown.height;
+				element.width = dropDown.width;
+				element.screenPos = { dropDown.screenPos.x, dropDown.screenPos.y + offsetY };
 
-			UIElement::RenderButton(renderer, element);
-			UIElement::RenderButtonText(renderer, element);
+				UIElement::RenderButton(renderer, element);
+				UIElement::RenderButtonText(renderer, element);
 
-			elementIndex++;
+				elementIndex++;
+			}
 		}
 	}
 }
@@ -115,49 +122,27 @@ void UIManager::Update()
 
 		for (UIButton& button : window.buttons)
 		{
+			// Button press
 			if (button.MouseHoverOver(*inputSystem) &&
 				inputSystem->GetMouseButtonDown(Mouse::LEFT_BUTTON) && !button.pressed)
 			{
 				button.currentColor = button.pressedColor;
+				audioManager->Play("Click", 1.0f);
 				button.pressed = true;
 			}
+			// Button hover
 			else if (button.MouseHoverOver(*inputSystem))
 			{
+				if (!button.playedAudio) {
+					button.playedAudio = true;
+					audioManager->Play("Hover", 1.0f);
+				}
 				button.currentColor = button.highlightedColor;
 			}
 			else
 			{
+				button.playedAudio = false;
 				button.currentColor = button.stationaryColor;
-			}
-		}
-
-		for (UIDropDown& dropDown : window.dropdownButtons)
-		{
-			if (dropDown.MouseHoverOver(*inputSystem))
-			{
-				dropDown.currentColor = dropDown.highlightedColor;
-			}
-
-			if (dropDown.MouseHoverOver(*inputSystem) &&
-				inputSystem->GetMouseButtonDown(Mouse::LEFT_BUTTON) && !dropDown.pressed)
-			{
-				dropDown.currentColor = dropDown.pressedColor;
-				dropDown.pressed = true;
-			}
-		}
-
-		for (UIToggle& toggle : window.toggles)
-		{
-			if (toggle.MouseHoverOver(*inputSystem))
-			{
-				toggle.currentColor = toggle.highlightedColor;
-			}
-
-			if (toggle.MouseHoverOver(*inputSystem) &&
-				inputSystem->GetMouseButtonDown(Mouse::LEFT_BUTTON) && !toggle.pressed)
-			{
-				toggle.currentColor = toggle.pressedColor;
-				toggle.pressed = true;
 			}
 		}
 	}
@@ -171,6 +156,5 @@ void UIManager::RenderWindows(SDL_Renderer* renderer)
 			continue;
 
 		RenderButtons(window.buttons, renderer);
-		RenderDropdowns(window.dropdownButtons, renderer);
 	}
 }

@@ -3,30 +3,51 @@
 #include "../Math/Vector2.h"
 #include <vector>
 #include <unordered_map>
+#include "../Audio/AudioSystem.h"
 
 class InputSystem;
-class AudioManager;
 class RenderingSystem;
 class Camera;
 
-struct UIElement
+class UIElement
 {
+private:
+	AudioManager::AudioClip m_audioClip;
+
+public:
 	SDL_Texture* texture = nullptr;
+
+	bool playedAudio = false;
 	bool pressed = false;
+	bool displayName = false;
 
-	std::string text{};
+	std::string name{};
+	std::string displayText{};
+
 	Vec2f screenPos{};
-
 	float height = 0.0f;
 	float width = 0.0f;
 
 	SDL_Color currentColor{ 255, 255, 255, 255 };
-	SDL_Color stationaryColor{ 155, 156, 155, 255 };
-	SDL_Color highlightedColor{ 125, 156, 125, 240 };
+	SDL_Color stationaryColor{ 155, 156, 155, 0 };
+	SDL_Color highlightedColor{ 125, 156, 125, 100 };
 	SDL_Color pressedColor{ 100, 156, 100, 255 };
+
 
 	bool MouseHoverOver(InputSystem& inputSystem);
 	bool IsButtonPressed();
+	void SetAudioClip(AudioManager::AudioClip& audioClip)
+	{
+		m_audioClip = audioClip;
+	}
+	void PlayAudio(AudioManager& audioManager, float volume)
+	{
+		audioManager.Play(m_audioClip, volume);
+	}
+	void PlayAudio(AudioManager& audioManager, const std::string& audioName, float volume)
+	{
+		audioManager.Play(audioName, volume);
+	}
 	static void RenderButtonText(SDL_Renderer* renderer, UIElement& element);
 	static void RenderButton(SDL_Renderer* renderer, UIElement& element);
 };
@@ -49,12 +70,6 @@ struct UIWindow
 {
 	std::unordered_map<std::string, size_t> buttonIndex;
 	std::vector<UIButton> buttons;
-
-	std::unordered_map<std::string, size_t> dropdownIndex;
-	std::vector<UIDropDown> dropdownButtons;
-
-	std::unordered_map<std::string, size_t> toggleIndex;
-	std::vector<UIToggle> toggles;
 
 	bool visible = false;
 	bool destroyed = false;
@@ -111,21 +126,7 @@ public:
 
 	UIButton& WindowGetButton(UIWindow& window, const std::string& buttonName)
 	{
-		if (m_windowIndex.find(buttonName) == m_windowIndex.end())
-			throw std::runtime_error("Could not find UIWindow: " + buttonName);
-
 		return window.buttons[window.buttonIndex[buttonName]];
-	}
-
-	void WindowAddDropdown(UIWindow& window, const UIDropDown& dropDown, const std::string& dropDownName)
-	{
-		window.dropdownButtons.emplace_back(dropDown);
-		window.dropdownIndex.emplace(dropDownName, window.dropdownButtons.size() - 1);
-	}
-	void WindowAddToggle(UIWindow& window, const UIToggle& toggle, const std::string& toggleName)
-	{
-		window.toggles.emplace_back(toggle);
-		window.toggleIndex.emplace(toggleName, window.dropdownButtons.size() - 1);
 	}
 
 	void WindowAddButton(UIWindow& window, const UIButton& button, const std::string& buttonName)
@@ -134,13 +135,11 @@ public:
 		window.buttonIndex.emplace(buttonName, window.buttons.size() - 1);
 		std::cout << "Added button: " << buttonName << "\n";
 	}
-	void WindowDestroyButton(UIWindow& window, const std::string& buttonName);
 	void WindowClearButtons(UIWindow& window)
 	{
 		window.buttonIndex.clear();
 		window.buttons.clear();
 	}
-
 
 	void Update();
 };
