@@ -19,9 +19,7 @@ void UIElement::RenderButtonText(SDL_Renderer* renderer, UIElement& element)
 	const float textWidth = static_cast<float>(element.displayText.size()) * charWidth;
 
 	const float x = element.screenPos.x + (element.width - textWidth) * 0.5f;
-
 	const float y = element.screenPos.y + (element.height - charHeight) * 0.5f;
-
 
 	SDL_SetRenderDrawColor(renderer, 234, 204, 183, 255);
 
@@ -29,33 +27,6 @@ void UIElement::RenderButtonText(SDL_Renderer* renderer, UIElement& element)
 		SDL_RenderDebugText(renderer, element.screenPos.x, y, element.name.c_str());
 	}
 	SDL_RenderDebugText(renderer, x, y, element.displayText.c_str());
-}
-
-void UIManager::RenderDropdowns(std::vector<UIDropDown>& dropDowns, SDL_Renderer* renderer)
-{
-	for (UIDropDown& dropDown : dropDowns)
-	{
-		UIElement::RenderButton(renderer, dropDown);
-		UIElement::RenderButtonText(renderer, dropDown);
-
-		if (dropDown.pressed) 
-		{
-			size_t elementIndex = 0;
-			for (auto& element : dropDown.elements)
-			{
-				float offsetY = dropDown.height * (elementIndex + 1);
-
-				element.height = dropDown.height;
-				element.width = dropDown.width;
-				element.screenPos = { dropDown.screenPos.x, dropDown.screenPos.y + offsetY };
-
-				UIElement::RenderButton(renderer, element);
-				UIElement::RenderButtonText(renderer, element);
-
-				elementIndex++;
-			}
-		}
-	}
 }
 
 void UIElement::RenderButton(SDL_Renderer* renderer, UIElement& element)

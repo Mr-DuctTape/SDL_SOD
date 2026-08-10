@@ -50,7 +50,6 @@ void UpdateSettings(Game& game, Engine& engine)
 		SDL_SetWindowFullscreen(engine.application.GetWindow(), false);
 		break;
 	}
-
 }
 
 int main()
@@ -80,7 +79,6 @@ int main()
 		float targetFrameTime = 1.0f / (float)frameLimit;
 
 		engine.debugger.DebuggerStartTime();
-
 		engine.DeltaTimeUpdate();
 		engine.inputSystem.Process();
 		engine.renderingSystem.ClearScreen();
@@ -98,15 +96,10 @@ int main()
 			engine.debugger.DrawAllColliders(engine.entityManager);
 		}
 
-		if (game.playing)
-		{
-			game.Update();
-		}
-		else
-		{
-			game.MainMenu();
+		game.Update();
+
+		if (!game.playing)
 			UpdateSettings(game, engine);
-		}
 
 		engine.Update();
 		engine.renderingSystem.RenderScreen(engine.entityManager);

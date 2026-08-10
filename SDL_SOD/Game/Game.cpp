@@ -302,7 +302,6 @@ void Game::LoadLevel(EntityManager& entityManager, AssetManager& assetManager, c
 {
 	LoadTilemap(entityManager, assetManager, level);
 	LoadObjects(entityManager, level);
-	SpawnPlayer(entityManager, Vec2f{ 200.0f, 200.0f });
 }
 void Game::Update(RenderingSystem& renderingSystem, EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem, float deltaTime)
 {
@@ -320,5 +319,41 @@ void Game::Update(RenderingSystem& renderingSystem, EntityManager& entityManager
 
 void Game::Update()
 {
-	Update(m_engine.renderingSystem, m_engine.entityManager, m_engine.audioManager, m_engine.inputSystem, m_engine.deltaTime);
+	static bool loaded = false;
+	if (playing)
+	{
+		if (!loaded)
+		{
+			LoadTexturesAndPrefabs(m_engine.entityManager, m_engine.assetManager);
+			LoadLevel(m_engine.entityManager, m_engine.assetManager, "Assets/Levels/Tutorial");
+			SpawnPlayer(m_engine.entityManager, Vec2f{ 200.0f, 200.0f });
+			loaded = true;
+		}
+		Update(m_engine.renderingSystem, m_engine.entityManager, m_engine.audioManager, m_engine.inputSystem, m_engine.deltaTime);
+	}
+	else if(m_gameUI.MainMenu())
+	{
+		m_engine.Quit();
+	}
+}
+
+[[nodiscard]] bool GameUI::MainMenu()  // returns true on quit
+{
+	SettingsMenu(game.GetSettings());
+
+	if (MenuButtonPress(mainMenu, "Start"))
+	{
+		MenuVisible(mainMenu, false);
+		game.playing = true;
+	}
+	else if (MenuButtonPress(mainMenu, "Settings"))
+	{
+		MenuVisible(mainMenu, false);
+		MenuVisible(settingsMenu, true);
+	}
+	else if (MenuButtonPress(mainMenu, "Quit"))
+	{
+		return true;
+	}
+	return false;
 }

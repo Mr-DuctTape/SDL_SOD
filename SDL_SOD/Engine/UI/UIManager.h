@@ -52,15 +52,6 @@ public:
 	static void RenderButton(SDL_Renderer* renderer, UIElement& element);
 };
 
-struct UIDropDown : UIElement
-{
-	std::vector<UIElement> elements;;
-};
-
-struct UIToggle : UIElement
-{
-};
-
 struct UIButton : UIElement
 {
 
@@ -87,8 +78,6 @@ private:
 	std::vector<UIWindow> m_windows;
 
 	void RenderButtons(std::vector<UIButton>& buttons, SDL_Renderer* renderer);
-	void RenderToggles(std::vector<UIToggle>& toggles, SDL_Renderer* renderer) {};
-	void RenderDropdowns(std::vector<UIDropDown>& dropDowns, SDL_Renderer* renderer);
 
 public:
 	void Initialize(InputSystem& inputSystem, RenderingSystem& renderingSystem, AudioManager& audioManager);
@@ -133,7 +122,6 @@ public:
 	{
 		window.buttons.emplace_back(button);
 		window.buttonIndex.emplace(buttonName, window.buttons.size() - 1);
-		std::cout << "Added button: " << buttonName << "\n";
 	}
 	void WindowClearButtons(UIWindow& window)
 	{
