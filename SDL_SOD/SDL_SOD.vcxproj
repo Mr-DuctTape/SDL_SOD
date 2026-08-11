@@ -32,6 +32,7 @@
     <ClCompile Include="Engine\Math\Vector2.cpp" />
     <ClCompile Include="Engine\SOD_Engine.cpp" />
     <ClCompile Include="Game\Game.cpp" />
+    <ClCompile Include="Game\GameUI.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\Physics\System.cpp" />
     <ClCompile Include="Game\Entities\Player.cpp" />

@@ -23,8 +23,9 @@ void UIElement::RenderButtonText(SDL_Renderer* renderer, UIElement& element)
 
 	SDL_SetRenderDrawColor(renderer, 234, 204, 183, 255);
 
-	if (element.displayName) {
-		SDL_RenderDebugText(renderer, element.screenPos.x, y, element.name.c_str());
+	if (element.displayName) 
+	{
+		SDL_RenderDebugText(renderer, element.screenPos.x + 10, y, element.name.c_str());
 	}
 	SDL_RenderDebugText(renderer, x, y, element.displayText.c_str());
 }
@@ -84,11 +85,35 @@ bool UIElement::IsButtonPressed()
 	return pressed;
 }
 
-void UIManager::Update()
+void SmoothSize(UIButton& button, float savedH, float savedW, const float deltaTime)
+{
+	float& height = button.height;
+	float& width = button.width;
+
+	constexpr float speed = 400.0f;
+
+	constexpr float modified = 1.1f;
+
+	if (height < savedH * modified)
+	{
+		const float increase = speed * deltaTime;
+		height += increase;
+		button.screenPos.y -= increase * 0.5f;
+	}
+
+	if (width < savedW * modified)
+	{
+		const float increase = speed * deltaTime;
+		width += increase;
+		button.screenPos.x -= increase * 0.5f;
+	}
+}
+
+void UIManager::Update(const float deltaTime)
 {
 	for (UIWindow& window : m_windows)
 	{
-		if (!window.visible || window.destroyed)
+		if (!window.visible)
 			continue;
 
 		for (UIButton& button : window.buttons)
@@ -98,20 +123,34 @@ void UIManager::Update()
 				inputSystem->GetMouseButtonDown(Mouse::LEFT_BUTTON) && !button.pressed)
 			{
 				button.currentColor = button.pressedColor;
-				audioManager->Play("Click", 1.0f);
+				button.PlayClickSound(*audioManager, 1.0f);
 				button.pressed = true;
 			}
 			// Button hover
 			else if (button.MouseHoverOver(*inputSystem))
 			{
-				if (!button.playedAudio) {
+				if (!button.playedAudio)
+				{
+					button.savedHeight = button.height;
+					button.savedWidth = button.width;
+					button.savedScreenPos = button.screenPos;
+
 					button.playedAudio = true;
-					audioManager->Play("Hover", 1.0f);
+					button.PlayHoverSound(*audioManager, 1.0f);
 				}
+				// Smoothly increase the size of the button
+				SmoothSize(button, button.savedHeight, button.savedWidth, deltaTime);
 				button.currentColor = button.highlightedColor;
+
 			}
 			else
 			{
+				if (button.savedHeight > 0 && button.savedWidth > 0) {
+					button.screenPos = button.savedScreenPos;
+					button.height = button.savedHeight;
+					button.width = button.savedWidth;
+				}
+
 				button.playedAudio = false;
 				button.currentColor = button.stationaryColor;
 			}

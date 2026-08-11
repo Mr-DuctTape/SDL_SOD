@@ -27,6 +27,7 @@ void Game::LoadAllTextures(AssetManager& assetManager)
 	assetManager.CreateTexture("PlayerJump", "Assets/Textures/Jump.png");
 
 	// Effect Textures
+	assetManager.CreateTexture("WallJumpEffect", "Assets/Textures/WallJumpEffect.png");
 	assetManager.CreateTexture("RunningEffect", "Assets/Textures/Effect.png");
 	assetManager.CreateTexture("JumpEffect", "Assets/Textures/JumpFX.png");
 	assetManager.CreateTexture("DashEffect", "Assets/Textures/Dash.png");
@@ -52,6 +53,26 @@ void Game::CreateJumpingFXPrefab(EntityManager& entityManager, AssetManager& ass
 	jmpfxAnimator->scaleAnimationY = 1.0f;
 
 	m_prefabs.emplace("JumpFX", &jumpFxObj);
+}
+void Game::CreateWallJumpFXPrefab(EntityManager& entityManager, AssetManager& assetManager)
+{
+	Entity& jumpFxObj = entityManager.CreateEntity();
+	jumpFxObj.AddComponent<Transform>()->position = { -999999.0f, -999999.0f };
+
+	Sprite* jmpFxSprt = jumpFxObj.AddComponent<Sprite>();
+	jmpFxSprt->height = SPRT_HEIGHT;
+	jmpFxSprt->width = SPRT_WIDTH;
+
+	Animator* jmpfxAnimator = jumpFxObj.AddComponent<Animator>();
+	jmpfxAnimator->CreateAnimation("WallJumpFX", 6, 16, 16, assetManager.GetTexture("WallJumpEffect"));
+	jmpfxAnimator->SetAnimation("WallJumpFX");
+	jmpfxAnimator->update = false;
+	jmpfxAnimator->effectBase = true;
+	jmpfxAnimator->speed = 0.1f;
+	jmpfxAnimator->scaleAnimationX = 1.0f;
+	jmpfxAnimator->scaleAnimationY = 1.0f;
+
+	m_prefabs.emplace("WallJumpFX", &jumpFxObj);
 }
 void Game::CreateRunningFXPrefab(EntityManager& entityManager, AssetManager& assetManager)
 {
@@ -115,6 +136,7 @@ void Game::CreateExplosionFXPrefab(EntityManager& entityManager, AssetManager& a
 }
 void Game::CreateAllEffectPrefabs(EntityManager& entityManager, AssetManager& assetManager)
 {
+	CreateWallJumpFXPrefab(entityManager, assetManager);
 	CreateJumpingFXPrefab(entityManager, assetManager);
 	CreateRunningFXPrefab(entityManager, assetManager);
 	CreateDashFXPrefab(entityManager, assetManager);
@@ -276,7 +298,7 @@ void Game::LoadObjects(EntityManager& entityManager, const std::string& level)
 		std::cout << "Spikes Prefab not found! : " << level << "\n";
 		return;
 	}
-	entityManager.CreateEntitiesFromObjFile(objFile, "Spikes", *prefab);
+	entityManager.CreateEntitiesFromObj(objFile, "Spikes", *prefab);
 }
 
 void Game::SpawnPlayer(EntityManager& entityManager, const Vec2f position)
@@ -309,12 +331,18 @@ void Game::Update(RenderingSystem& renderingSystem, EntityManager& entityManager
 	Entity* jumpFX = GetPrefab("JumpFX");
 	Entity* runFX = GetPrefab("RunFX");
 	Entity* dashFX = GetPrefab("DashFX");
+	Entity* wallJumpFX = GetPrefab("WallJumpFX");
 
-	for (auto& player : m_players)
-		player.Update(renderingSystem, entityManager, audioManager, inputSystem, *deathFX, *runFX, *jumpFX, *dashFX, deltaTime);
-
-	for (auto& torch : m_torches)
+	for (auto& player : m_players) 
+	{
+		player.Update(renderingSystem, entityManager, audioManager, 
+			inputSystem, *deathFX, *runFX, *wallJumpFX, *jumpFX, *dashFX, 
+			m_settings.masterVolume, deltaTime);
+	}
+	for (auto& torch : m_torches) 
+	{
 		torch.Update();
+	}
 }
 
 void Game::Update()
@@ -322,38 +350,19 @@ void Game::Update()
 	static bool loaded = false;
 	if (playing)
 	{
-		if (!loaded)
+		if (!loaded) // TODO: in the future there will be different levels loaded so keep that in mind.
 		{
-			LoadTexturesAndPrefabs(m_engine.entityManager, m_engine.assetManager);
 			LoadLevel(m_engine.entityManager, m_engine.assetManager, "Assets/Levels/Tutorial");
-			SpawnPlayer(m_engine.entityManager, Vec2f{ 200.0f, 200.0f });
+			SpawnPlayer(m_engine.entityManager, Vec2f{ 10000.0f, 0.0f });
 			loaded = true;
 		}
-		Update(m_engine.renderingSystem, m_engine.entityManager, m_engine.audioManager, m_engine.inputSystem, m_engine.deltaTime);
+
+
+		Update(m_engine.renderingSystem, m_engine.entityManager, 
+			m_engine.audioManager, m_engine.inputSystem, m_engine.deltaTime);
 	}
 	else if(m_gameUI.MainMenu())
 	{
 		m_engine.Quit();
 	}
-}
-
-[[nodiscard]] bool GameUI::MainMenu()  // returns true on quit
-{
-	SettingsMenu(game.GetSettings());
-
-	if (MenuButtonPress(mainMenu, "Start"))
-	{
-		MenuVisible(mainMenu, false);
-		game.playing = true;
-	}
-	else if (MenuButtonPress(mainMenu, "Settings"))
-	{
-		MenuVisible(mainMenu, false);
-		MenuVisible(settingsMenu, true);
-	}
-	else if (MenuButtonPress(mainMenu, "Quit"))
-	{
-		return true;
-	}
-	return false;
 }

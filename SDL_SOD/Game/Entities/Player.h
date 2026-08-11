@@ -80,8 +80,9 @@ private:
 	void AllMovement
 	(   
 		EntityManager& entityManager, AudioManager& audioManager, 
-		InputSystem& inputSystem, Entity& runningEffect, 
-		Entity& jumpEffect, Entity& dashEffect, float deltaTime
+		InputSystem& inputSystem, Entity& runningEffect,
+		Entity& wallJumpEffect, Entity& jumpEffect, 
+		Entity& dashEffect, float deltaTime
 	);
 
 	void Death(Entity& effect, EntityManager& entityManager);
@@ -99,8 +100,12 @@ public:
 	(
 		RenderingSystem& renderingSystem, EntityManager& entityManager, 
 		AudioManager& audioManager, InputSystem& inputSystem,
+
 		Entity& deathEffect, Entity& runningEffect,
-		Entity& jumpingEffect, Entity& dashingEffect, float deltaTime
+		Entity& wallJumpEffect, Entity& jumpingEffect,
+		Entity& dashingEffect, 
+
+		float masterVolume, float deltaTime
 	);
 
 	Player(Entity& entity) : m_entity(entity) 

@@ -2,35 +2,6 @@
 #include <chrono>
 #include <thread>
 
-void Sleep(int ms)
-{
-	std::this_thread::sleep_for(std::chrono::milliseconds(ms));
-}
-
-void Engine::PrintCLIProgress()
-{
-	char empty = 177, filled = 219;
-
-	printf("Loading: ");
-
-	// Print initial loading bar
-	for (int i = 0; i < 26; i++)
-		printf("%c", empty);
-
-	// Return to the start of the bar
-	printf("\rLoading: ");
-
-	// Fill the bar
-	for (int i = 0; i < 26; i++)
-	{
-		printf("%c", filled);
-		fflush(stdout); // Force it to update immediately
-		Sleep(250);
-	}
-
-	printf("\n");
-}
-
 void Engine::Initialize()
 {
 	// creates the window and renderer
@@ -70,7 +41,7 @@ void Engine::Physics()
 void Engine::Update()
 {
 	audioManager.Update();
-	uiManager.Update();
+	uiManager.Update(deltaTime);
 
 	// Update all components 
 	Uint64 componentMsStart = SDL_GetPerformanceCounter();
@@ -107,7 +78,9 @@ void Engine::Update()
 
 	// Update physics
 	Uint64 physicsStart = SDL_GetPerformanceCounter();
+
 	Physics();
+
 	Uint64 physicsEnd = SDL_GetPerformanceCounter();
 	if (debugger.enabled)
 	{

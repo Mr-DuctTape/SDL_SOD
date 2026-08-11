@@ -12,7 +12,8 @@ class Camera;
 class UIElement
 {
 private:
-	AudioManager::AudioClip m_audioClip;
+	AudioManager::AudioClip m_hoverSound;
+	AudioManager::AudioClip m_clickSound;
 
 public:
 	SDL_Texture* texture = nullptr;
@@ -22,11 +23,16 @@ public:
 	bool displayName = false;
 
 	std::string name{};
+
 	std::string displayText{};
 
 	Vec2f screenPos{};
+	Vec2f savedScreenPos{};
+
 	float height = 0.0f;
 	float width = 0.0f;
+	float savedHeight = 0.0f;
+	float savedWidth = 0.0f;
 
 	SDL_Color currentColor{ 255, 255, 255, 255 };
 	SDL_Color stationaryColor{ 155, 156, 155, 0 };
@@ -36,17 +42,21 @@ public:
 
 	bool MouseHoverOver(InputSystem& inputSystem);
 	bool IsButtonPressed();
-	void SetAudioClip(AudioManager::AudioClip& audioClip)
+	void SetHoverAudio(AudioManager::AudioClip& audioClip)
 	{
-		m_audioClip = audioClip;
+		m_hoverSound = audioClip;
 	}
-	void PlayAudio(AudioManager& audioManager, float volume)
+	void SetClickAudio(AudioManager::AudioClip& audioClip)
 	{
-		audioManager.Play(m_audioClip, volume);
+		m_clickSound = audioClip;
 	}
-	void PlayAudio(AudioManager& audioManager, const std::string& audioName, float volume)
+	void PlayHoverSound(AudioManager& audioManager, float volume)
 	{
-		audioManager.Play(audioName, volume);
+		audioManager.Play(m_hoverSound, volume);
+	}
+	void PlayClickSound(AudioManager& audioManager, float volume)
+	{
+		audioManager.Play(m_clickSound, volume);
 	}
 	static void RenderButtonText(SDL_Renderer* renderer, UIElement& element);
 	static void RenderButton(SDL_Renderer* renderer, UIElement& element);
@@ -63,7 +73,6 @@ struct UIWindow
 	std::vector<UIButton> buttons;
 
 	bool visible = false;
-	bool destroyed = false;
 };
 
 class UIManager
@@ -87,7 +96,6 @@ public:
 		m_windows.emplace_back();
 		size_t index = m_windows.size() - 1;
 		m_windowIndex.emplace(name, index);
-		std::cout << "Created window: " << name << "\n";
 		return index;
 	}
 	UIWindow& GetWindow(size_t index)
@@ -105,10 +113,6 @@ public:
 	void SetWindowVisible(const std::string& name)
 	{
 		GetWindow(name).visible = true;
-	}
-	void DestroyWindow(const std::string& name)
-	{
-		GetWindow(name).destroyed = true;
 	}
 
 	void RenderWindows(SDL_Renderer* renderer);
@@ -129,5 +133,5 @@ public:
 		window.buttons.clear();
 	}
 
-	void Update();
+	void Update(const float deltaTime);
 };

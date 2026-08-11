@@ -82,6 +82,9 @@ std::vector<EntityManager::ParsedObject> EntityManager::LoadObjectFile(const std
 
 	std::string line;
 
+	constexpr float offsetX = 85.0f;
+	constexpr float offsetY = 178.0f;
+
 	//Load objects
 	while (std::getline(file, line))
 	{
@@ -103,8 +106,8 @@ std::vector<EntityManager::ParsedObject> EntityManager::LoadObjectFile(const std
 				std::stringstream ss(values);
 				int x, y;
 				ss >> x >> y;
-				obj.pos.x = x + 85.0f;
-				obj.pos.y = y + 178.0f;
+				obj.pos.x = x + offsetX;
+				obj.pos.y = y + offsetY;
 			}
 
 			std::getline(file, line);
@@ -121,7 +124,7 @@ std::vector<EntityManager::ParsedObject> EntityManager::LoadObjectFile(const std
 	return objects;
 }
 
-void EntityManager::CreateEntitiesFromObjFile(const std::string& path, const std::string& prefabName, Entity& prefab) 
+void EntityManager::CreateEntitiesFromObj(const std::string& path, const std::string& prefabName, Entity& prefab) 
 {
 	std::vector<ParsedObject> objects = LoadObjectFile(path);
 

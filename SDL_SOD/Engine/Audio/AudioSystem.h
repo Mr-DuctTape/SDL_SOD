@@ -41,6 +41,11 @@ public:
 	std::unordered_map<std::string, AudioClip> m_audioClips;
 	SDL_AudioDeviceID m_playBackDevice;
 
+	AudioClip& GetAudio(const std::string& name)
+	{
+		return m_audioClips[name];
+	}
+
 	AudioManager()
 	{
 		if (!SDL_InitSubSystem(SDL_INIT_AUDIO))
@@ -116,7 +121,7 @@ private:
 		if (!audioSource)
 			return;
 
-		//RandomizePitch(*audioSource, audioSource->pitch);
+		RandomizePitch(*audioSource, audioSource->pitch);
 		ChangeVolume(*audioSource, volume);
 
 		SDL_ClearAudioStream(audioSource->stream);

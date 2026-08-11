@@ -74,7 +74,6 @@ struct BoxCollider2D : Component
 	float offsetX = 0.0f;
 	float offsetY = 0.0f;
 
-	// 150.0f is default 
 	float width = 150.0f;
 	float height = 150.0f;
 
@@ -110,8 +109,8 @@ struct Transform : Component
 {
 	Vec2f position;
 	float rotation = 0.0f;
-
 	void RotateTowards(const Vec2f& pos) {};
+
 	Transform* Clone() override
 	{
 		return new Transform(*this);

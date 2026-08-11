@@ -183,7 +183,7 @@ private:
 		std::string textureName{};
 		Vec2f pos;
 	};
-	std::vector<ParsedObject> LoadObjectFile(const std::string& path);
+	[[nodiscard]] std::vector<ParsedObject> LoadObjectFile(const std::string& path);
 
 public:
 	std::vector<Entity*> entities;
@@ -192,6 +192,6 @@ public:
 	Entity& CreateEntity(Entity* prefab);
 	Entity& CreateEntity();
 
-	void CreateEntitiesFromObjFile(const std::string& path, const std::string& prefabName, Entity& prefab);
+	void CreateEntitiesFromObj(const std::string& path, const std::string& prefabName, Entity& prefab);
 	void DestroyEntity(Entity& entity);
 };

@@ -227,8 +227,13 @@ void Player::WallJump(EntityManager& entityManager, AudioManager& audioManager, 
 			-4000.0f
 		};
 		Vec2f pos = m_transform->position;
-		pos.y -= 50.0f;
-		SpawnJumpEffect(entityManager, effect, pos, m_animator->flippedX);
+		pos.y += 25.0f;
+		if (m_animator->flippedX)
+			pos.x += 30.0f;
+		else
+			pos.x -= 30.0f;
+
+		SpawnJumpEffect(entityManager, effect, pos, !m_animator->flippedX);
 		audioManager.Play("Jump", m_jumpVolume);
 		audioManager.Play("Step", m_stepVolume);
 	}
@@ -267,7 +272,7 @@ void Player::Dash(EntityManager& entityManager, AudioManager& audioManager, Inpu
 		SpawnEffect(entityManager, dashEffect, spawnPos, m_animator->flippedX);
 	}
 }
-void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem, Entity& runningEffect, Entity& jumpEffect, Entity& dashEffect, float deltaTime)
+void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem, Entity& runningEffect, Entity& wallJumpEffect, Entity& jumpEffect, Entity& dashEffect, float deltaTime)
 {
 	Vec2f accel = { 0, 0 };
 	Vec2f force = { 0, 0 };
@@ -352,7 +357,8 @@ void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManage
 	}
 
 	Dash(entityManager, audioManager, inputSystem, dashEffect, accel, deltaTime);
-	WallJump(entityManager, audioManager, inputSystem, jumpEffect, gatherBuffer, deltaTime);
+
+	WallJump(entityManager, audioManager, inputSystem, wallJumpEffect, gatherBuffer, deltaTime);
 
 	m_physics2D->Accelerate(accel);
 	m_physics2D->AddForce(force);
@@ -374,7 +380,7 @@ void Player::Death(Entity& effect, EntityManager& entityManager)
 	fxAnim->destroyOnFinish = true;
 	fxAnim->update = true;
 	fxAnim->finished = false;
-	playerTransform->position = Vec2f{ 200.0f, 0.0f };
+	playerTransform->position = Vec2f{ 2000.0f, 0.0f };
 }
 void Player::Bounds(RenderingSystem& renderingSystem, EntityManager& entityManager, Entity& effect)
 {
@@ -427,9 +433,13 @@ void Player::CameraFollow(RenderingSystem& renderingSystem, float deltaTime)
 	camera.pos += (target - camera.pos) * m_cameraFollowSpeed * deltaTime;
 }
 void Player::Update(RenderingSystem& renderingSystem, EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem,
-	Entity& deathEffect, Entity& runningEffect, Entity& jumpingEffect, Entity& dashingEffect, float deltaTime)
+	Entity& deathEffect, Entity& runningEffect, Entity& wallJumpEffect, Entity& jumpingEffect, Entity& dashingEffect, float masterVolume, float deltaTime)
 {
-	AllMovement(entityManager, audioManager, inputSystem, runningEffect, jumpingEffect, dashingEffect, deltaTime);
+	m_jumpVolume *= masterVolume;
+	m_dashVolume *= masterVolume;
+	m_stepVolume *= masterVolume;
+
+	AllMovement(entityManager, audioManager, inputSystem, runningEffect, wallJumpEffect, jumpingEffect, dashingEffect, deltaTime);
 	SpikeCollision(entityManager, deathEffect);
 	Bounds(renderingSystem, entityManager, deathEffect);
 	CameraFollow(renderingSystem, deltaTime);
