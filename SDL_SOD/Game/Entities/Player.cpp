@@ -58,9 +58,28 @@ void Player::PlaySoundOnAnimation(
 }
 void Player::ChangeAnimatorStates(float playerMovingSpeed)
 {
-	if (!m_animator) return;
+	if (!m_animator)
+		return;
 
-	if (m_animator->currentState == "Jump" && m_animator->finished)
+	if (m_animator->currentState == "WallIdle")
+	{
+		if (!m_boxCollider2D->wallCollision)
+		{
+			if (playerMovingSpeed > 70)
+			{
+				m_animator->SetAnimation("Run");
+				m_animator->currentState = "Run";
+			}
+			else
+			{
+				m_animator->SetAnimation("Idle");
+				m_animator->currentState = "Idle";
+			}
+		}
+
+		m_animator->speed = 0.15f;
+	}
+	else if (m_animator->currentState == "Jump" && m_animator->finished)
 	{
 		if (playerMovingSpeed > 70)
 		{
@@ -72,9 +91,8 @@ void Player::ChangeAnimatorStates(float playerMovingSpeed)
 			m_animator->SetAnimation("Idle");
 			m_animator->currentState = "Idle";
 		}
-
 	}
-	if (m_animator->currentState == "Idle")
+	else if (m_animator->currentState == "Idle")
 	{
 		if (playerMovingSpeed > 70)
 		{
@@ -179,6 +197,77 @@ bool Player::IsJumpBufferRunnning(float deltaTime, float jTime, float& jTimer, b
 
 	return jumpBuffer;
 }
+void Player::SlideDownWall(
+	BoxCollider2D* m_boxCollider2D,
+	InputSystem& inputSystem,
+	Vec2f& accel,
+	Vec2f& velocity,
+	float deltaTime)
+{
+	constexpr float slideDownTime = 0.8f;
+
+	static float slideDownTimer = 0.0f;
+	static bool slideExhausted = false;
+
+	bool validCollision =
+		!m_boxCollider2D->groundCollision &&
+		m_boxCollider2D->wallCollision;
+
+	bool validInput =
+		inputSystem.GetButton(SDL_SCANCODE_A) ||
+		inputSystem.GetButton(SDL_SCANCODE_D);
+
+	// Not touching a wall.
+	if (!validCollision)
+	{
+		slideDownTimer = 0.0f;
+		slideExhausted = false;
+		return;
+	}
+
+	// Don't do anything if we're not pressing toward the wall.
+	if (!validInput)
+	{
+		slideDownTimer = 0.0f;
+		slideExhausted = false;
+		return;
+	}
+
+	// Just entered the wall.
+	if (m_animator->currentState != "WallIdle")
+	{
+		slideDownTimer = 0.0f;
+		slideExhausted = false;
+
+		m_animator->SetAnimation("WallIdle");
+		m_animator->currentState = "WallIdle";
+
+		if (inputSystem.GetButton(SDL_SCANCODE_A))
+			m_animator->flippedX = true;
+		else if (inputSystem.GetButton(SDL_SCANCODE_D))
+			m_animator->flippedX = false;
+
+		// Stick to wall.
+		velocity.y = 0.0f;
+
+		return;
+	}
+
+	// Slide has already expired.
+	if (slideExhausted)
+		return;
+
+	// Wall sliding.
+	slideDownTimer += deltaTime;
+
+	if (slideDownTimer >= slideDownTime)
+	{
+		slideExhausted = true;
+		return;
+	}
+
+	accel.y -= 9000.0f;
+}
 
 void Player::WallJump(EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem, Entity& effect, bool& gatherBuffer, float deltaTime)
 {
@@ -226,8 +315,9 @@ void Player::WallJump(EntityManager& entityManager, AudioManager& audioManager, 
 			direction * 1500.0f,
 			-4000.0f
 		};
+
 		Vec2f pos = m_transform->position;
-		pos.y += 25.0f;
+		pos.y += 0.0f;
 		if (m_animator->flippedX)
 			pos.x += 30.0f;
 		else
@@ -285,17 +375,12 @@ void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManage
 		m_movementSpeed = m_movementSpeed * 1.25f;
 	}
 
-	static float coyoteTimer = 0.0f;
-	float coyoteTime = 0.10f;
-	bool coyoteAvailable = false;
-	IsCoyoteAvailable(deltaTime, coyoteTime, coyoteTimer, coyoteAvailable, isGrounded);
-
 	float speed = m_physics2D->velocity.Magnitude();
 	ChangeAnimatorStates(speed);
 
 	if (m_animator->currentState == "Run")
 	{
-		if(AnimationKeyFrame("Run", m_animator, {1}))
+		if (AnimationKeyFrame("Run", m_animator, { 1 }))
 		{
 			SpawnRunningEffect(entityManager, runningEffect, isGrounded, m_animator->flippedX, deltaTime);
 		}
@@ -325,6 +410,12 @@ void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManage
 	{
 		gatherBuffer = IsJumpBufferRunnning(deltaTime, jumpBufferTime, jumpBufferTimer, jumpBuffer);
 	}
+
+
+	static float coyoteTimer = 0.0f;
+	float coyoteTime = 0.10f;
+	bool coyoteAvailable = false;
+	IsCoyoteAvailable(deltaTime, coyoteTime, coyoteTimer, coyoteAvailable, isGrounded);
 
 	bool jumpAvailable = isGrounded || coyoteAvailable;
 	if (gatherBuffer && jumpAvailable)
@@ -357,7 +448,7 @@ void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManage
 	}
 
 	Dash(entityManager, audioManager, inputSystem, dashEffect, accel, deltaTime);
-
+	SlideDownWall(m_boxCollider2D, inputSystem, accel, m_physics2D->velocity, deltaTime);
 	WallJump(entityManager, audioManager, inputSystem, wallJumpEffect, gatherBuffer, deltaTime);
 
 	m_physics2D->Accelerate(accel);
@@ -380,7 +471,7 @@ void Player::Death(Entity& effect, EntityManager& entityManager)
 	fxAnim->destroyOnFinish = true;
 	fxAnim->update = true;
 	fxAnim->finished = false;
-	playerTransform->position = Vec2f{ 2000.0f, 0.0f };
+	playerTransform->position = Vec2f{ 8000.0f, 0.0f };
 }
 void Player::Bounds(RenderingSystem& renderingSystem, EntityManager& entityManager, Entity& effect)
 {

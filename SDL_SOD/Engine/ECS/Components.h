@@ -252,6 +252,8 @@ public:
 	struct Animation
 	{
 		SDL_Texture* spriteSheet = nullptr;
+		std::string AnimationName;
+
 		SDL_FRect src = {};
 		SDL_FRect dst = {};
 

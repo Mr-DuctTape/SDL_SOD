@@ -8,6 +8,7 @@
 #include "../Engine/Debugger/Debugger.h"
 #include "../Engine/Audio/AudioSystem.h"
 #include "../Engine/UI/UIManager.h"
+#include "../Engine/Dialog.h"
 
 class Engine
 {
@@ -25,6 +26,8 @@ public:
 	RenderingSystem renderingSystem;
 	UIManager uiManager;
 	Debugger debugger;
+
+	DialogSystem dialogSystem;
 
 	EntityManager entityManager;
 	AssetManager assetManager;

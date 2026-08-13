@@ -3,27 +3,8 @@
 #include "../../Engine/ECS/Entities.h"
 
 class Camera;
-
 class RenderingSystem;
 class InputSystem;
-
-class Torch
-{
-private:
-	Entity& m_entity;
-
-	void ChangeAnimatorState() {};
-	void CheckForPlayerTrigger() {};
-public: 
-
-	void Update() {};
-	Entity& GetEntity()
-	{
-		return m_entity;
-	}
-	Torch(Entity& entity) : m_entity(entity) {};
-	~Torch() = default;
-};
 
 class Player
 {
@@ -65,24 +46,43 @@ private:
 	bool IsCoyoteAvailable(float deltaTime, float cTime, float& cTimer, bool& coyote, bool grounded);
 	bool IsJumpBufferRunnning(float deltaTime, float jTime, float& jTimer, bool& jumpBuffer);
 
+	void SlideDownWall
+	(
+		BoxCollider2D* m_boxCollider2D,
+		InputSystem& inputSystem,
+		Vec2f& accel,
+		Vec2f& velocity,
+		float deltaTime
+	);
+
 	void WallJump
 	(   
-		EntityManager& entityManager, AudioManager& audioManager,
-		InputSystem& inputSystem, Entity& effect, 
-		bool& gatherBuffer, float deltaTime
+		EntityManager& entityManager, 
+		AudioManager& audioManager,
+		InputSystem& inputSystem,
+		Entity& effect, 
+		bool& gatherBuffer, 
+		float deltaTime
 	);
 	void Dash
 	(   
-		EntityManager& entityManager, AudioManager& audioManager,
-		InputSystem& inputSystem, Entity& dashEffect, 
-		Vec2f accel, float deltaTime
+		EntityManager& entityManager, 
+		AudioManager& audioManager,
+		InputSystem& inputSystem,
+		Entity& dashEffect, 
+		Vec2f accel, 
+		float deltaTime
 	);
 	void AllMovement
 	(   
-		EntityManager& entityManager, AudioManager& audioManager, 
-		InputSystem& inputSystem, Entity& runningEffect,
-		Entity& wallJumpEffect, Entity& jumpEffect, 
-		Entity& dashEffect, float deltaTime
+		EntityManager& entityManager, 
+		AudioManager& audioManager, 
+		InputSystem& inputSystem,
+		Entity& runningEffect,
+		Entity& wallJumpEffect, 
+		Entity& jumpEffect, 
+		Entity& dashEffect,
+		float deltaTime
 	);
 
 	void Death(Entity& effect, EntityManager& entityManager);
@@ -98,14 +98,19 @@ public:
 	}
 	void Update
 	(
-		RenderingSystem& renderingSystem, EntityManager& entityManager, 
-		AudioManager& audioManager, InputSystem& inputSystem,
+		RenderingSystem& renderingSystem,
+		EntityManager& entityManager, 
+		AudioManager& audioManager, 
+		InputSystem& inputSystem,
 
-		Entity& deathEffect, Entity& runningEffect,
-		Entity& wallJumpEffect, Entity& jumpingEffect,
+		Entity& deathEffect, 
+		Entity& runningEffect,
+		Entity& wallJumpEffect, 
+		Entity& jumpingEffect,
 		Entity& dashingEffect, 
 
-		float masterVolume, float deltaTime
+		float masterVolume,
+		float deltaTime
 	);
 
 	Player(Entity& entity) : m_entity(entity) 

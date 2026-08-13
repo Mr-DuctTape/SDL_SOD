@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Game\Entities\Characters.cpp" />
+    <ClCompile Include="Engine\Dialog.cpp" />
     <ClCompile Include="Engine\Graphics\Camera.cpp" />
     <ClCompile Include="Engine\Audio\AudioSystem.cpp" />
     <ClCompile Include="Engine\Debugger\Debugger.cpp" />
@@ -31,6 +33,7 @@
     <ClCompile Include="Engine\Input\Input.cpp" />
     <ClCompile Include="Engine\Math\Vector2.cpp" />
     <ClCompile Include="Engine\SOD_Engine.cpp" />
+    <ClCompile Include="Game\Entities\Torch.cpp" />
     <ClCompile Include="Game\Game.cpp" />
     <ClCompile Include="Game\GameUI.cpp" />
     <ClCompile Include="main.cpp" />
@@ -39,6 +42,8 @@
     <ClCompile Include="Engine\UI\UIManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Game\Entities\Characters.h" />
+    <ClInclude Include="Engine\Dialog.h" />
     <ClInclude Include="Engine\Graphics\Camera.h" />
     <ClInclude Include="Engine\Audio\AudioSystem.h" />
     <ClInclude Include="Engine\Macros\DEBUGPRINT.h" />
@@ -52,9 +57,11 @@
     <ClInclude Include="Engine\Math\Vector2.h" />
     <ClInclude Include="Engine\SOD_Engine.h" />
     <ClInclude Include="Engine\Physics\System.h" />
+    <ClInclude Include="Game\Entities\Torch.h" />
     <ClInclude Include="Game\Game.h" />
     <ClInclude Include="Game\Entities\Player.h" />
     <ClInclude Include="Engine\UI\UIManager.h" />
+    <ClInclude Include="Game\GameUI.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="SDL3.dll" />
@@ -147,7 +154,7 @@
     <Link>
       <AdditionalLibraryDirectories>C:\SDL3_image\lib\x64;C:\SDL3\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>SDL3.lib;SDL3_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
   </ItemDefinitionGroup>

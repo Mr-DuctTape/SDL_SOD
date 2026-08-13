@@ -9,11 +9,12 @@ void Engine::Initialize()
 	inputSystem.Initialize(*application.GetWindow(), renderingSystem);
 
 	// Initialize rendering system, give references/pointers to others
-	renderingSystem.Initialize(debugger, uiManager);
+	renderingSystem.Initialize(debugger, uiManager, dialogSystem);
 	uiManager.Initialize(inputSystem, renderingSystem, audioManager);
 	debugger.Initialize(&renderingSystem.camera);
 	assetManager.Initialize(renderingSystem.renderer);
 	physics.Intialize(&debugger);
+	dialogSystem.Initialize(audioManager);
 
 	isRunning = true;
 }
@@ -42,6 +43,7 @@ void Engine::Update()
 {
 	audioManager.Update();
 	uiManager.Update(deltaTime);
+	dialogSystem.Update(deltaTime);
 
 	// Update all components 
 	Uint64 componentMsStart = SDL_GetPerformanceCounter();

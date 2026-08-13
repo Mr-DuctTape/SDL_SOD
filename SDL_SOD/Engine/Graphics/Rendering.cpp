@@ -5,8 +5,9 @@
 #include "../ECS/Components.h"
 #include "../Debugger/Debugger.h"
 #include "../UI/UIManager.h"
+#include "../Dialog.h"
 
-void RenderingSystem::Initialize(Debugger& debugger, UIManager& uiManager)
+void RenderingSystem::Initialize(Debugger& debugger, UIManager& uiManager, DialogSystem& dialogSystem)
 {
 	renderTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, renderResX, renderResY);
 	SDL_SetTextureScaleMode(renderTexture, SDL_SCALEMODE_PIXELART);
@@ -15,6 +16,7 @@ void RenderingSystem::Initialize(Debugger& debugger, UIManager& uiManager)
 
 	this->debugger = &debugger;
 	this->uiManager = &uiManager;
+	this->dialogSystem = &dialogSystem;
 }
 Debugger* RenderingSystem::GetDebugger()
 {
@@ -39,6 +41,7 @@ void TileMap::Render(RenderingSystem& renderingSystem, Camera& camera)
 			// Get the position on screen
 			SDL_FRect dst = WorldToScreen(GetTileBoxCollider2D(x, y).rect, camera);
 
+			//TODO: Change tiles[y][x] == 3
 			if (dst.x + dst.w < 0.0f ||
 				dst.x > renderingSystem.renderResX ||
 				dst.y + dst.h < 0.0f ||
@@ -72,7 +75,7 @@ void Animator::Render(RenderingSystem& renderingSystem, Camera& camera)
 	if (!currentAnimation.spriteSheet && !errorDisplayed)
 	{
 		std::cout << "=== Animator Error ===\n";
-		std::cout << "(Animator): Animator spritesheet not found\n";
+		std::cout << "(Animator Rendering): Animator spritesheet not found " << currentAnimation.AnimationName << "\n";
 		std::cout << "(Animator): Entity ID: " << parent->ID << "\n";
 		errorDisplayed = true;
 		return;
@@ -129,11 +132,55 @@ void Animator::Render(RenderingSystem& renderingSystem, Camera& camera)
 	}
 }
 
+// UI Rendering
+void UIElement::RenderButtonText(SDL_Renderer* renderer, UIElement& element)
+{
+	constexpr float charWidth = 8.0f;
+	constexpr float charHeight = 8.0f;
+
+	const float textWidth = static_cast<float>(element.displayText.size()) * charWidth;
+
+	const float x = element.screenPos.x + (element.width - textWidth) * 0.5f;
+	const float y = element.screenPos.y + (element.height - charHeight) * 0.5f;
+
+	SDL_SetRenderDrawColor(renderer, 234, 204, 183, 255);
+
+	if (element.displayName)
+	{
+		SDL_RenderDebugText(renderer, element.screenPos.x + 10, y, element.name.c_str());
+	}
+	SDL_RenderDebugText(renderer, x, y, element.displayText.c_str());
+}
+
+void UIElement::RenderButton(SDL_Renderer* renderer, UIElement& element)
+{
+	SDL_FRect rect{};
+	rect.x = element.screenPos.x;
+	rect.y = element.screenPos.y;
+	rect.w = element.width;
+	rect.h = element.height;
+
+	if (element.texture)
+	{
+		SDL_RenderTexture(renderer, element.texture, NULL, &rect);
+	}
+	else
+	{
+		SDL_SetRenderDrawColor(renderer, element.currentColor.r, element.currentColor.g, element.currentColor.b, element.currentColor.a);
+		SDL_RenderFillRect(renderer, &rect);
+	}
+}
+
 // Global rendering
 void RenderingSystem::PresentScreen()
 {
 	SDL_RenderTexture(renderer, renderTexture, nullptr, nullptr);
 	SDL_RenderPresent(renderer);
+}
+
+void RenderingSystem::RenderText(const std::string& text, Vec2f pos)
+{
+	SDL_RenderDebugText(renderer, pos.x, pos.y, text.c_str());
 }
 
 void RenderingSystem::RenderScreen(EntityManager& entityManager)
@@ -231,15 +278,17 @@ void RenderingSystem::RenderScreen(EntityManager& entityManager)
 
 	// Render UI
 	uiManager->RenderWindows(renderer);
+	dialogSystem->RenderDialogs(renderer);
 
 	Uint64 presentScreenStart = SDL_GetPerformanceCounter();
 	SDL_SetRenderTarget(renderer, nullptr);
 	PresentScreen();
 	Uint64 presentScreenEnd = SDL_GetPerformanceCounter();
-	if (debugger && debugger->enabled) 
+	if (debugger && debugger->enabled)
 	{
 		debugger->debugStats.presentScreenMs = (presentScreenEnd - presentScreenStart) * 1000.0f / SDL_GetPerformanceFrequency();
 	}
+
 }
 
 void RenderingSystem::ClearScreen()
@@ -267,7 +316,7 @@ void RenderingSystem::ClearScreen()
 		debugger->debugStats.tilesRendered = 0;
 
 		Uint64 end = SDL_GetPerformanceCounter();
-		debugger->debugStats.clearScreenMs = 
+		debugger->debugStats.clearScreenMs =
 			(end - start) * 1000.0f / SDL_GetPerformanceFrequency();
 
 		debugger->debugStats.renderMs = debugger->debugStats.clearScreenMs + debugger->debugStats.drawingMs + debugger->debugStats.debugMs;

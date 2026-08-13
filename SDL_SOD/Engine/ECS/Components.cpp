@@ -57,7 +57,7 @@ Animator::Animation Animator::CreateAnimation(const std::string& name, int frame
 	anim.pixelWidth = pixelWidth;
 	anim.spriteSheet = spriteSheet;
 	anim.ID = Increase++;
-
+	anim.AnimationName = name;
 	animations.emplace(name, anim);
 	return anim;
 }

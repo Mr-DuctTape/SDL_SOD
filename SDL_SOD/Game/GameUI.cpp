@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "GameUI.h"
 
 // --- GAME UI ---
 
@@ -18,7 +19,7 @@ void GameUI::CreateMainMenuButtons()
 	button.SetHoverAudio(audioManager.GetAudio("Hover"));
 	button.SetClickAudio(audioManager.GetAudio("Click"));
 
-	UIWindow& window = uiManager.GetWindow(mainMenu);
+	UIWindow& window = uiManager.GetWindow(m_mainMenu);
 	uiManager.WindowAddButton(window, button, "Start");
 
 	button.height = buttonHeight;
@@ -36,6 +37,7 @@ void GameUI::CreateMainMenuButtons()
 
 	window.visible = true;
 }
+
 void GameUI::CreateSettingsButtons()
 {
 	constexpr float buttonHeight = 50.0f;
@@ -44,7 +46,7 @@ void GameUI::CreateSettingsButtons()
 
 	Vec2f startPos{ renderingSystem.renderResX * 0.5f - buttonWidth * 0.5f - 100.0f, 100.0f };
 
-	UIWindow& window = uiManager.GetWindow(settingsMenu);
+	UIWindow& window = uiManager.GetWindow(m_settingsMenu);
 
 	UIButton button;
 	button.displayName = true;
@@ -105,14 +107,42 @@ void GameUI::CreateSettingsButtons()
 
 	uiManager.WindowAddButton(window, button, "Back");
 	window.visible = false;
+}
+
+void GameUI::CreatePauseMenuButtons()
+{
+	constexpr float buttonHeight = 100.0f;
+	constexpr float buttonWidth = 500.0f;
+	constexpr float offset = 200.0f;
+
+	UIWindow& window = uiManager.GetWindow(m_pausedMenu);
+
+	Vec2f startPos{ renderingSystem.renderResX * 0.5f - buttonWidth * 0.5f, 100.0f };
+
+	UIButton button;
+	button.height = buttonHeight;
+	button.width = buttonWidth;
+	button.displayText = "[ Start ]";
+	button.screenPos = startPos;
+	button.SetHoverAudio(audioManager.GetAudio("Hover"));
+	button.SetClickAudio(audioManager.GetAudio("Click"));
+
+	uiManager.WindowAddButton(window, button, "Start");
 
 	button.height = buttonHeight;
 	button.width = buttonWidth;
-	button.displayText = "[ TEST ]";
-	button.screenPos = { 600, 100 };
-	button.name = "TEst";
-	button.displayName = true;
-	uiManager.WindowAddButton(window, button, "TEST");
+	button.displayText = "[ Settings ]";
+	button.screenPos = { startPos.x, startPos.y += offset };
+
+	uiManager.WindowAddButton(window, button, "Settings");
+
+	button.height = buttonHeight;
+	button.width = buttonWidth;
+	button.displayText = "[ Quit ]";
+	button.screenPos = { startPos.x, startPos.y += offset };
+	uiManager.WindowAddButton(window, button, "Quit");
+
+	window.visible = true;
 }
 
 bool GameUI::MenuButtonPress(Menu menu, const std::string& name)
@@ -134,17 +164,17 @@ bool GameUI::MenuButtonPress(Menu menu, const std::string& name)
 
 bool GameUI::MainMenu()  // returns true on quit
 {
-	if (MenuButtonPress(mainMenu, "Start"))
+	if (MenuButtonPress(m_mainMenu, "Start"))
 	{
-		MenuVisible(mainMenu, false);
+		MenuVisible(m_mainMenu, false);
 		game.playing = true;
 	}
-	else if (MenuButtonPress(mainMenu, "Settings"))
+	else if (MenuButtonPress(m_mainMenu, "Settings"))
 	{
-		MenuVisible(mainMenu, false);
-		MenuVisible(settingsMenu, true);
+		MenuVisible(m_mainMenu, false);
+		MenuVisible(m_settingsMenu, true);
 	}
-	else if (MenuButtonPress(mainMenu, "Quit"))
+	else if (MenuButtonPress(m_mainMenu, "Quit"))
 	{
 		return true;
 	}
@@ -157,7 +187,7 @@ bool GameUI::MainMenu()  // returns true on quit
 
 void GameUI::SettingsMenu(Settings& settings)
 {
-	if (MenuButtonPress(settingsMenu, "DisplayMode"))
+	if (MenuButtonPress(m_settingsMenu, "DisplayMode"))
 	{
 		static int displayMode = static_cast<int>(settings.displayMode);
 		displayMode++;
@@ -168,7 +198,7 @@ void GameUI::SettingsMenu(Settings& settings)
 
 		settings.displayMode = static_cast<Settings::DisplayMode>(displayMode);
 
-		UIWindow& window = uiManager.GetWindow(settingsMenu);
+		UIWindow& window = uiManager.GetWindow(m_settingsMenu);
 		UIButton& button = uiManager.WindowGetButton(window, "DisplayMode");
 
 		switch (settings.displayMode)
@@ -182,9 +212,9 @@ void GameUI::SettingsMenu(Settings& settings)
 		}
 	}
 
-	if (MenuButtonPress(settingsMenu, "VSync"))
+	if (MenuButtonPress(m_settingsMenu, "VSync"))
 	{
-		UIWindow& window = uiManager.GetWindow(settingsMenu);
+		UIWindow& window = uiManager.GetWindow(m_settingsMenu);
 		UIButton& button = uiManager.WindowGetButton(window, "VSync");
 
 		if (settings.vsync)
@@ -199,7 +229,7 @@ void GameUI::SettingsMenu(Settings& settings)
 		}
 	}
 
-	if (MenuButtonPress(settingsMenu, "FrameLimit"))
+	if (MenuButtonPress(m_settingsMenu, "FrameLimit"))
 	{
 		static int choice = static_cast<int>(settings.frameLimit);
 
@@ -209,7 +239,7 @@ void GameUI::SettingsMenu(Settings& settings)
 			choice = 0;
 		}
 
-		UIWindow& window = uiManager.GetWindow(settingsMenu);
+		UIWindow& window = uiManager.GetWindow(m_settingsMenu);
 		UIButton& button = uiManager.WindowGetButton(window, "FrameLimit");
 
 		Settings::FrameLimit frameLimit = static_cast<Settings::FrameLimit>(choice);
@@ -246,9 +276,9 @@ void GameUI::SettingsMenu(Settings& settings)
 		settings.frameLimit = frameLimit;
 	}
 
-	if (MenuButtonPress(settingsMenu, "MainSound"))
+	if (MenuButtonPress(m_settingsMenu, "MainSound"))
 	{
-		UIButton& button = uiManager.WindowGetButton(uiManager.GetWindow(settingsMenu), "MainSound");
+		UIButton& button = uiManager.WindowGetButton(uiManager.GetWindow(m_settingsMenu), "MainSound");
 
 		static int level;
 		level++;
@@ -269,9 +299,9 @@ void GameUI::SettingsMenu(Settings& settings)
 		button.displayText += "]";
 	}
 
-	if (MenuButtonPress(settingsMenu, "Debug"))
+	if (MenuButtonPress(m_settingsMenu, "Debug"))
 	{
-		UIWindow& window = uiManager.GetWindow(settingsMenu);
+		UIWindow& window = uiManager.GetWindow(m_settingsMenu);
 		UIButton& button = uiManager.WindowGetButton(window, "Debug");
 
 		settings.debugMode = !settings.debugMode;
@@ -286,14 +316,14 @@ void GameUI::SettingsMenu(Settings& settings)
 		}
 	}
 
-	if (MenuButtonPress(settingsMenu, "Volume"))
+	if (MenuButtonPress(m_settingsMenu, "Volume"))
 	{
 
 	}
 
-	if (MenuButtonPress(settingsMenu, "Back"))
+	if (MenuButtonPress(m_settingsMenu, "Back"))
 	{
-		MenuVisible(settingsMenu, false);
-		MenuVisible(mainMenu, true);
+		MenuVisible(m_settingsMenu, false);
+		MenuVisible(m_mainMenu, true);
 	}
 }

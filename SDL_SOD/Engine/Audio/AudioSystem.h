@@ -66,7 +66,7 @@ public:
 		for (auto& source : m_audioSources)
 		{
 			source.stream = SDL_CreateAudioStream(&m_deviceFormat, &m_deviceFormat);
-
+			
 			if (!source.stream)
 			{
 				PrintError();
@@ -74,6 +74,7 @@ public:
 			}
 
 			SDL_BindAudioStream(m_playBackDevice, source.stream);
+			std::cout << "AudioSource created \n";
 		}
 	}
 
