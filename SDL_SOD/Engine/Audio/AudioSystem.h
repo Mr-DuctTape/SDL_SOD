@@ -74,7 +74,6 @@ public:
 			}
 
 			SDL_BindAudioStream(m_playBackDevice, source.stream);
-			std::cout << "AudioSource created \n";
 		}
 	}
 

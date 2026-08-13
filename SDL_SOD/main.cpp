@@ -37,6 +37,8 @@ int main()
 	AudioManager::AudioClip* clip2 = engine.audioManager.CreateAudioClip("Step", "Assets/Audio/Step.wav");
 	AudioManager::AudioClip* clip3 = engine.audioManager.CreateAudioClip("Jump", "Assets/Audio/Jump2.wav");
 
+	AudioManager::AudioClip* clip4 = engine.audioManager.CreateAudioClip("Jump2", "Assets/Audio/Jump.wav");
+
 	Game game(engine);
 
 	auto& dialog = engine.dialogSystem.CreateDialog("Dialog");
@@ -46,7 +48,7 @@ int main()
 	dialog.entireDialog.push_back("I'll show you around!");
 	dialog.entireDialog.push_back("Let me lead the way");
 	dialog.position = { 200, 200 };
-	dialog.audioClip = engine.audioManager.GetAudio("Click");
+	dialog.audioClip = engine.audioManager.GetAudio("Jump2");
 
 	auto& dialog2 = engine.dialogSystem.CreateDialog("Dialog2");
 	dialog2.entireDialog.push_back("What did you just say Bob?");

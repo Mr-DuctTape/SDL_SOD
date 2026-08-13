@@ -30,10 +30,10 @@ void Game::LoadAllTextures(AssetManager& assetManager)
 	assetManager.CreateTexture("PlayerWallIdle", "Assets/Textures/WallIdle.png");
 
 	// Bob
-	assetManager.CreateTexture("Mason", "Assets/Textures/Mason.png");
+	assetManager.CreateTexture("Bob", "Assets/Textures/Mason.png");
 
 	// Ember textures
-	assetManager.CreateTexture("Ember", "Assets/Textures/Ember.png");
+	assetManager.CreateTexture("Amber", "Assets/Textures/Ember.png");
 
 	// Effect Textures
 	assetManager.CreateTexture("WallJumpEffect", "Assets/Textures/WallJumpEffect.png");
@@ -202,10 +202,10 @@ void Game::CreatePlayerPrefab(EntityManager& entityManager, AssetManager& assetM
 
 	m_prefabs.emplace("Player", &playerObject);
 }
-void Game::CreateMasonPrefab(EntityManager& entityManager, AssetManager& assetManager)
+void Game::CreateBobPrefab(EntityManager& entityManager, AssetManager& assetManager)
 {
 	Entity& torchObject = entityManager.CreateEntity();
-	torchObject.AddComponent<EntityTag>()->name = "Mason";
+	torchObject.AddComponent<EntityTag>()->name = "Bob";
 	torchObject.AddComponent<Transform>()->position = { -99999.0f, -9999.0f };
 
 	Sprite* torchSprite = torchObject.AddComponent<Sprite>();
@@ -219,15 +219,15 @@ void Game::CreateMasonPrefab(EntityManager& entityManager, AssetManager& assetMa
 	torchAnimator->scaleAnimationY = 1.0f;
 	torchAnimator->speed = 0.15f;
 
-	torchAnimator->CreateAnimation("MasonIdle", 4, 16, 16, assetManager.GetTexture("Mason"));
-	torchAnimator->SetAnimation("MasonIdle");
+	torchAnimator->CreateAnimation("BobIdle", 4, 16, 16, assetManager.GetTexture("Bob"));
+	torchAnimator->SetAnimation("BobIdle");
 
-	m_prefabs.emplace("Mason", &torchObject);
+	m_prefabs.emplace("Bob", &torchObject);
 }
-void Game::CreateEmberPrefab(EntityManager& entityManager, AssetManager& assetManager)
+void Game::CreateAmberPrefab(EntityManager& entityManager, AssetManager& assetManager)
 {
 	Entity& emberObj = entityManager.CreateEntity();
-	emberObj.AddComponent<EntityTag>()->name = "Ember";
+	emberObj.AddComponent<EntityTag>()->name = "Amber";
 	emberObj.AddComponent<Transform>()->position = { -99999.0f, -9999.0f };
 
 	Sprite* emberSprite = emberObj.AddComponent<Sprite>();
@@ -241,10 +241,10 @@ void Game::CreateEmberPrefab(EntityManager& entityManager, AssetManager& assetMa
 	emberAnimator->scaleAnimationY = 1.0f;
 	emberAnimator->speed = 0.15f;
 
-	emberAnimator->CreateAnimation("EmberIdle", 4, 16, 16, assetManager.GetTexture("Ember"));
-	emberAnimator->SetAnimation("EmberIdle");
+	emberAnimator->CreateAnimation("AmberIdle", 4, 16, 16, assetManager.GetTexture("Amber"));
+	emberAnimator->SetAnimation("AmberIdle");
 
-	m_prefabs.emplace("Ember", &emberObj);
+	m_prefabs.emplace("Amber", &emberObj);
 }
 void Game::CreateTorchPrefab(EntityManager& entityManager, AssetManager& assetManager)
 {
@@ -278,8 +278,8 @@ void Game::CreateAllPrefabs(EntityManager& entityManager, AssetManager& assetMan
 	CreateTorchPrefab(entityManager, assetManager);
 
 
-	CreateEmberPrefab(entityManager, assetManager);
-	CreateMasonPrefab(entityManager, assetManager);
+	CreateAmberPrefab(entityManager, assetManager);
+	CreateBobPrefab(entityManager, assetManager);
 }
 
 void Game::LoadTilemap(EntityManager& entityManager, AssetManager& assetManager, const std::string& level)
@@ -368,13 +368,15 @@ void Game::SpawnPlayer(EntityManager& entityManager, const Vec2f position)
 }
 void Game::SpawnBob(EntityManager& entityManager, const Vec2f position)
 {
-	Entity& entity = entityManager.CreateEntity(GetPrefab("Mason"));
+	Entity& entity = entityManager.CreateEntity(GetPrefab("Bob"));
   	entity.GetComponent<Transform>()->position = position;
+	m_npcs.emplace_back(NPC(entity)).character = NPC::CharacterType::Bob;
 }
-void Game::SpawnEmber(EntityManager& entityManager, const Vec2f position)
+void Game::SpawnAmber(EntityManager& entityManager, const Vec2f position)
 {
-	Entity& entity = entityManager.CreateEntity(GetPrefab("Ember"));
+	Entity& entity = entityManager.CreateEntity(GetPrefab("Amber"));
 	entity.GetComponent<Transform>()->position = position;
+	m_npcs.emplace_back(NPC(entity)).character = NPC::CharacterType::Amber;
 }
 void Game::SpawnTorch(EntityManager& entityManager, const Vec2f position)
 {
@@ -402,16 +404,25 @@ void Game::Update(RenderingSystem& renderingSystem, EntityManager& entityManager
 	Entity* dashFX = GetPrefab("DashFX");
 	Entity* wallJumpFX = GetPrefab("WallJumpFX");
 
-	for (auto& player : m_players) 
+	for (Player& player : m_players) 
 	{
 		player.Update(renderingSystem, entityManager, audioManager, 
 			inputSystem, *deathFX, *runFX, *wallJumpFX, *jumpFX, *dashFX, 
 			m_settings.masterVolume, deltaTime);
 	}
-	for (auto& torch : m_torches) 
+
+	for (Torch& torch : m_torches) 
 	{
-		for (auto& player : m_players)
+		for (Player& player : m_players) {
 			torch.Update(player.GetEntity().GetComponent<Transform>());
+		}
+	}
+
+	for (NPC& npc : m_npcs)
+	{
+		for (Player& player : m_players){
+			npc.Update(m_engine, player.GetEntity(), deltaTime);
+		}
 	}
 }
 
@@ -434,8 +445,8 @@ void Game::Update()
 			SpawnTorch(m_engine.entityManager, Vec2f{ 1200.0f, 800.0f });
 			SpawnTorch(m_engine.entityManager, Vec2f{ 1500.0f, 800.0f });
 			SpawnTorch(m_engine.entityManager, Vec2f{ 1800.0f, 800.0f });
-			SpawnBob(m_engine.entityManager, Vec2f{ 600.0f, 900.0f });
-			SpawnEmber(m_engine.entityManager, Vec2f{ 200.0f, 600.0f });
+			SpawnBob(m_engine.entityManager, Vec2f{ 600.0f, 1000.0f });
+			SpawnAmber(m_engine.entityManager, Vec2f{ 200.0f, 600.0f });
 			loaded = true;
 		}
 
