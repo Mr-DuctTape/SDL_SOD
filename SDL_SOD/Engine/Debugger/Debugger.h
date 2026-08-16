@@ -2,13 +2,12 @@
 #include <vector>
 #include <SDL3/SDL.h>
 #include "../Macros/DEBUGPRINT.h"
+#include "../Math/Vector2.h"
 
 struct Line
 {
-	float x1 = 0;
-	float y1 = 0;
-	float x2 = 0;
-	float y2 = 0;
+	Vec2f p1;
+	Vec2f p2;
 };
 
 struct BoxCollider2D;

@@ -24,10 +24,10 @@ public:
 	AudioManager audioManager;
 
 	RenderingSystem renderingSystem;
+	DialogSystem dialogSystem;
+
 	UIManager uiManager;
 	Debugger debugger;
-
-	DialogSystem dialogSystem;
 
 	EntityManager entityManager;
 	AssetManager assetManager;

@@ -16,6 +16,8 @@ private:
 	Physics2D* m_physics2D;
 	BoxCollider2D* m_boxCollider2D;
 
+	Vec2f m_respawnPosition;
+
 	float m_cameraFollowSpeed = 4.0f;
 	float m_movementSpeed = 3500.0f;
 	float m_jumpForce = 4000.0f;
@@ -92,10 +94,17 @@ private:
 	void CameraFollow(RenderingSystem& renderingSystem, float deltaTime);
 
 public:
+	bool freezeInput = false;
+
 	Entity& GetEntity()
 	{
 		return m_entity;
 	}
+	Vec2f& GetRespawnPosition()
+	{
+		return m_respawnPosition;
+	}
+
 	void Update
 	(
 		RenderingSystem& renderingSystem,
@@ -127,4 +136,6 @@ public:
 		}
 	}
 	~Player() = default;
+
+	friend class Game;
 };

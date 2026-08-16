@@ -29,11 +29,11 @@ void Game::LoadAllTextures(AssetManager& assetManager)
 	assetManager.CreateTexture("PlayerJump", "Assets/Textures/Jump.png");
 	assetManager.CreateTexture("PlayerWallIdle", "Assets/Textures/WallIdle.png");
 
-	// Bob
-	assetManager.CreateTexture("Bob", "Assets/Textures/Mason.png");
+	// Bob Textures
+	assetManager.CreateTexture("Bob", "Assets/Textures/Bob.png");
 
-	// Ember textures
-	assetManager.CreateTexture("Amber", "Assets/Textures/Ember.png");
+	// Amber Textures
+	assetManager.CreateTexture("Amber", "Assets/Textures/Amber.png");
 
 	// Effect Textures
 	assetManager.CreateTexture("WallJumpEffect", "Assets/Textures/WallJumpEffect.png");
@@ -282,6 +282,138 @@ void Game::CreateAllPrefabs(EntityManager& entityManager, AssetManager& assetMan
 	CreateBobPrefab(entityManager, assetManager);
 }
 
+void Game::SpawnPlayer(EntityManager& entityManager, const Vec2f position)
+{
+	auto& player = std::get<std::optional<Player>>(m_gameEntities);
+	if (player)
+	{
+		player.value().m_transform->position = position;
+		return;
+	}
+
+	Entity& entity = entityManager.CreateEntity(GetPrefab("Player"));
+	entity.GetComponent<Transform>()->position = position;
+	player.emplace(Player(entity));
+}
+
+void Game::SpawnBob(EntityManager& entityManager, const Vec2f position)
+{
+	auto& bob = std::get<std::optional<Bob>>(m_gameEntities);
+	if (bob)
+	{
+		bob.value().m_transform->position = position;
+	}
+
+	Entity& entity = entityManager.CreateEntity(GetPrefab("Bob"));
+	entity.GetComponent<Transform>()->position = position;
+
+	bob.emplace(Bob(entity, m_engine.dialogSystem));
+}
+
+void Game::SpawnAmber(EntityManager& entityManager, const Vec2f position)
+{
+	auto& amber = std::get<std::optional<Amber>>(m_gameEntities);
+	if (amber)
+	{
+		amber.value().m_transform->position = position;
+		return;
+	}
+
+	Entity& entity = entityManager.CreateEntity(GetPrefab("Amber"));
+	entity.GetComponent<Transform>()->position = position;
+
+	amber.emplace(Amber(entity, m_engine.dialogSystem));
+}
+
+void Game::SpawnTorch(EntityManager& entityManager, const Vec2f position)
+{
+	Entity& entity = entityManager.CreateEntity(GetPrefab("Torch"));
+	entity.GetComponent<Transform>()->position = position;
+
+	auto& torches = std::get<std::vector<Torch>>(m_gameEntities);
+	torches.emplace_back(Torch(entity));
+}
+
+void Game::LoadTexturesAndPrefabs(EntityManager& entityManager, AssetManager& assetManager)
+{
+	LoadAllTextures(assetManager);
+	CreateAllPrefabs(entityManager, assetManager);
+	CreateAllEffectPrefabs(entityManager, assetManager);
+}
+
+void Game::LoadLevel(EntityManager& entityManager, AssetManager& assetManager, const std::string& level)
+{
+	LoadTilemap(entityManager, assetManager, level);
+	LoadObjects(entityManager, level);
+}
+
+void Game::Update(RenderingSystem& renderingSystem, EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem, float deltaTime)
+{
+	Entity* deathFX = GetPrefab("DeathFX");
+	Entity* jumpFX = GetPrefab("JumpFX");
+	Entity* runFX = GetPrefab("RunFX");
+	Entity* dashFX = GetPrefab("DashFX");
+	Entity* wallJumpFX = GetPrefab("WallJumpFX");
+
+	auto& player = std::get<std::optional<Player>>(m_gameEntities);
+	if (!player.has_value())
+	{
+		std::cout << "player doesn't exist!\n";
+		return;
+	}
+
+	player.value().Update(renderingSystem, entityManager, audioManager,
+		inputSystem, *deathFX, *runFX, *wallJumpFX, *jumpFX, *dashFX,
+		m_settings.masterVolume, deltaTime);
+
+	for (Torch& torch : std::get<std::vector<Torch>>(m_gameEntities))
+	{
+		torch.Update(player.value());
+	}
+
+	auto& bob = std::get<std::optional<Bob>>(m_gameEntities);
+	if (bob.has_value())
+	{
+		bob.value().Update(m_engine, player.value(), deltaTime);
+	}
+
+	auto& amber = std::get<std::optional<Amber>>(m_gameEntities);
+	if (amber.has_value())
+	{
+		amber.value().Update(m_engine, player.value(), deltaTime);
+	}
+}
+
+void Game::Update()
+{
+	static bool loaded = false;
+	if (playing)
+	{
+		if (m_engine.inputSystem.GetButtonDown(SDL_SCANCODE_ESCAPE))
+		{
+			m_gameUI.MenuVisible(m_gameUI.m_mainMenu, true);
+		}
+
+		if (!loaded) // TODO: in the future there will be different levels loaded so keep that in mind.
+		{
+			LoadLevel(m_engine.entityManager, m_engine.assetManager, "Assets/Levels/Tutorial");
+			SpawnPlayer(m_engine.entityManager, Vec2f{ 200.0f, 0.0f });
+
+			SpawnTorch(m_engine.entityManager, Vec2f{ 5197.52f, 800.0f });
+			SpawnBob(m_engine.entityManager, Vec2f{ 14206.9f, 2120.0f });
+			SpawnAmber(m_engine.entityManager, Vec2f{ 8000.0f, 600.0f });
+			loaded = true;
+		}
+
+		Update(m_engine.renderingSystem, m_engine.entityManager,
+			m_engine.audioManager, m_engine.inputSystem, m_engine.deltaTime);
+	}
+	else if (m_gameUI.MainMenu())
+	{
+		m_engine.Quit();
+	}
+}
+
 void Game::LoadTilemap(EntityManager& entityManager, AssetManager& assetManager, const std::string& level)
 {
 	std::filesystem::path levelPath = level;
@@ -359,102 +491,144 @@ void Game::LoadObjects(EntityManager& entityManager, const std::string& level)
 	}
 	entityManager.CreateEntitiesFromObj(objFile, "Spikes", *prefab);
 }
-
-void Game::SpawnPlayer(EntityManager& entityManager, const Vec2f position)
+void Game::CreateDialogs(DialogSystem& dialogSystem)
 {
-	Entity& entity = entityManager.CreateEntity(GetPrefab("Player"));
-	entity.GetComponent<Transform>()->position = position;
-	m_players.emplace_back(Player(entity));
-}
-void Game::SpawnBob(EntityManager& entityManager, const Vec2f position)
-{
-	Entity& entity = entityManager.CreateEntity(GetPrefab("Bob"));
-  	entity.GetComponent<Transform>()->position = position;
-	m_npcs.emplace_back(NPC(entity)).character = NPC::CharacterType::Bob;
-}
-void Game::SpawnAmber(EntityManager& entityManager, const Vec2f position)
-{
-	Entity& entity = entityManager.CreateEntity(GetPrefab("Amber"));
-	entity.GetComponent<Transform>()->position = position;
-	m_npcs.emplace_back(NPC(entity)).character = NPC::CharacterType::Amber;
-}
-void Game::SpawnTorch(EntityManager& entityManager, const Vec2f position)
-{
-	Entity& entity = entityManager.CreateEntity(GetPrefab("Torch"));
-	entity.GetComponent<Transform>()->position = position;
-	m_torches.emplace_back(Torch(entity));
-}
-
-void Game::LoadTexturesAndPrefabs(EntityManager& entityManager, AssetManager& assetManager)
-{
-	LoadAllTextures(assetManager);
-	CreateAllPrefabs(entityManager, assetManager);
-	CreateAllEffectPrefabs(entityManager, assetManager);
-}
-void Game::LoadLevel(EntityManager& entityManager, AssetManager& assetManager, const std::string& level)
-{
-	LoadTilemap(entityManager, assetManager, level);
-	LoadObjects(entityManager, level);
-}
-void Game::Update(RenderingSystem& renderingSystem, EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem, float deltaTime)
-{
-	Entity* deathFX = GetPrefab("DeathFX");
-	Entity* jumpFX = GetPrefab("JumpFX");
-	Entity* runFX = GetPrefab("RunFX");
-	Entity* dashFX = GetPrefab("DashFX");
-	Entity* wallJumpFX = GetPrefab("WallJumpFX");
-
-	for (Player& player : m_players) 
-	{
-		player.Update(renderingSystem, entityManager, audioManager, 
-			inputSystem, *deathFX, *runFX, *wallJumpFX, *jumpFX, *dashFX, 
-			m_settings.masterVolume, deltaTime);
-	}
-
-	for (Torch& torch : m_torches) 
-	{
-		for (Player& player : m_players) {
-			torch.Update(player.GetEntity().GetComponent<Transform>());
-		}
-	}
-
-	for (NPC& npc : m_npcs)
-	{
-		for (Player& player : m_players){
-			npc.Update(m_engine, player.GetEntity(), deltaTime);
-		}
-	}
-}
-
-void Game::Update()
-{
-	static bool loaded = false;
-	if (playing)
-	{
-		if (m_engine.inputSystem.GetButtonDown(SDL_SCANCODE_ESCAPE))
+	auto CreateDialog = [&dialogSystem](const char* dialogName) -> DialogSystem::Dialog&
 		{
-			m_gameUI.MenuVisible(m_gameUI.m_mainMenu, true);
-		}
+			return dialogSystem.CreateDialog(dialogName);
+		};
 
-		if (!loaded) // TODO: in the future there will be different levels loaded so keep that in mind.
+	GetSettings();
+
+	DialogSystem::Dialog* dialog = nullptr;
+	auto AddLine = [&dialog](const char* str) -> void
 		{
-			LoadLevel(m_engine.entityManager, m_engine.assetManager, "Assets/Levels/Tutorial");
-			SpawnPlayer(m_engine.entityManager, Vec2f{ 200.0f, 0.0f });
-			SpawnTorch(m_engine.entityManager, Vec2f{ 600.0f, 800.0f });
-			SpawnTorch(m_engine.entityManager, Vec2f{ 900.0f, 800.0f });
-			SpawnTorch(m_engine.entityManager, Vec2f{ 1200.0f, 800.0f });
-			SpawnTorch(m_engine.entityManager, Vec2f{ 1500.0f, 800.0f });
-			SpawnTorch(m_engine.entityManager, Vec2f{ 1800.0f, 800.0f });
-			SpawnBob(m_engine.entityManager, Vec2f{ 600.0f, 1000.0f });
-			SpawnAmber(m_engine.entityManager, Vec2f{ 200.0f, 600.0f });
-			loaded = true;
-		}
+			dialog->entireDialog.emplace_back(str);
+		};
 
-		Update(m_engine.renderingSystem, m_engine.entityManager, 
-			m_engine.audioManager, m_engine.inputSystem, m_engine.deltaTime);
-	}
-	else if(m_gameUI.MainMenu())
-	{
-		m_engine.Quit();
-	}
+	AudioManager& audioManager = m_engine.audioManager;
+	auto SetAudio = [&dialog, &audioManager](const char* name) -> void
+		{
+			dialog->audioClip = audioManager.GetAudio(name);
+		};
+
+
+	const char* AmberVoiceLine = "Hover";
+	const char* BobVoiceLine = "Jump2";
+
+	dialog = &CreateDialog("Amber_Intro");
+	AddLine("Oh!");
+	AddLine("You're awake!"); 
+	AddLine("Hi! I'm Amber.");
+	AddLine("Amber will show you the ropes!");
+	SetAudio(AmberVoiceLine);
+
+	dialog = &CreateDialog("Amber_Move_Start");
+	AddLine("Try to move!");
+	AddLine("Use your ( A,D ) keys.");
+	SetAudio(AmberVoiceLine);
+
+	dialog = &CreateDialog("Amber_Move_End");
+	AddLine("That's it!");
+	AddLine("Amber is proud!");
+	SetAudio(AmberVoiceLine);
+
+	dialog = &CreateDialog("Amber_Jump_Start");
+	AddLine("What's next...");
+	AddLine("Amber loves to fly.. so");
+	AddLine("You should try to jump!");
+	AddLine("Press your ( SPACE ) key to jump!");
+	SetAudio(AmberVoiceLine);
+
+	dialog = &CreateDialog("Amber_Jump_End");
+	AddLine("Perfect!");
+	AddLine("You're flying like Amber!");
+	AddLine("Well... kinda...");
+	AddLine("Now put these two together..");
+	AddLine("And overcome the obstacles!");
+	SetAudio(AmberVoiceLine);
+
+	dialog = &CreateDialog("Amber_JumpMove_Start");
+	AddLine("Amber says to go forward!");
+	AddLine("And try to use your controls!");
+	SetAudio(AmberVoiceLine);
+
+	dialog = &CreateDialog("Amber_JumpMove_End");
+	AddLine("Amber hasn't seen a fire spirit move");
+	AddLine("This QUICK!");
+	SetAudio(AmberVoiceLine);
+
+	dialog = &CreateDialog("Amber_Spikes_Start");
+	AddLine("Oh...");
+	AddLine("Amber says SPIKES are bad..");
+	AddLine("Jump over them!");
+	SetAudio(AmberVoiceLine);
+
+	dialog = &CreateDialog("Amber_Spikes_End");
+	AddLine("Perfect jumps!");
+	SetAudio(AmberVoiceLine);
+
+	dialog = &CreateDialog("Amber_Torch_Start");
+	AddLine("Torches light up when you get near!");
+	AddLine("And allow you to respawn at it!");
+	AddLine("Amber thinks it's great you can't die!");
+	SetAudio(AmberVoiceLine);
+
+
+	dialog = &CreateDialog("Amber_Dash_Start");
+	AddLine("It seems you can't jump over this one.");
+	AddLine("Hmmm...");
+	AddLine("Amber thinks ( SHIFT ) button!");
+	AddLine("That should cause you to dash!");
+	AddLine("Pair it with a jump to be more effective!");
+	SetAudio(AmberVoiceLine);
+
+	dialog = &CreateDialog("Amber_Dash_End");
+	AddLine("Great!");
+	AddLine("Amber that was a great dash!");
+	AddLine("Now make your way across these obstacles!");
+	SetAudio(AmberVoiceLine);
+
+	dialog = &CreateDialog("Amber_Fall");
+	AddLine("That's a big drop..");
+	AddLine("Go ahead and jump down.");
+	AddLine("Amber will catch you!");
+	AddLine("Probably.");
+	SetAudio(AmberVoiceLine);
+
+	dialog = &CreateDialog("Amber_WallJump_Start");
+	AddLine("That's a long way up..");
+	AddLine("You can probably...");
+	AddLine("Cling to the walls ( A,D )..");
+	AddLine("Amber says jump into a wall! ( SPACE )");
+	AddLine("And jump to the other!");
+	SetAudio(AmberVoiceLine);
+
+	dialog = &CreateDialog("Amber_WallJump_End");
+	AddLine("You did it!");
+	AddLine("Amber is not needed anymore...");
+	AddLine("But don't worry!");
+	AddLine("Amber will always be here!");
+	SetAudio(AmberVoiceLine);
+
+	dialog = &CreateDialog("Amber_Response");
+	AddLine("Yes Amber is teaching!");
+	AddLine("Amber will teach everything!");
+	SetAudio(AmberVoiceLine);
+
+	// Bob voice lines
+
+	dialog = &CreateDialog("Bob_Intro");
+	AddLine("I am the mysterious Blob...");
+	AddLine("But friends call me BOB!");
+	AddLine("You seem quite new around here...");
+	AddLine("Anyway you are now Bob's new friend!");
+	AddLine("Amber are you teaching my friend?");
+	SetAudio(BobVoiceLine);
+
+	dialog = &CreateDialog("Bob_Response");
+	AddLine("Whenever Amber is done teaching you.");
+	AddLine("Come meet me here friend.");
+	AddLine("I need help with something important.");
+	SetAudio(BobVoiceLine);
 }

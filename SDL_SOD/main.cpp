@@ -2,6 +2,7 @@
 #include "Engine/SOD_Engine.h"
 #include "Game/Game.h"
 #include "Game/GameUI.h"
+#include <Windows.h>
 
 enum color
 {
@@ -28,7 +29,12 @@ void UpdateSettings(Game& game, Engine& engine)
 }
 
 
-int main()
+int WINAPI WinMain(
+	HINSTANCE hInstance,
+	HINSTANCE hPrevInstance,
+	LPSTR lpCmdLine,
+	int nCmdShow
+)
 {
 	Engine engine;
 	engine.Initialize();
@@ -40,23 +46,6 @@ int main()
 	AudioManager::AudioClip* clip4 = engine.audioManager.CreateAudioClip("Jump2", "Assets/Audio/Jump.wav");
 
 	Game game(engine);
-
-	auto& dialog = engine.dialogSystem.CreateDialog("Dialog");
-	dialog.entireDialog.push_back("I am the mysterious Blob...");
-	dialog.entireDialog.push_back("But friends call me BOB!");
-	dialog.entireDialog.push_back("Since you're new around here.");
-	dialog.entireDialog.push_back("I'll show you around!");
-	dialog.entireDialog.push_back("Let me lead the way");
-	dialog.position = { 200, 200 };
-	dialog.audioClip = engine.audioManager.GetAudio("Jump2");
-
-	auto& dialog2 = engine.dialogSystem.CreateDialog("Dialog2");
-	dialog2.entireDialog.push_back("What did you just say Bob?");
-	dialog2.entireDialog.push_back("You can't lead a fire sprit!");
-	dialog2.entireDialog.push_back("That's my job! Ember's job!");
-	dialog2.entireDialog.push_back("Ember has got this, Just follow me!");
-	dialog2.position = { 200, 200 };
-	dialog2.audioClip = engine.audioManager.GetAudio("Click");
 
 	// Game loop
 	while (engine.isRunning)
@@ -80,16 +69,7 @@ int main()
 		else if (!game.GetSettings().debugMode)
 		{
 			engine.debugger.enabled = false;
-		}
-
-		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_1))
-		{
-			dialog.activated = true;
-		}
-		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_2))
-		{
-			dialog2.activated = true;
-		}
+		}    
 
 		if (engine.debugger.enabled)
 		{
@@ -101,6 +81,12 @@ int main()
 		if (!game.playing) 
 		{
 			UpdateSettings(game, engine);
+		}
+
+		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_L))
+		{
+			auto& obj = std::get<std::optional<Player>>(game.m_gameEntities);
+			std::cout << obj.value().GetEntity().GetComponent<Transform>()->position << "\n";
 		}
 
 		// End of frame

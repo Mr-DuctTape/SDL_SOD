@@ -2,6 +2,7 @@
 #include "../../Engine/Audio/AudioSystem.h"
 #include "../../Engine/ECS/Entities.h"
 
+class Player;
 class Torch
 {
 private:
@@ -18,6 +19,7 @@ private:
 	};
 
 	State m_state = OFF;
+	float m_turnOnRange = 350.0f;
 
 	void ChangeAnimatorState()
 	{
@@ -48,7 +50,7 @@ private:
 
 	void CheckPlayerTrigger(Transform* player)
 	{
-		if ((player->position - m_transform->position).Magnitude() < 350.0f && m_state == OFF)
+		if ((player->position - m_transform->position).Magnitude() < m_turnOnRange && m_state == OFF)
 		{
 			m_state = LIT;
 		}
@@ -56,11 +58,7 @@ private:
 
 public:
 
-	void Update(Transform* player) 
-	{
-		CheckPlayerTrigger(player);
-		ChangeAnimatorState();
-	};
+	void Update(Player& player);
 
 	Entity& GetEntity()
 	{

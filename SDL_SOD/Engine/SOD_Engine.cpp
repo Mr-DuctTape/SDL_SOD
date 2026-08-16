@@ -10,12 +10,14 @@ void Engine::Initialize()
 
 	// Initialize rendering system, give references/pointers to others
 	renderingSystem.Initialize(debugger, uiManager, dialogSystem);
-	uiManager.Initialize(inputSystem, renderingSystem, audioManager);
-	debugger.Initialize(&renderingSystem.camera);
-	assetManager.Initialize(renderingSystem.renderer);
-	physics.Intialize(&debugger);
 	dialogSystem.Initialize(audioManager);
 
+	uiManager.Initialize(inputSystem, renderingSystem, audioManager);
+	debugger.Initialize(&renderingSystem.camera);
+
+	assetManager.Initialize(renderingSystem.renderer);
+	physics.Intialize(&debugger);
+	
 	isRunning = true;
 }
 
@@ -53,9 +55,9 @@ void Engine::Update()
 		for (auto& component : entity->components)
 		{
 			// Update which entities are destroyables
-			if (auto p = dynamic_cast<Animator*>(component))
+			if (auto anim = dynamic_cast<Animator*>(component))
 			{
-				if (p->destroyOnFinish && p->finished) 
+				if (anim->destroyOnFinish && anim->finished) 
 				{
 					destroyables.push_back(entity);
 				}

@@ -3,6 +3,11 @@
 #include "Components.h"
 #include <iostream>
 #include "../Macros/DEBUGPRINT.h"
+#include <typeindex>
+#include <unordered_map>
+
+template<typename T>
+concept ValidComponent = std::is_base_of_v<Component, T>;
 
 class Entity
 {
@@ -21,85 +26,71 @@ private:
 		}
 		components.clear();
 	}
+	void Push(Component* comp);
+
+	std::unordered_map<std::type_index, size_t> componentsIndex;
 public:
 	EntityID ID = 0;
-	std::vector<Component*> components{};
+	std::vector<Component*> components;
 
-	Entity() {};
-	inline void Push_Back(Component* component)
+	Entity() 
 	{
-		component->parent = this;
-		component->Init();
-		components.push_back(component);
+		components.reserve(10);
+		componentsIndex.reserve(10);
+	};
+
+	template<ValidComponent T>
+	inline void Push_Back(T* component)
+	{
+		Component* comp = static_cast<Component*>(component);
+		Push(comp);
+		componentsIndex.emplace(typeid(*component), components.size() - 1);
 	}
-	template <typename T>
+
+	template <ValidComponent T>
 	T* AddComponent(const T& value)
 	{
-		static_assert(std::is_base_of_v<Component, T>, "T must be a component!");
-		for (size_t i = 0; i < components.size(); i++)
-		{
-			if (T* component = dynamic_cast<T*>(components[i]))
-			{
-				return component;
-			}
-		}
+		if (componentsIndex.find(typeid(value)) != componentsIndex.end())
+			return static_cast<T*>(components[componentsIndex[typeid(value)]]);
+
 		T* component = new T(value);
 		Push_Back(component);
 		return component;
 	}
-	template <typename T>
+	template <ValidComponent T>
 	T* AddComponent()
 	{
-		static_assert(std::is_base_of_v<Component, T>, "T must be a component!");
-		for (size_t i = 0; i < components.size(); i++)
-		{
-			if (T* component = dynamic_cast<T*>(components[i]))
-			{
-				return component;
-			}
-		}
+		if (componentsIndex.find(typeid(T)) != componentsIndex.end())
+			return static_cast<T*>(components[componentsIndex[typeid(T)]]);
+
 		T* component = new T();
 		Push_Back(component);
 		return component;
 	}
-	template <typename T>
+	template <ValidComponent T>
 	bool RemoveComponent()
 	{
-		for (size_t i = 0; i < components.size(); i++)
+		if (componentsIndex.find(typeid(T)) != componentsIndex.end()) 
 		{
-			if (T* component = dynamic_cast<T*>(components[i]))
-			{
-				delete components[i];
-				components.erase(components.begin() + i);
-				return true;
-			}
+			size_t index = componentsIndex[typeid(T)];
+			delete components[index];
+			components[index] = components.back();
+			components.pop_back();
 		}
 		return false;
 	}
-	template <typename T>
+	template <ValidComponent T>
 	bool HasComponent() const
 	{
-		static_assert(std::is_base_of_v<Component, T>, "T must be a component!");
-		for (size_t i = 0; i < components.size(); i++)
-		{
-			if (T* component = dynamic_cast<T*>(components[i]))
-			{
-				return true;
-			}
-		}
+		if (componentsIndex.find(typeid(T)) != componentsIndex.end())
+			return true;
 		return false;
 	}
-	template <typename T>
+	template <ValidComponent T>
 	T* GetComponent()
 	{
-		static_assert(std::is_base_of_v<Component, T>, "T must be a component!");
-		for (size_t i = 0; i < components.size(); i++)
-		{
-			if (T* component = dynamic_cast<T*>(components[i]))
-			{
-				return component;
-			}
-		}
+		if (componentsIndex.find(typeid(T)) != componentsIndex.end())
+			return static_cast<T*>(components[componentsIndex[typeid(T)]]);
 		return nullptr;
 	}
 	~Entity()

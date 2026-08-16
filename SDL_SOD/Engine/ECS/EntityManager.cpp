@@ -6,6 +6,14 @@
 #include <string>
 #include <fstream>
 
+void Entity::Push(Component* comp)
+{
+	comp->parent = this;
+	comp->Init();
+	components.push_back(comp);
+
+}
+
 // --- EntityManager --- 
 
 Entity& EntityManager::CreateEntity(Entity* prefab)

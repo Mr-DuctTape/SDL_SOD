@@ -5,7 +5,6 @@
 #include "../Graphics/Camera.h"
 #include <format>
 
-
 void Debugger::DrawBoxCollider2D(const BoxCollider2D& a, SDL_Color color)
 {
 	if (!camRef)
@@ -359,10 +358,5 @@ void Debugger::DrawAllColliders(EntityManager& entityManager)
 
 void Debugger::DrawTrajectory(const Vec2f& v1, const Vec2f& v2)
 {
-	float x1 = v1.x;
-	float y1 = v1.y;
-	float x2 = v2.x;
-	float y2 = v2.y;
-
-	trajectories.push_back({ x1,y1,x2,y2 });
+	trajectories.push_back({ WorldToScreen(v1.x, v1.y, *camRef), WorldToScreen(v2.x, v2.y, *camRef)});
 }
