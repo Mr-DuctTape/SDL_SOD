@@ -4,6 +4,10 @@
 #include "Game/GameUI.h"
 #include <Windows.h>
 
+#define _CRTDBG_MAP_ALLOC
+#include <cstdlib>
+#include <crtdbg.h>
+
 enum color
 {
 	RED,
@@ -29,21 +33,21 @@ void UpdateSettings(Game& game, Engine& engine)
 }
 
 
-int WINAPI WinMain(
-	HINSTANCE hInstance,
-	HINSTANCE hPrevInstance,
-	LPSTR lpCmdLine,
-	int nCmdShow
-)
+int main()
 {
+	if constexpr (DEBUGPRINT) {
+		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	}
+
 	Engine engine;
 	engine.Initialize();
 
-	AudioManager::AudioClip* clip = engine.audioManager.CreateAudioClip("Dash", "Assets/Audio/Dash.wav");
-	AudioManager::AudioClip* clip2 = engine.audioManager.CreateAudioClip("Step", "Assets/Audio/Step.wav");
-	AudioManager::AudioClip* clip3 = engine.audioManager.CreateAudioClip("Jump", "Assets/Audio/Jump2.wav");
-
-	AudioManager::AudioClip* clip4 = engine.audioManager.CreateAudioClip("Jump2", "Assets/Audio/Jump.wav");
+	engine.audioManager.CreateAudioClip("Dash", "Assets/Audio/Dash.wav");
+	engine.audioManager.CreateAudioClip("Step", "Assets/Audio/Step.wav");
+	engine.audioManager.CreateAudioClip("Jump", "Assets/Audio/Jump2.wav");
+	engine.audioManager.CreateAudioClip("Jump2", "Assets/Audio/Jump.wav");
+	engine.audioManager.CreateAudioClip("Hover", "Assets/Audio/Hover.wav");
+	engine.audioManager.CreateAudioClip("Click", "Assets/Audio/Hover.wav");
 
 	Game game(engine);
 
@@ -85,7 +89,7 @@ int WINAPI WinMain(
 
 		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_L))
 		{
-			auto& obj = std::get<std::optional<Player>>(game.m_gameEntities);
+			auto& obj = game.m_gameEntities.player;
 			std::cout << obj.value().GetEntity().GetComponent<Transform>()->position << "\n";
 		}
 
@@ -110,5 +114,17 @@ int WINAPI WinMain(
 		engine.debugger.DebuggerEndTime();
 	}
 
+	if constexpr (DEBUGPRINT) {
+		FILE* file;
+
+		fopen_s(&file, "MemoryLeaks.txt", "w");
+
+		_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+		_CrtSetReportFile(_CRT_WARN, file);
+
+		_CrtDumpMemoryLeaks();
+
+		fclose(file);
+	}
 	return 0;
 }

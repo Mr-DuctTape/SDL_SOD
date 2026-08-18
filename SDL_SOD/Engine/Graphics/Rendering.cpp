@@ -17,6 +17,9 @@ void RenderingSystem::Initialize(Debugger& debugger, UIManager& uiManager, Dialo
 	this->debugger = &debugger;
 	this->uiManager = &uiManager;
 	this->dialogSystem = &dialogSystem;
+
+	if constexpr (DEBUGPRINT)
+		std::cout << "[" << "\033[33m" << "RENDERINGSYSTEM" << "\033[37m" << "] " << " Initialized: " << this << "\n";
 }
 Debugger* RenderingSystem::GetDebugger()
 {
@@ -108,24 +111,19 @@ void Animator::Render(RenderingSystem& renderingSystem, Camera& camera)
 	Debugger* debugger = renderingSystem.GetDebugger();
 
 	// some debugging for the animator
-	if (debugger && debugger->enabled)
+	if (debugger->enabled)
 	{
 		if (destroyOnFinish)
 		{
 			SDL_SetRenderDrawColor(renderingSystem.renderer, 170, 140, 255, 255);
-			SDL_RenderDebugText(renderingSystem.renderer, x, y + 20,
-				("Destroyable"));
+			SDL_RenderDebugText(renderingSystem.renderer, x, y + 20, "Destroyable");
 		}
 		else
 		{
 			SDL_SetRenderDrawColor(renderingSystem.renderer, 120, 180, 255, 255);
-			SDL_RenderDebugText(renderingSystem.renderer, x - 10, y - 20,
-				("Animator: "));
-			SDL_RenderDebugText(renderingSystem.renderer, x - 10, y - 10,
-				("State: " + currentState).c_str());
-
-			SDL_RenderDebugText(renderingSystem.renderer, x - 10, y,
-				("FlippedX: " + std::string(flippedX ? "true" : "false")).c_str());
+			SDL_RenderDebugText(renderingSystem.renderer, x - 10, y - 20, "Animator: ");
+			SDL_RenderDebugText(renderingSystem.renderer, x - 10, y - 10, ("State: " + currentState).c_str());
+			SDL_RenderDebugText(renderingSystem.renderer, x - 10, y, ("FlippedX: " + std::string(flippedX ? "true" : "false")).c_str());
 		}
 		debugger->debugStats.spritesRendered++;
 		debugger->debugStats.drawCalls++;

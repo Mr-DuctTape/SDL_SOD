@@ -27,7 +27,6 @@ void DialogSystem::Dialog::Update(AudioManager& audioManager, float deltaTime)
 			if (lineTimer >= timeBetweenLines)
 			{
 				displayedLine.clear();
-
 				charIndex = 0;
 				charTimer = 0.0f;
 				lineTimer = 0.0f;
@@ -90,6 +89,9 @@ void DialogSystem::Initialize(AudioManager& audioManager)
 	m_audioManager = &audioManager;
 	m_dialogs.reserve(32);
 	m_dialogIndex.reserve(32);
+	if constexpr (DEBUGPRINT) {
+		std::cout << "[" << "\033[34m" << "DIALOGSYSTEM" << "\033[37m" << "] " << " Initialized: " << this << "\n";
+	}
 }
 
 size_t DialogSystem::GetDialogIndex(const std::string& name)

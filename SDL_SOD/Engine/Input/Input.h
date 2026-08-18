@@ -1,5 +1,7 @@
 #pragma once
 #include <SDL3/SDL.h>
+#include "../Macros/DEBUGPRINT.h"
+#include <iostream>
 
 enum Mouse
 {
@@ -36,4 +38,9 @@ public:
 	const bool GetMouseButtonUp(Mouse button);
 	const Vec2f GetMousePosition() const;
 	void Process();
+	~InputSystem()
+	{
+		if constexpr (DEBUGPRINT)
+			std::cout << "[" << "\033[35m" << "INPUTSYSTEM" << "\033[37m" << "] " << " Destroying: " << this << "\n";
+	}
 };

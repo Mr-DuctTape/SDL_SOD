@@ -6,18 +6,20 @@
 #include "../Math/Vector2.h"
 #include "../Macros/DEBUGPRINT.h"
 
-using EntityID = uint32_t;
-
 class Entity;
 
-struct Component // Base component you can create any component u want as long as it inherits from this
+struct Component // Base component any component needs to inherits from this
 {
 	Entity* parent = nullptr;
+
 	virtual void Update(float dt) {};
-	virtual ~Component() {};
 	virtual void Init() {};
-	virtual size_t Size() { return 0; };
+	virtual size_t Size() {
+		return sizeof(*this);
+	}
 	virtual Component* Clone() { return nullptr; };
+
+	virtual ~Component() = default;
 };
 
 struct EntityTag : Component
@@ -41,14 +43,6 @@ struct Physics2D : Component
 	Vec2f last_velocity = { 0.0f, 0.0f };
 
 	Vec2f last_position = { 0.0f, 0.0f };
-
-	Physics2D()
-	{
-		if (DEBUGPRINT)
-			std::cout << "Physics2D created: "
-			<< velocity.x << ", "
-			<< velocity.y << std::endl;
-	}
 
 	bool useGravity = false;
 

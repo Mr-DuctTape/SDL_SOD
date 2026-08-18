@@ -9,6 +9,22 @@ void UIManager::Initialize(InputSystem& inputSystem, RenderingSystem& renderingS
 	this->inputSystem = &inputSystem;
 	this->audioManager = &audioManager;
 	this->renderingSystem = &renderingSystem;
+
+	if constexpr(DEBUGPRINT)
+		std::cout << "[" << "\033[31m" << "UISYSTEM" << "\033[37m" << "] " << " Initialized: " << this << "\n";
+}
+
+size_t UIManager::CreateWindow(const std::string& name) // Returns index to window
+{
+	m_windows.emplace_back();
+	size_t index = m_windows.size() - 1;
+	m_windowIndex.emplace(name, index);
+	return index;
+}
+
+void UIManager::SetWindowVisible(const std::string& name)
+{
+	GetWindow(name).visible = true;
 }
 
 void UIManager::RenderButtons(std::vector<UIButton>& buttons, SDL_Renderer* renderer)
@@ -40,6 +56,23 @@ bool UIElement::MouseHoverOver(InputSystem& inputSystem)
 	{
 		return false;
 	}
+}
+
+void UIElement::SetHoverAudio(AudioManager::AudioClip& audioClip)
+{
+	m_hoverSound = audioClip;
+}
+void UIElement::SetClickAudio(AudioManager::AudioClip& audioClip)
+{
+	m_clickSound = audioClip;
+}
+void UIElement::PlayHoverSound(AudioManager& audioManager, float volume)
+{
+	audioManager.Play(m_hoverSound, volume);
+}
+void UIElement::PlayClickSound(AudioManager& audioManager, float volume)
+{
+	audioManager.Play(m_clickSound, volume);
 }
 
 bool UIElement::IsButtonPressed()
@@ -103,7 +136,6 @@ void UIManager::Update(const float deltaTime)
 				// Smoothly increase the size of the button
 				SmoothSize(button, button.savedHeight, button.savedWidth, deltaTime);
 				button.currentColor = button.highlightedColor;
-
 			}
 			else
 			{

@@ -39,32 +39,18 @@ public:
 	SDL_Color highlightedColor{ 125, 156, 125, 100 };
 	SDL_Color pressedColor{ 100, 156, 100, 255 };
 
-
 	bool MouseHoverOver(InputSystem& inputSystem);
 	bool IsButtonPressed();
-	void SetHoverAudio(AudioManager::AudioClip& audioClip)
-	{
-		m_hoverSound = audioClip;
-	}
-	void SetClickAudio(AudioManager::AudioClip& audioClip)
-	{
-		m_clickSound = audioClip;
-	}
-	void PlayHoverSound(AudioManager& audioManager, float volume)
-	{
-		audioManager.Play(m_hoverSound, volume);
-	}
-	void PlayClickSound(AudioManager& audioManager, float volume)
-	{
-		audioManager.Play(m_clickSound, volume);
-	}
+	void SetHoverAudio(AudioManager::AudioClip& audioClip);
+	void SetClickAudio(AudioManager::AudioClip& audioClip);
+	void PlayHoverSound(AudioManager& audioManager, float volume);
+	void PlayClickSound(AudioManager& audioManager, float volume);
 	static void RenderButtonText(SDL_Renderer* renderer, UIElement& element);
 	static void RenderButton(SDL_Renderer* renderer, UIElement& element);
 };
 
 struct UIButton : UIElement
 {
-
 };
 
 struct UIWindow
@@ -82,22 +68,14 @@ private:
 	RenderingSystem* renderingSystem = nullptr;
 	AudioManager* audioManager = nullptr;
 
-private:
 	std::unordered_map<std::string, size_t> m_windowIndex;
 	std::vector<UIWindow> m_windows;
 
 	void RenderButtons(std::vector<UIButton>& buttons, SDL_Renderer* renderer);
-
 public:
 	void Initialize(InputSystem& inputSystem, RenderingSystem& renderingSystem, AudioManager& audioManager);
 
-	size_t CreateWindow(const std::string& name) // Returns index to window
-	{
-		m_windows.emplace_back();
-		size_t index = m_windows.size() - 1;
-		m_windowIndex.emplace(name, index);
-		return index;
-	}
+	size_t CreateWindow(const std::string& name);
 	UIWindow& GetWindow(size_t index)
 	{
 		return m_windows[index];
@@ -110,10 +88,7 @@ public:
 		return m_windows[m_windowIndex[name]];
 	}
 
-	void SetWindowVisible(const std::string& name)
-	{
-		GetWindow(name).visible = true;
-	}
+	void SetWindowVisible(const std::string& name);
 
 	void RenderWindows(SDL_Renderer* renderer);
 
@@ -134,4 +109,19 @@ public:
 	}
 
 	void Update(const float deltaTime);
+
+	~UIManager()
+	{
+		if constexpr (DEBUGPRINT)
+		{
+			for (auto& window : m_windows)
+			{
+				std::cout << "[" << "\033[31m" << "UISYSTEM" << "\033[37m" << "] " << " Destroying Window: " << &window << "\n";
+				for (auto& b : window.buttons)
+				{
+					std::cout << "[" << "\033[33m" << "WINDOW" << "\033[37m" << "] " << " Destroying button: " << &b << "\n";
+				}
+			}
+		}
+	}
 };

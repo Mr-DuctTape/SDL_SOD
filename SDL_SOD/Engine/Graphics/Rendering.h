@@ -36,8 +36,12 @@ public:
 	RenderingSystem() = default;
 	~RenderingSystem()
 	{
-		if (DEBUGPRINT)
+		if constexpr (DEBUGPRINT) {
+			std::cout << "[" << "\033[33m" << "RENDERINGSYSTEM" << "\033[37m" << "] " << " Destroying: " << this << "\n";
 			std::cout << "[" << "\033[33m" << "RENDERINGSYSTEM" << "\033[37m" << "] " << " Destroying Renderer: " << renderer << "\n";
+			std::cout << "[" << "\033[33m" << "RENDERINGSYSTEM" << "\033[37m" << "] " << " Destroying RenderTexture: " << renderTexture << "\n";
+		}
 		SDL_DestroyRenderer(renderer);
+		SDL_DestroyTexture(renderTexture);
 	}
 };

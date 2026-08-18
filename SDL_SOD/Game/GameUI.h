@@ -68,45 +68,42 @@ class Game;
 class GameUI
 {
 private:
-	Game& game;
-	RenderingSystem& renderingSystem;
-	AudioManager& audioManager;
+	Game& m_game;
+	RenderingSystem& m_renderingSystem;
+	AudioManager& m_audioManager;
 
 	void CreateMainMenuButtons();
 	void CreateSettingsButtons();
 	void CreatePauseMenuButtons();
 
 public:
-	UIManager& uiManager;
+	UIManager& m_uiManager;
 	
 	Menu m_mainMenu;
 	Menu m_settingsMenu;
 	Menu m_pausedMenu;
 
-	void MenuVisible(Menu menu, bool visible)
+	inline void MenuVisible(Menu menu, bool visible)
 	{
-		uiManager.GetWindow(menu).visible = visible;
+		m_uiManager.GetWindow(menu).visible = visible;
 	}
 
-	[[nodiscard]] bool MenuButtonHover(Menu menu, const std::string& name);
+	//[[nodiscard]] bool MenuButtonHover(Menu menu, const std::string& name);
 	[[nodiscard]] bool MenuButtonPress(Menu menu, const std::string& name);
+	[[nodiscard]] bool MainMenu(); // returns true on quit
 
 	void SettingsMenu(Settings& settings);
 
-	[[nodiscard]] bool MainMenu(); // returns true on quit
-
 	GameUI(Engine& engine, Game& game)
 		:
-		game(game),
-		uiManager(engine.uiManager),
-		renderingSystem(engine.renderingSystem),
-		audioManager(engine.audioManager),
-		m_mainMenu(uiManager.CreateWindow("MainMenu")),
-		m_pausedMenu(uiManager.CreateWindow("PauseMenu")),
-		m_settingsMenu(uiManager.CreateWindow("SettingsMenu"))
+		m_game(game),
+		m_uiManager(engine.uiManager),
+		m_renderingSystem(engine.renderingSystem),
+		m_audioManager(engine.audioManager),
+		m_mainMenu(m_uiManager.CreateWindow("MainMenu")),
+		m_pausedMenu(m_uiManager.CreateWindow("PauseMenu")),
+		m_settingsMenu(m_uiManager.CreateWindow("SettingsMenu"))
 	{
-		audioManager.CreateAudioClip("Hover", "Assets/Audio/Hover.wav");
-		audioManager.CreateAudioClip("Click", "Assets/Audio/Hover.wav");
 		CreateMainMenuButtons();
 		CreateSettingsButtons();
 	}

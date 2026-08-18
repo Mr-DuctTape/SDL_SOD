@@ -29,15 +29,15 @@ private:
 	void Push(Component* comp);
 
 	std::unordered_map<std::type_index, size_t> componentsIndex;
-public:
-	EntityID ID = 0;
+public: 
 	std::vector<Component*> components;
+	size_t ID = 0;
 
-	Entity() 
+	Entity()
 	{
 		components.reserve(10);
 		componentsIndex.reserve(10);
-	};
+	}
 
 	template<ValidComponent T>
 	inline void Push_Back(T* component)
@@ -50,8 +50,11 @@ public:
 	template <ValidComponent T>
 	T* AddComponent(const T& value)
 	{
-		if (componentsIndex.find(typeid(value)) != componentsIndex.end())
-			return static_cast<T*>(components[componentsIndex[typeid(value)]]);
+		auto it = componentsIndex.find(typeid(value));
+		if (it != componentsIndex.end())
+		{
+			return static_cast<T*>(components[it->second]);
+		}
 
 		T* component = new T(value);
 		Push_Back(component);
@@ -60,8 +63,11 @@ public:
 	template <ValidComponent T>
 	T* AddComponent()
 	{
-		if (componentsIndex.find(typeid(T)) != componentsIndex.end())
-			return static_cast<T*>(components[componentsIndex[typeid(T)]]);
+		auto it = componentsIndex.find(typeid(T));
+		if (it != componentsIndex.end())
+		{
+			return static_cast<T*>(components[it->second]);
+		}
 
 		T* component = new T();
 		Push_Back(component);
@@ -70,9 +76,10 @@ public:
 	template <ValidComponent T>
 	bool RemoveComponent()
 	{
-		if (componentsIndex.find(typeid(T)) != componentsIndex.end()) 
+		auto it = componentsIndex.find(typeid(T));
+		if (it != componentsIndex.end()) 
 		{
-			size_t index = componentsIndex[typeid(T)];
+			size_t index = it->second;
 			delete components[index];
 			components[index] = components.back();
 			components.pop_back();
@@ -89,8 +96,11 @@ public:
 	template <ValidComponent T>
 	T* GetComponent()
 	{
-		if (componentsIndex.find(typeid(T)) != componentsIndex.end())
-			return static_cast<T*>(components[componentsIndex[typeid(T)]]);
+		auto it = componentsIndex.find(typeid(T));
+		if (it != componentsIndex.end()) 
+		{
+			return static_cast<T*>(components[it->second]);
+		}
 		return nullptr;
 	}
 	~Entity()
@@ -105,6 +115,9 @@ public:
 		other.ID = -1;
 		for (Component* c : components)
 			c->parent = this;
+
+		if constexpr (DEBUGPRINT)
+			std::cout << "[" << "\033[35m" << "ENTITY" << "\033[37m" << "] : Created " << this << "\n";
 	}
 	Entity(const Entity& other)
 	{
@@ -119,6 +132,9 @@ public:
 			Component* clone = component->Clone();
 			Push_Back(clone);
 		}
+
+		if constexpr (DEBUGPRINT)
+			std::cout << "[" << "\033[35m" << "ENTITY" << "\033[37m" << "] : Created " << this << "\n";
 	}
 
 	Entity& operator=(Entity&& other) noexcept
@@ -167,22 +183,42 @@ public:
 class EntityManager
 {
 private:
-	EntityID IDManager = 0;
+	size_t IDManager = 0;
 	struct ParsedObject
 	{
 		std::string name{ "T" };
-		std::string textureName{};
 		Vec2f pos;
 	};
 	[[nodiscard]] std::vector<ParsedObject> LoadObjectFile(const std::string& path);
 
 public:
+	EntityManager()
+	{
+		if constexpr (DEBUGPRINT)
+			std::cout << "[" << "\033[32m" << "ENTITYMANAGER" << "\033[37m" << "] : Created" << "\n";
+	}
 	std::vector<Entity*> entities;
 
-	Entity& CreateEntity(Entity& prefab);
-	Entity& CreateEntity(Entity* prefab);
-	Entity& CreateEntity();
+	inline Entity& CreateEntity(Entity* prefab)
+	{
+		IDManager++;
+		entities.emplace_back(new Entity(*prefab))->ID = IDManager;
+		return *entities.back();
+	}
+	inline Entity& CreateEntity(Entity& prefab)
+	{
+		IDManager++;
+		entities.emplace_back(new Entity(prefab))->ID = IDManager;
+		return *entities.back();
+	}
+	inline Entity& CreateEntity()
+	{
+		IDManager++;
+		entities.emplace_back(new Entity())->ID = IDManager;
+		return *entities.back();
+	}
 
 	void CreateEntitiesFromObj(const std::string& path, const std::string& prefabName, Entity& prefab);
+
 	void DestroyEntity(Entity& entity);
 };

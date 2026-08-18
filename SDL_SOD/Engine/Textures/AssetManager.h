@@ -3,6 +3,7 @@
 #include <string>
 #include <SDL3/SDL.h>
 #include <iostream>
+#include "../Macros/DEBUGPRINT.h"
 
 class AssetManager
 {
@@ -15,6 +16,9 @@ public:
 	void Initialize(SDL_Renderer* renderer)
 	{
 		this->renderer = renderer;
+
+		if constexpr (DEBUGPRINT)
+			std::cout << "[" << "\033[36m" << "ASSETMANAGER" << "\033[37m" << "] " << " Initialized: " << this << "\n";
 	}
 
 	SDL_Texture* CreateTexture(std::string name, const std::string& filePath);

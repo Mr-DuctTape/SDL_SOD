@@ -3,7 +3,45 @@
 
 void Torch::Update(Player& player)
 {
-	CheckPlayerTrigger(player.GetEntity().GetComponent<Transform>());
+	if (CheckPlayerTrigger(player.GetEntity().GetComponent<Transform>())) {
+		player.GetRespawnPosition() = m_transform->position;
+	}
 	ChangeAnimatorState();
-	player.GetRespawnPosition() = m_transform->position;
 }
+
+bool Torch::CheckPlayerTrigger(Transform* player)
+{
+	if ((player->position - m_transform->position).Magnitude() < m_turnOnRange && m_state == State::OFF)
+	{
+		m_state = State::LIT;
+		return true;
+	}
+	return false;
+}
+
+void Torch::ChangeAnimatorState()
+{
+	switch (m_state)
+	{
+	case State::LIT:
+		if (m_animator->currentState != "TorchLIT")
+		{
+			m_animator->SetAnimation("TorchLIT");
+		}
+		else if (m_animator->finished)
+		{
+			m_state = State::ON;
+		}
+		break;
+	case State::ON:
+		if (m_animator->currentState != "TorchON") {
+			m_animator->SetAnimation("TorchON");
+		}
+		break;
+	case State::OFF:
+		if (m_animator->currentState != "TorchOFF") {
+			m_animator->SetAnimation("TorchOFF");
+		}
+		break;
+	}
+};

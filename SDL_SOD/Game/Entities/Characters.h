@@ -61,15 +61,17 @@ public:
 
 	Amber(Entity& entity, DialogSystem& dialogSystem) : Character(entity, dialogSystem)
 	{
-		dependentDialogs =
-		{
-			{dialogSystem.GetDialogIndex("Amber_Response"), dialogSystem.GetDialogIndex("Bob_Intro")}
-		};
 
 		auto GetDialogIndex = [&dialogSystem](const char* name) -> size_t
 			{
 				return dialogSystem.GetDialogIndex(name);
 			};
+
+		dependentDialogs =
+		{
+			{GetDialogIndex("Amber_Response"), GetDialogIndex("Bob_Intro")},
+			{GetDialogIndex("Amber_Tutorial_End"), GetDialogIndex("Bob_Response")}
+		};
 
 		tutorialDialogs =
 		{

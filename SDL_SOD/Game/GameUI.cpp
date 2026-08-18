@@ -9,31 +9,31 @@ void GameUI::CreateMainMenuButtons()
 	constexpr float buttonWidth = 500.0f;
 	constexpr float offset = 200.0f;
 
-	Vec2f startPos{ renderingSystem.renderResX * 0.5f - buttonWidth * 0.5f, 100.0f };
+	Vec2f startPos{ m_renderingSystem.renderResX * 0.5f - buttonWidth * 0.5f, 100.0f };
 
 	UIButton button;
 	button.height = buttonHeight;
 	button.width = buttonWidth;
 	button.displayText = "[ Start ]";
 	button.screenPos = startPos;
-	button.SetHoverAudio(audioManager.GetAudio("Hover"));
-	button.SetClickAudio(audioManager.GetAudio("Click"));
+	button.SetHoverAudio(m_audioManager.GetAudio("Hover"));
+	button.SetClickAudio(m_audioManager.GetAudio("Click"));
 
-	UIWindow& window = uiManager.GetWindow(m_mainMenu);
-	uiManager.WindowAddButton(window, button, "Start");
+	UIWindow& window = m_uiManager.GetWindow(m_mainMenu);
+	m_uiManager.WindowAddButton(window, button, "Start");
 
 	button.height = buttonHeight;
 	button.width = buttonWidth;
 	button.displayText = "[ Settings ]";
 	button.screenPos = { startPos.x, startPos.y += offset };
 
-	uiManager.WindowAddButton(window, button, "Settings");
+	m_uiManager.WindowAddButton(window, button, "Settings");
 
 	button.height = buttonHeight;
 	button.width = buttonWidth;
 	button.displayText = "[ Quit ]";
 	button.screenPos = { startPos.x, startPos.y += offset };
-	uiManager.WindowAddButton(window, button, "Quit");
+	m_uiManager.WindowAddButton(window, button, "Quit");
 
 	window.visible = true;
 }
@@ -44,9 +44,9 @@ void GameUI::CreateSettingsButtons()
 	constexpr float buttonWidth = 400.0f;
 	constexpr float yOffset = 75.0f;
 
-	Vec2f startPos{ renderingSystem.renderResX * 0.5f - buttonWidth * 0.5f - 100.0f, 100.0f };
+	Vec2f startPos{ m_renderingSystem.renderResX * 0.5f - buttonWidth * 0.5f - 100.0f, 100.0f };
 
-	UIWindow& window = uiManager.GetWindow(m_settingsMenu);
+	UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
 
 	UIButton button;
 	button.displayName = true;
@@ -55,10 +55,10 @@ void GameUI::CreateSettingsButtons()
 	button.name = "Display Mode:";
 	button.displayText = "[Windowed]";
 	button.screenPos = { 100.0f, startPos.y };
-	button.SetClickAudio(audioManager.GetAudio("Click"));
-	button.SetHoverAudio(audioManager.GetAudio("Hover"));
+	button.SetClickAudio(m_audioManager.GetAudio("Click"));
+	button.SetHoverAudio(m_audioManager.GetAudio("Hover"));
 
-	uiManager.WindowAddButton(window, button, "DisplayMode");
+	m_uiManager.WindowAddButton(window, button, "DisplayMode");
 
 	button.height = buttonHeight;
 	button.width = buttonWidth;
@@ -66,14 +66,14 @@ void GameUI::CreateSettingsButtons()
 	button.displayText = "[ON]";
 	button.screenPos = { 100.0f, startPos.y += yOffset };
 
-	uiManager.WindowAddButton(window, button, "VSync");
+	m_uiManager.WindowAddButton(window, button, "VSync");
 
 	button.height = buttonHeight;
 	button.width = buttonWidth;
 	button.name = "Debug Mode:";
 	button.displayText = "[OFF]";
 	button.screenPos = { 100.0f, startPos.y += yOffset };
-	uiManager.WindowAddButton(window, button, "Debug");
+	m_uiManager.WindowAddButton(window, button, "Debug");
 
 	button.height = buttonHeight;
 	button.width = buttonWidth;
@@ -81,7 +81,7 @@ void GameUI::CreateSettingsButtons()
 	button.displayText = "[60]";
 	button.screenPos = { 100.0f, startPos.y += yOffset };
 
-	uiManager.WindowAddButton(window, button, "FrameLimit");
+	m_uiManager.WindowAddButton(window, button, "FrameLimit");
 
 	button.height = buttonHeight;
 	button.width = buttonWidth;
@@ -96,16 +96,24 @@ void GameUI::CreateSettingsButtons()
 	button.displayText += "]";
 	button.screenPos = { 100.0f, startPos.y += yOffset };
 
-	uiManager.WindowAddButton(window, button, "MainSound");
+	m_uiManager.WindowAddButton(window, button, "MainSound");
+
+	button.displayText = "[" + std::string(m_audioManager.GetDeviceName(m_audioManager.m_playBackDevice)) + "]";
+	button.height = buttonHeight;
+	button.width = buttonWidth * 2;
+	button.name = "Audio device:";
+	button.screenPos = { 100.0f, startPos.y += yOffset };
+
+	m_uiManager.WindowAddButton(window, button, "AudioDevice");
 
 	button.height = buttonHeight + 50;
 	button.width = buttonWidth;
 	button.name = "Back";
 	button.displayText = "[Back]";
-	button.screenPos = { renderingSystem.renderResX * 0.5f - buttonWidth * 0.5f, startPos.y + 150};
+	button.screenPos = { m_renderingSystem.renderResX * 0.5f - buttonWidth * 0.5f, startPos.y + 100};
 	button.displayName = false;
 
-	uiManager.WindowAddButton(window, button, "Back");
+	m_uiManager.WindowAddButton(window, button, "Back");
 	window.visible = false;
 }
 
@@ -115,39 +123,39 @@ void GameUI::CreatePauseMenuButtons()
 	constexpr float buttonWidth = 500.0f;
 	constexpr float offset = 200.0f;
 
-	UIWindow& window = uiManager.GetWindow(m_pausedMenu);
+	UIWindow& window = m_uiManager.GetWindow(m_pausedMenu);
 
-	Vec2f startPos{ renderingSystem.renderResX * 0.5f - buttonWidth * 0.5f, 100.0f };
+	Vec2f startPos{ m_renderingSystem.renderResX * 0.5f - buttonWidth * 0.5f, 100.0f };
 
 	UIButton button;
 	button.height = buttonHeight;
 	button.width = buttonWidth;
 	button.displayText = "[ Start ]";
 	button.screenPos = startPos;
-	button.SetHoverAudio(audioManager.GetAudio("Hover"));
-	button.SetClickAudio(audioManager.GetAudio("Click"));
+	button.SetHoverAudio(m_audioManager.GetAudio("Hover"));
+	button.SetClickAudio(m_audioManager.GetAudio("Click"));
 
-	uiManager.WindowAddButton(window, button, "Start");
+	m_uiManager.WindowAddButton(window, button, "Start");
 
 	button.height = buttonHeight;
 	button.width = buttonWidth;
 	button.displayText = "[ Settings ]";
 	button.screenPos = { startPos.x, startPos.y += offset };
 
-	uiManager.WindowAddButton(window, button, "Settings");
+	m_uiManager.WindowAddButton(window, button, "Settings");
 
 	button.height = buttonHeight;
 	button.width = buttonWidth;
 	button.displayText = "[ Quit ]";
 	button.screenPos = { startPos.x, startPos.y += offset };
-	uiManager.WindowAddButton(window, button, "Quit");
+	m_uiManager.WindowAddButton(window, button, "Quit");
 
 	window.visible = true;
 }
 
 bool GameUI::MenuButtonPress(Menu menu, const std::string& name)
 {
-	UIWindow& window = uiManager.GetWindow(menu);
+	UIWindow& window = m_uiManager.GetWindow(menu);
 
 	bool& pressed = window.buttons[window.buttonIndex[name]].pressed;
 
@@ -167,7 +175,7 @@ bool GameUI::MainMenu()  // returns true on quit
 	if (MenuButtonPress(m_mainMenu, "Start"))
 	{
 		MenuVisible(m_mainMenu, false);
-		game.playing = true;
+		m_game.playing = true;
 	}
 	else if (MenuButtonPress(m_mainMenu, "Settings"))
 	{
@@ -180,7 +188,7 @@ bool GameUI::MainMenu()  // returns true on quit
 	}
 	else
 	{
-		SettingsMenu(game.GetSettings());
+		SettingsMenu(m_game.GetSettings());
 	}
 	return false;
 }
@@ -198,8 +206,8 @@ void GameUI::SettingsMenu(Settings& settings)
 
 		settings.displayMode = static_cast<Settings::DisplayMode>(displayMode);
 
-		UIWindow& window = uiManager.GetWindow(m_settingsMenu);
-		UIButton& button = uiManager.WindowGetButton(window, "DisplayMode");
+		UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
+		UIButton& button = m_uiManager.WindowGetButton(window, "DisplayMode");
 
 		switch (settings.displayMode)
 		{
@@ -214,8 +222,8 @@ void GameUI::SettingsMenu(Settings& settings)
 
 	if (MenuButtonPress(m_settingsMenu, "VSync"))
 	{
-		UIWindow& window = uiManager.GetWindow(m_settingsMenu);
-		UIButton& button = uiManager.WindowGetButton(window, "VSync");
+		UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
+		UIButton& button = m_uiManager.WindowGetButton(window, "VSync");
 
 		if (settings.vsync)
 		{
@@ -239,8 +247,8 @@ void GameUI::SettingsMenu(Settings& settings)
 			choice = 0;
 		}
 
-		UIWindow& window = uiManager.GetWindow(m_settingsMenu);
-		UIButton& button = uiManager.WindowGetButton(window, "FrameLimit");
+		UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
+		UIButton& button = m_uiManager.WindowGetButton(window, "FrameLimit");
 
 		Settings::FrameLimit frameLimit = static_cast<Settings::FrameLimit>(choice);
 		switch (frameLimit)
@@ -278,7 +286,7 @@ void GameUI::SettingsMenu(Settings& settings)
 
 	if (MenuButtonPress(m_settingsMenu, "MainSound"))
 	{
-		UIButton& button = uiManager.WindowGetButton(uiManager.GetWindow(m_settingsMenu), "MainSound");
+		UIButton& button = m_uiManager.WindowGetButton(m_uiManager.GetWindow(m_settingsMenu), "MainSound");
 
 		static int level;
 		level++;
@@ -301,8 +309,8 @@ void GameUI::SettingsMenu(Settings& settings)
 
 	if (MenuButtonPress(m_settingsMenu, "Debug"))
 	{
-		UIWindow& window = uiManager.GetWindow(m_settingsMenu);
-		UIButton& button = uiManager.WindowGetButton(window, "Debug");
+		UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
+		UIButton& button = m_uiManager.WindowGetButton(window, "Debug");
 
 		settings.debugMode = !settings.debugMode;
 		switch (settings.debugMode)
@@ -325,5 +333,26 @@ void GameUI::SettingsMenu(Settings& settings)
 	{
 		MenuVisible(m_settingsMenu, false);
 		MenuVisible(m_mainMenu, true);
+	}
+
+	if (MenuButtonPress(m_settingsMenu, "AudioDevice"))
+	{
+		static int choice = m_audioManager.m_playBackDevice;
+		static std::vector<float> savedWidths;
+
+		std::vector<uint32_t> devices = m_audioManager.GetAvailableDevices();
+		size_t count = devices.size();
+		savedWidths.resize(count);
+
+		choice++;
+		if (choice >= count) {
+			choice = 0;
+		}
+
+		UIButton& button = m_uiManager.WindowGetButton(m_uiManager.GetWindow(m_settingsMenu), "AudioDevice");
+		button.displayText = "[" + std::string(m_audioManager.GetDeviceName(devices[choice])) + "]";
+		m_audioManager.m_playBackDevice = devices[choice];
+
+		m_audioManager.RebindAudioDevice();
 	}
 }

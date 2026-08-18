@@ -11,38 +11,17 @@ void Entity::Push(Component* comp)
 	comp->parent = this;
 	comp->Init();
 	components.push_back(comp);
-
 }
 
 // --- EntityManager --- 
 
-Entity& EntityManager::CreateEntity(Entity* prefab)
-{
-	IDManager++;
-	entities.emplace_back(new Entity(*prefab))->ID = IDManager;
-	return *entities.back();
-}
-
-Entity& EntityManager::CreateEntity(Entity& prefab)
-{
-	IDManager++;
-	entities.emplace_back(new Entity(prefab))->ID = IDManager;
-	return *entities.back();
-}
-
-Entity& EntityManager::CreateEntity()
-{
-	IDManager++;
-	entities.emplace_back(new Entity())->ID = IDManager;
-	return *entities.back();
-}
-
 void SwapAndPop(std::vector<Entity*>& entities, int index)
 {
-	Entity* temp = entities[index];
-	entities[index] = entities.back();
-	entities.back() = temp;
+	if constexpr(DEBUGPRINT)
+		std::cout << "[" << "\033[32m" << "ENTITYMANAGER" << "\033[37m" << "] " << "Destroying entity : " << &entities[index] << "\n";
 
+	delete entities[index];
+	entities[index] = std::move(entities.back());
 	entities.pop_back();
 }
 
@@ -56,16 +35,12 @@ void EntityManager::DestroyEntity(Entity& entity)
 			continue;
 		}
 
-		if(DEBUGPRINT)
-			std::cout << "[" << "\033[32m" << "ENTITYMANAGER" << "\033[37m" << "] " << "Destroying entity : " << &entity << "\n";
-
-		delete entities[i];
 		SwapAndPop(entities, i);
 		break;
 	}
 }
 
-std::string Trim(std::string str)
+static std::string Trim(std::string str)
 {
 	str.erase(0, str.find_first_not_of(" \t"));
 	str.erase(str.find_last_not_of(" \t") + 1);
@@ -94,7 +69,7 @@ std::vector<EntityManager::ParsedObject> EntityManager::LoadObjectFile(const std
 	constexpr float offsetY = 178.0f;
 
 	//Load objects
-	while (std::getline(file, line))
+	while (std::getline(file, line)) 
 	{
 		if (line.starts_with("Object"))
 		{
@@ -118,13 +93,6 @@ std::vector<EntityManager::ParsedObject> EntityManager::LoadObjectFile(const std
 				obj.pos.y = y + offsetY;
 			}
 
-			std::getline(file, line);
-			if (line.starts_with("Texture"))
-			{
-				size_t divider = line.find(":");
-				obj.textureName = Trim(line.substr(divider + 1));
-			}
-
 			objects.push_back(obj);
 		}
 	}
@@ -146,8 +114,6 @@ void EntityManager::CreateEntitiesFromObj(const std::string& path, const std::st
 			if (!transform)
 				continue;
 
-			if(DEBUGPRINT)
-				std::cout << obj.pos << "\n";
 			transform->position = obj.pos;
 		}
 	}

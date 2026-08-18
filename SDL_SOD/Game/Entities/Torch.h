@@ -11,50 +11,18 @@ private:
 	Transform* m_transform = nullptr;
 	Animator* m_animator = nullptr;
 
-	enum State
+	enum class State
 	{
 		OFF,
 		LIT,
 		ON
 	};
 
-	State m_state = OFF;
+	State m_state = State::OFF;
 	float m_turnOnRange = 350.0f;
 
-	void ChangeAnimatorState()
-	{
-		switch (m_state)
-		{
-		case LIT:
-			if (m_animator->currentState != "TorchLIT")
-			{
-				m_animator->SetAnimation("TorchLIT");
-			}
-			else if (m_animator->finished)
-			{
-				m_state = ON;
-			}
-			break;
-		case ON:
-			if (m_animator->currentState != "TorchON") {
-				m_animator->SetAnimation("TorchON");
-			}
-			break;
-		case OFF:
-			if (m_animator->currentState != "TorchOFF") {
-				m_animator->SetAnimation("TorchOFF");
-			}
-			break;
-		}
-	};
-
-	void CheckPlayerTrigger(Transform* player)
-	{
-		if ((player->position - m_transform->position).Magnitude() < m_turnOnRange && m_state == OFF)
-		{
-			m_state = LIT;
-		}
-	};
+	void ChangeAnimatorState();
+	bool CheckPlayerTrigger(Transform* player);
 
 public:
 

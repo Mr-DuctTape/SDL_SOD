@@ -65,13 +65,16 @@ private:
 	);
 
 public:
-
-	std::tuple<
-		std::vector<Torch>,
-		std::optional<Player>,
-		std::optional<Amber>,
-		std::optional<Bob>>
-		m_gameEntities;
+	// Wrappers referencing entities managed by EntityManager, 
+	// Do not own anything
+	struct GameEntities 
+	{
+		std::vector<Torch> torches;
+		std::optional<Player> player;
+		std::optional<Amber> amber;
+		std::optional<Bob> bob;
+	};
+	GameEntities m_gameEntities;
 
 	bool playing = false;
 
@@ -81,6 +84,7 @@ public:
 	{
 		LoadTexturesAndPrefabs(m_engine.entityManager, m_engine.assetManager);
 		CreateDialogs(m_engine.dialogSystem);
+		m_engine.renderingSystem.camera.pos = { -5000.0f, -5000.0f };
 	}
 
 	[[nodiscard]] Settings& GetSettings()

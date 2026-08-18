@@ -25,7 +25,7 @@ public:
 		float timePerChar = 0.8f;
 
 		float lineTimer = 0.0f;
-		float timeBetweenLines = 10.0f;
+		float timeBetweenLines = 18.0f;
 
 		AudioManager::AudioClip audioClip;
 
@@ -66,4 +66,15 @@ public:
 	void ActivateDialog(const std::string& dialog); // O(1)
 
 	void Update(float deltaTime);
+
+	~DialogSystem()
+	{
+		if constexpr (DEBUGPRINT)
+		{
+			for (auto& dialog : m_dialogs)
+			{
+				std::cout << "[" << "\033[34m" << "DIALOGSYSTEM" << "\033[37m" << "] " << " Destroying Dialog: " << &dialog << "\n";
+			}
+		}
+	}
 };

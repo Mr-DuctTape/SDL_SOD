@@ -17,6 +17,8 @@ void InputSystem::Initialize(SDL_Window& window, RenderingSystem& renderingSyste
 {
 	this->window = &window;
 	this->renderingSystem = &renderingSystem;
+	if constexpr (DEBUGPRINT)
+		std::cout << "[" << "\033[35m" << "INPUTSYSTEM" << "\033[37m" << "] " << " Initialized: " << this << "\n";
 }
 
 void InputSystem::Process()

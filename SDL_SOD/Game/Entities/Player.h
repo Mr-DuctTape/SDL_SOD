@@ -16,7 +16,7 @@ private:
 	Physics2D* m_physics2D;
 	BoxCollider2D* m_boxCollider2D;
 
-	Vec2f m_respawnPosition;
+	Vec2f m_respawnPosition{290.0f, 960.0f};
 
 	float m_cameraFollowSpeed = 4.0f;
 	float m_movementSpeed = 3500.0f;
@@ -107,7 +107,7 @@ public:
 
 	void Update
 	(
-		RenderingSystem& renderingSystem,
+		RenderingSystem& renderingSystem, 
 		EntityManager& entityManager, 
 		AudioManager& audioManager, 
 		InputSystem& inputSystem,

@@ -24,4 +24,7 @@ void Application::Initialize(SDL_Renderer*& renderer, int windowWidth, int windo
 		std::cout << "Unable to create icon\n";
 	SDL_SetWindowIcon(window, icon);
 	SDL_DestroySurface(icon);
+
+	if constexpr (DEBUGPRINT)
+		std::cout << "[" << "\033[35m" << "APPLICATION" << "\033[37m" << "] " << " Initialized: " << this << "\n";
 }
