@@ -3,12 +3,12 @@
 
 void Bob::Update(Engine& engine, Player& player, float deltaTime)
 {
-	Transform* playerTransform = player.GetEntity().GetComponent<Transform>();
-	Vec2f playerDir = playerTransform->position - m_transform->position;
+	Transform& playerTransform = player.GetEntity().GetComponent<Transform>();
+	Vec2f playerDir = playerTransform.position - m_transform.position;
 
 	for (auto& [dialog, activator] : dependentDialogs)
 	{
-		m_dialogSystem.GetDialog(dialog).position = WorldToScreen((int)m_transform->position.x, (int)m_transform->position.y, engine.renderingSystem.camera);
+		m_dialogSystem.GetDialog(dialog).position = WorldToScreen((int)m_transform.position.x, (int)m_transform.position.y, engine.renderingSystem.camera);
 
 		if (m_dialogSystem.GetDialogIndex("Bob_Intro") == dialog)
 		{
@@ -33,15 +33,15 @@ void Bob::Update(Engine& engine, Player& player, float deltaTime)
 
 void Amber::Update(Engine& engine, Player& player, float deltaTime)
 {
-	Transform* playerTransform = player.GetEntity().GetComponent<Transform>();
-	Vec2f playerDir = playerTransform->position - m_transform->position;
+	Transform& playerTransform = player.GetEntity().GetComponent<Transform>();
+	Vec2f playerDir = playerTransform.position - m_transform.position;
 
 	if (playerDir.Magnitude() >= 200.0f)
 	{
-		m_transform->position += playerDir * deltaTime;
+		m_transform.position += playerDir * deltaTime;
 	}
 
-	Physics2D* playerPhys = player.GetEntity().GetComponent<Physics2D>();
+	Physics2D& playerPhys = player.GetEntity().GetComponent<Physics2D>();
 	DialogSystem& dialogSystem = m_dialogSystem;
 
 	auto ActivateDialog = [&dialogSystem](const size_t dialog) -> void
@@ -76,12 +76,17 @@ void Amber::Update(Engine& engine, Player& player, float deltaTime)
 			continue;
 
 		m_dialogSystem.GetDialog(dialog).position =
-			WorldToScreen((int)m_transform->position.x, (int)m_transform->position.y, engine.renderingSystem.camera);
+			WorldToScreen((int)m_transform.position.x, (int)m_transform.position.y, engine.renderingSystem.camera);
 
 		auto IsDialog = [&dialogSystem, dialog](const std::string& name)
 			{
 				return dialogSystem.GetDialogIndex(name) == dialog;
 			};
+
+		if (engine.inputSystem.GetButton(SDL_SCANCODE_2))
+		{
+			dialogSystem.SetFinished(dialog);
+		}
 
 		if (IsDialog("Amber_Move_Start"))
 		{
@@ -91,7 +96,7 @@ void Amber::Update(Engine& engine, Player& player, float deltaTime)
 
 			if (!IsFinished("Amber_Move_Start"))
 			{
-				playerPhys->velocity = { 0,0 };
+				playerPhys.velocity = { 0,0 };
 			}
 			else
 			{
@@ -101,7 +106,7 @@ void Amber::Update(Engine& engine, Player& player, float deltaTime)
 
 		if (IsDialog("Amber_Move_End"))
 		{
-			if (playerPhys->velocity.x > 0.1f || playerPhys->velocity.x < -0.1f) {
+			if (playerPhys.velocity.x > 0.1f || playerPhys.velocity.x < -0.1f) {
 				ActivateDialog(dialog);
 			}
 		}
@@ -116,37 +121,37 @@ void Amber::Update(Engine& engine, Player& player, float deltaTime)
 			ActivateDialog(dialog);
 		}
 
-		if (IsDialog("Amber_Spikes_Start") && playerTransform->position.x >= 2400.0f)
+		if (IsDialog("Amber_Spikes_Start") && playerTransform.position.x >= 2400.0f)
 		{
 			ActivateDialog(dialog);
 		}
 
-		if (IsDialog("Amber_Spikes_End") && playerTransform->position.x >= 3500.0f)
+		if (IsDialog("Amber_Spikes_End") && playerTransform.position.x >= 3500.0f)
 		{
 			ActivateDialog(dialog);
 		}
 
-		if (IsDialog("Amber_Dash_Start") && playerTransform->position.x >= 5500.0f)
+		if (IsDialog("Amber_Dash_Start") && playerTransform.position.x >= 5500.0f)
 		{
 			ActivateDialog(dialog);
 		}
 
-		if (IsDialog("Amber_Dash_End") && playerTransform->position.x >= 6700.0f)
+		if (IsDialog("Amber_Dash_End") && playerTransform.position.x >= 6700.0f)
 		{
 			ActivateDialog(dialog);
 		}
 
-		if (IsDialog("Amber_Fall") && playerTransform->position.x >= 9890.0f)
+		if (IsDialog("Amber_Fall") && playerTransform.position.x >= 9890.0f)
 		{
 			ActivateDialog(dialog);
 		}
 
-		if (IsDialog("Amber_WallJump_Start") && playerTransform->position.x >= 10900.0f)
+		if (IsDialog("Amber_WallJump_Start") && playerTransform.position.x >= 10900.0f)
 		{
 			ActivateDialog(dialog);
 		}
 
-		if (IsDialog("Amber_Torch_Start") && playerTransform->position.x >= 4800.0f)
+		if (IsDialog("Amber_Torch_Start") && playerTransform.position.x >= 4800.0f)
 		{
 			ActivateDialog(dialog);
 		}
@@ -155,7 +160,7 @@ void Amber::Update(Engine& engine, Player& player, float deltaTime)
 	
 	for (auto& [dialog, activator] : dependentDialogs)
 	{
-		m_dialogSystem.GetDialog(dialog).position = WorldToScreen((int)m_transform->position.x, (int)m_transform->position.y, engine.renderingSystem.camera);
+		m_dialogSystem.GetDialog(dialog).position = WorldToScreen((int)m_transform.position.x, (int)m_transform.position.y, engine.renderingSystem.camera);
 
 		if (IsFinished(activator))
 		{
@@ -175,7 +180,7 @@ void Amber::AmberIntro(Engine& engine, Vec2f playerDir)
 	auto& amber_intro = engine.dialogSystem.GetDialog("Amber_Intro");
 
 	amber_intro.position =
-		WorldToScreen((int)m_transform->position.x, (int)m_transform->position.y, engine.renderingSystem.camera);
+		WorldToScreen((int)m_transform.position.x, (int)m_transform.position.y, engine.renderingSystem.camera);
 
 	if (playerDir.Magnitude() <= 200.0f)
 	{

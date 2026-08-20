@@ -96,7 +96,7 @@ void GameUI::CreateSettingsButtons()
 	button.displayText += "]";
 	button.screenPos = { 100.0f, startPos.y += yOffset };
 
-	m_uiManager.WindowAddButton(window, button, "MainSound");
+	//m_uiManager.WindowAddButton(window, button, "MainSound");
 
 	button.displayText = "[" + std::string(m_audioManager.GetDeviceName(m_audioManager.m_playBackDevice)) + "]";
 	button.height = buttonHeight;
@@ -291,12 +291,14 @@ void GameUI::SettingsMenu(Settings& settings)
 		static int level;
 		level++;
 
-		if (level > 12)
+		constexpr int max_level = 12;
+
+		if (level > max_level)
 			level = 0;
 
 		button.displayText = "[";
 
-		for (int i = 0; i < 12; i++)
+		for (int i = 0; i < max_level; i++)
 		{
 			if (i < level)
 				button.displayText += '#';
@@ -305,6 +307,14 @@ void GameUI::SettingsMenu(Settings& settings)
 		}
 
 		button.displayText += "]";
+
+		if (level > 0) {
+			settings.masterVolume += 10.0f / 50.0f;
+		}
+		else {
+			settings.masterVolume = level;
+		}
+		std::cout << "Volume: " << settings.masterVolume << std::endl;
 	}
 
 	if (MenuButtonPress(m_settingsMenu, "Debug"))
@@ -322,11 +332,6 @@ void GameUI::SettingsMenu(Settings& settings)
 			button.displayText = "[ON]";
 			break;
 		}
-	}
-
-	if (MenuButtonPress(m_settingsMenu, "Volume"))
-	{
-
 	}
 
 	if (MenuButtonPress(m_settingsMenu, "Back"))

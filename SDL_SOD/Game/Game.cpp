@@ -285,12 +285,12 @@ void Game::SpawnPlayer(EntityManager& entityManager, const Vec2f position)
 {
 	auto& player = m_gameEntities.player;
 	if (player){
-		player.value().m_transform->position = position;
+		player.value().m_transform.position = position;
 		return;
 	}
 
 	Entity& entity = entityManager.CreateEntity(GetPrefab("Player"));
-	entity.GetComponent<Transform>()->position = position;
+	entity.GetComponent<Transform>().position = position;
 	player.emplace(Player(entity));
 }
 
@@ -298,12 +298,12 @@ void Game::SpawnBob(EntityManager& entityManager, const Vec2f position)
 {
 	auto& bob = m_gameEntities.bob;
 	if (bob){
-		bob.value().m_transform->position = position;
+		bob.value().m_transform.position = position;
 		return;
 	}
 
 	Entity& entity = entityManager.CreateEntity(GetPrefab("Bob"));
-	entity.GetComponent<Transform>()->position = position;
+	entity.GetComponent<Transform>().position = position;
 
 	bob.emplace(Bob(entity, m_engine.dialogSystem));
 }
@@ -312,12 +312,12 @@ void Game::SpawnAmber(EntityManager& entityManager, const Vec2f position)
 {
 	auto& amber = m_gameEntities.amber;
 	if (amber){
-		amber.value().m_transform->position = position;
+		amber.value().m_transform.position = position;
 		return;
 	}
 
 	Entity& entity = entityManager.CreateEntity(GetPrefab("Amber"));
-	entity.GetComponent<Transform>()->position = position;
+	entity.GetComponent<Transform>().position = position;
 
 	amber.emplace(Amber(entity, m_engine.dialogSystem));
 }
@@ -325,7 +325,7 @@ void Game::SpawnAmber(EntityManager& entityManager, const Vec2f position)
 void Game::SpawnTorch(EntityManager& entityManager, const Vec2f position)
 {
 	Entity& entity = entityManager.CreateEntity(GetPrefab("Torch"));
-	entity.GetComponent<Transform>()->position = position;
+	entity.GetComponent<Transform>().position = position;
 
 	auto& torches = m_gameEntities.torches;
 	torches.emplace_back(Torch(entity));
@@ -352,6 +352,12 @@ void Game::Update(RenderingSystem& renderingSystem, EntityManager& entityManager
 	Entity* dashFX = GetPrefab("DashFX");
 	Entity* wallJumpFX = GetPrefab("WallJumpFX");
 
+	if (!deathFX || !jumpFX || !runFX || !dashFX || !wallJumpFX)
+	{
+		std::cout << "(ERROR): Unable to find effect prefabs\n";
+		return;
+	}
+
 	auto& player = m_gameEntities.player;
 	if (!player.has_value())
 	{
@@ -365,7 +371,7 @@ void Game::Update(RenderingSystem& renderingSystem, EntityManager& entityManager
 
 	for (Torch& torch : m_gameEntities.torches)
 	{
-		torch.Update(player.value());
+		torch.Update(m_engine.audioManager, player.value());
 	}
 
 	auto& bob = m_gameEntities.bob;
@@ -392,12 +398,12 @@ void Game::Update()
 		if (!loaded) // TODO: in the future there will be different levels loaded so keep that in mind.
 		{
 			LoadLevel(m_engine.entityManager, m_engine.assetManager, "Assets/Levels/Tutorial");
-			SpawnPlayer(m_engine.entityManager, Vec2f{ 290.0f, 960.0f });
+			SpawnPlayer(m_engine.entityManager, Vec2f{ 290.3f, 300.0f });
 
 			SpawnTorch(m_engine.entityManager, Vec2f{ 5197.52f, 800.0f });
 			SpawnTorch(m_engine.entityManager, Vec2f{ 11852.8f, 3650.0f });
 
-			SpawnBob(m_engine.entityManager, Vec2f{ 14206.9f, 2120.0f });
+			SpawnBob(m_engine.entityManager, Vec2f{ 14206.9f, 2145.0f });
 			SpawnAmber(m_engine.entityManager, Vec2f{ 8000.0f, -600.0f });
 			loaded = true;
 		}
@@ -507,11 +513,10 @@ void Game::CreateDialogs(DialogSystem& dialogSystem)
 		};
 
 
-	const char* AmberVoiceLine = "Hover";
+	const char* AmberVoiceLine = "Click";
 	const char* BobVoiceLine = "Jump2";
 
 	dialog = &CreateDialog("Amber_Intro");
-	AddLine("Oh!");
 	AddLine("You're awake!"); 
 	AddLine("Hi! I'm Amber.");
 	AddLine("Amber will help you learn!");
@@ -528,21 +533,17 @@ void Game::CreateDialogs(DialogSystem& dialogSystem)
 	SetAudio(AmberVoiceLine);
 
 	dialog = &CreateDialog("Amber_Jump_Start");
-	AddLine("Amber loves to fly.. so");
-	AddLine("You should try to jump!");
+	AddLine("Amber thinks you should jump!");
 	AddLine("Press your ( SPACE ) key to jump!");
 	SetAudio(AmberVoiceLine);
 
 	dialog = &CreateDialog("Amber_Jump_End");
 	AddLine("Perfect!");
-	AddLine("You're flying like Amber!");
-	AddLine("Well... kinda...");
-	AddLine("Now put these two together..");
-	AddLine("And overcome the obstacles ahead!");
+	AddLine("Now put these two together!");
 	SetAudio(AmberVoiceLine);
 
 	dialog = &CreateDialog("Amber_Spikes_Start");
-	AddLine("Amber says SPIKES are bad..");
+	AddLine("SPIKES are bad..");
 	AddLine("Jump over them!");
 	SetAudio(AmberVoiceLine);
 
@@ -551,33 +552,30 @@ void Game::CreateDialogs(DialogSystem& dialogSystem)
 
 	dialog = &CreateDialog("Amber_Torch_Start");
 	AddLine("Torches light up when you get close!");
-	AddLine("And allow you to respawn at them!");
+	AddLine("They allow you to respawn at them!");
 	SetAudio(AmberVoiceLine);
 
 	dialog = &CreateDialog("Amber_Dash_Start");
-	AddLine("It seems you can't jump over this one.");
-	AddLine("Use your ( SHIFT ) key to dash!");
-	AddLine("And pair it with a jump to be more effective!");
+	AddLine("You can't jump over this one.");
+	AddLine("Jump and pair it with a dash!");
+	AddLine("To dash press ( SHIFT )");
 	SetAudio(AmberVoiceLine);
 
 	dialog = &CreateDialog("Amber_Dash_End");
-	AddLine("Great!");
-	AddLine("Now continue forward!");
+	AddLine("Amazing!");
 	SetAudio(AmberVoiceLine);
 
 	dialog = &CreateDialog("Amber_Fall");
-	AddLine("That's a big drop..");
 	AddLine("Jump down.");
 	AddLine("Amber will catch you!");
 	AddLine("Probably.");
 	SetAudio(AmberVoiceLine);
 
 	dialog = &CreateDialog("Amber_WallJump_Start");
-	AddLine("Now for Amber's favorite..");
+	AddLine("Now for Amber's favorite.");
 	AddLine("Wall jumping!");
-	AddLine("Amber says jump into a wall! ( SPACE )");
-	AddLine("And cling to the walls ( A,D )..");
-	AddLine("And jump to the other! ( SPACE )");
+	AddLine("You can cling to walls with ( A,D )");
+	AddLine("Then you can jump off them with ( SPACE )");
 	SetAudio(AmberVoiceLine);
 
 	dialog = &CreateDialog("Amber_WallJump_End");
@@ -593,7 +591,6 @@ void Game::CreateDialogs(DialogSystem& dialogSystem)
 	SetAudio(AmberVoiceLine);
 
 	dialog = &CreateDialog("Amber_Tutorial_End");
-	AddLine("This is sadly the end of the tutorial.");
 	AddLine("If you got this as a playtest there is sadly nothing more.");
 	AddLine("Feel free to move around and test out everything you learned.");
 	AddLine("Amber is looking forward to seeing you again!");
@@ -605,14 +602,14 @@ void Game::CreateDialogs(DialogSystem& dialogSystem)
 	dialog = &CreateDialog("Bob_Intro");
 	AddLine("I am the mysterious Blob...");
 	AddLine("But friends call me BOB!");
-	AddLine("You seem quite new around here...");
-	AddLine("Anyway you are now Bob's new friend!");
+	AddLine("You seem quite new around here..");
+	AddLine("No matter! You're now Bob's friend!");
 	AddLine("Amber are you teaching my friend?");
 	SetAudio(BobVoiceLine);
 
 	dialog = &CreateDialog("Bob_Response");
 	AddLine("Whenever Amber is done teaching you.");
-	AddLine("Come meet me here friend.");
+	AddLine("Come meet me here!");
 	AddLine("I need help with something important.");
 	SetAudio(BobVoiceLine);
 }

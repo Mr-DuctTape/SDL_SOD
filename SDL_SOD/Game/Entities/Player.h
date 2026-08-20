@@ -10,11 +10,11 @@ class Player
 {
 private:
 	Entity& m_entity;
-	Sprite* m_sprite;
-	Transform* m_transform;
-	Animator* m_animator;
-	Physics2D* m_physics2D;
-	BoxCollider2D* m_boxCollider2D;
+	Sprite& m_sprite;
+	Transform& m_transform;
+	Animator& m_animator;
+	Physics2D& m_physics2D;
+	BoxCollider2D& m_boxCollider2D;
 
 	Vec2f m_respawnPosition{290.0f, 960.0f};
 
@@ -25,32 +25,70 @@ private:
 	float m_dashVolume = 0.1f;
 	float m_jumpVolume = 0.5f;
 	float m_stepVolume = 0.02f;
+	float m_deathVolume = 0.2f;
 
 	// Sounds
 	void PlaySoundOnAnimation
 	(  
 		AudioManager& audioManager, const std::string& audioClip, 
 		const std::string& animationName, float volume, 
-		Animator* animator, const std::vector<int>& framesToPlayON
+		Animator& animator, const std::vector<int>& framesToPlayON
 	);
 
-	bool AnimationKeyFrame(const std::string& animationName, Animator* animator, const std::vector<int>& frames);
+	bool AnimationKeyFrame
+	(
+		const std::string& animationName,
+		Animator& animator, 
+		const std::vector<int>& frames
+	);
 
 	// Animator
 	void ChangeAnimatorStates(float playerMovingSpeed);
 
 	// Spawning effects
-	void SpawnEffect(EntityManager& entityManager, Entity& effect, Vec2f pos, bool flippedX);
-	void SpawnRunningEffect(EntityManager& entityManager, Entity& effect, bool isGrounded, bool flippedX, float deltaTime);
-	void SpawnJumpEffect(EntityManager& entityManager, Entity& prefab, Vec2f pos, bool flippedX);
+	void SpawnEffect
+	(
+		EntityManager& entityManager, 
+		Entity& effect, 
+		Vec2f pos, 
+		bool flippedX
+	);
+	void SpawnRunningEffect
+	(
+		EntityManager& entityManager, 
+		Entity& effect, 
+		bool isGrounded,
+		bool flippedX,
+		float deltaTime
+	);
+	void SpawnJumpEffect
+	(
+		EntityManager& entityManager, 
+		Entity& prefab, 
+		Vec2f pos,
+		bool flippedX
+	);
 
 	// Movement 
-	bool IsCoyoteAvailable(float deltaTime, float cTime, float& cTimer, bool& coyote, bool grounded);
-	bool IsJumpBufferRunnning(float deltaTime, float jTime, float& jTimer, bool& jumpBuffer);
+	bool IsCoyoteAvailable
+	(
+		float deltaTime,
+		float cTime, 
+		float& cTimer, 
+		bool& coyote, 
+		bool grounded
+	);
+	bool IsJumpBufferRunnning
+	(
+		float deltaTime, 
+		float jTime, 
+		float& jTimer, 
+		bool& jumpBuffer
+	);
 
 	void SlideDownWall
 	(
-		BoxCollider2D* m_boxCollider2D,
+		BoxCollider2D& m_boxCollider2D,
 		InputSystem& inputSystem,
 		Vec2f& accel,
 		Vec2f& velocity,
@@ -80,6 +118,7 @@ private:
 		EntityManager& entityManager, 
 		AudioManager& audioManager, 
 		InputSystem& inputSystem,
+
 		Entity& runningEffect,
 		Entity& wallJumpEffect, 
 		Entity& jumpEffect, 
@@ -87,9 +126,26 @@ private:
 		float deltaTime
 	);
 
-	void Death(Entity& effect, EntityManager& entityManager);
-	void Bounds(RenderingSystem& renderingSystem, EntityManager& entityManager, Entity& effect);
-	void SpikeCollision(EntityManager& entityManager, Entity& effect);
+	void Death
+	(
+		Entity& effect, 
+		AudioManager& audioManager, 
+		EntityManager& entityManager
+	);
+
+	void Bounds
+	(
+		RenderingSystem& renderingSystem,
+		AudioManager& audioManager, 
+		EntityManager& entityManager, 
+		Entity& effect
+	);
+	void SpikeCollision
+	(
+		AudioManager& audioManager, 
+		EntityManager& entityManager, 
+		Entity& effect
+	);
 
 	void CameraFollow(RenderingSystem& renderingSystem, float deltaTime);
 
@@ -122,18 +178,15 @@ public:
 		float deltaTime
 	);
 
-	Player(Entity& entity) : m_entity(entity) 
+	Player(Entity& entity) : 
+		m_entity(entity),
+		m_sprite(m_entity.GetComponent<Sprite>()),
+		m_animator(m_entity.GetComponent<Animator>()),
+		m_transform(m_entity.GetComponent<Transform>()),
+		m_boxCollider2D(m_entity.GetComponent<BoxCollider2D>()),
+		m_physics2D(m_entity.GetComponent<Physics2D>())
 	{
-		m_sprite = m_entity.GetComponent<Sprite>();
-		m_animator = m_entity.GetComponent<Animator>();
-		m_transform = m_entity.GetComponent<Transform>();
-		m_boxCollider2D = m_entity.GetComponent<BoxCollider2D>();
-		m_physics2D = m_entity.GetComponent<Physics2D>();
 
-		if (!m_sprite || !m_animator || !m_transform || !m_boxCollider2D || !m_physics2D)
-		{
-			std::cout << "(PLAYER) One or more components are nullptr!\n";
-		}
 	}
 	~Player() = default;
 

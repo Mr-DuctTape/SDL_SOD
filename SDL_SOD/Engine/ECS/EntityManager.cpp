@@ -6,11 +6,11 @@
 #include <string>
 #include <fstream>
 
-void Entity::Push(Component* comp)
+void Entity::Emplace(Component* comp)
 {
 	comp->parent = this;
 	comp->Init();
-	components.push_back(comp);
+	m_components.emplace_back(comp);
 }
 
 // --- EntityManager --- 
@@ -29,7 +29,7 @@ void EntityManager::DestroyEntity(Entity& entity)
 {
 	for (size_t i = 0; i < entities.size(); )
 	{
-		if (entities[i]->ID != entity.ID)
+		if (entities[i]->m_id != entity.m_id)
 		{
 			i++;
 			continue;
@@ -110,11 +110,8 @@ void EntityManager::CreateEntitiesFromObj(const std::string& path, const std::st
 		{
 			// Create the entitiy
 			Entity& entity = CreateEntity(&prefab);
-			Transform* transform = entity.GetComponent<Transform>();
-			if (!transform)
-				continue;
-
-			transform->position = obj.pos;
+			Transform& transform = entity.GetComponent<Transform>();
+			transform.position = obj.pos;
 		}
 	}
 }

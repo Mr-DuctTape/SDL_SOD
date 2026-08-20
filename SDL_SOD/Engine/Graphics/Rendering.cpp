@@ -30,12 +30,7 @@ Debugger* RenderingSystem::GetDebugger()
 
 void TileMap::Render(RenderingSystem& renderingSystem, Camera& camera)
 {
-	Transform* transform = parent->GetComponent<Transform>();
-	if (!transform)
-	{
-		std::cout << "Could not find Transform component (Tilemap rendering)\n";
-		return;
-	}
+	Transform& transform = parent->GetComponent<Transform>();
 
 	for (int y = 0; y < tiles.size(); y++)
 	{
@@ -79,7 +74,7 @@ void Animator::Render(RenderingSystem& renderingSystem, Camera& camera)
 	{
 		std::cout << "=== Animator Error ===\n";
 		std::cout << "(Animator Rendering): Animator spritesheet not found " << currentAnimation.AnimationName << "\n";
-		std::cout << "(Animator): Entity ID: " << parent->ID << "\n";
+		std::cout << "(Animator): Entity ID: " << parent->m_id << "\n";
 		errorDisplayed = true;
 		return;
 	}
@@ -192,8 +187,8 @@ void RenderingSystem::RenderScreen(EntityManager& entityManager)
 	{
 		if (entity->HasComponent<TileMap>())
 		{
-			TileMap* tileMap = entity->GetComponent<TileMap>();
-			tileMap->Render(*this, camera);
+			TileMap& tileMap = entity->GetComponent<TileMap>();
+			tileMap.Render(*this, camera);
 			continue;
 		}
 
@@ -203,11 +198,11 @@ void RenderingSystem::RenderScreen(EntityManager& entityManager)
 
 		if (debugger && debugger->enabled && entity->HasComponent<Physics2D>())
 		{
-			Transform* transform = entity->GetComponent<Transform>();
-			Physics2D* physics = entity->GetComponent<Physics2D>();
+			Transform& transform = entity->GetComponent<Transform>();
+			Physics2D& physics = entity->GetComponent<Physics2D>();
 
-			Vec2f previous = transform->position;
-			Vec2f velocity = physics->velocity;
+			Vec2f previous = transform.position;
+			Vec2f velocity = physics.velocity;
 
 			previous.y += 100.0f;
 			previous.x += 50.0f;
@@ -216,7 +211,7 @@ void RenderingSystem::RenderScreen(EntityManager& entityManager)
 
 			for (float t = 0; t < 0.5f; t += 0.05f)
 			{
-				velocity += physics->acceleration * 0.05f;
+				velocity += physics.acceleration * 0.05f;
 				position += velocity * 0.05f;
 
 				debugger->DrawTrajectory(previous, position);
@@ -227,12 +222,12 @@ void RenderingSystem::RenderScreen(EntityManager& entityManager)
 
 		if (entity->HasComponent<Animator>())
 		{
-			Animator* animator = entity->GetComponent<Animator>();
-			animator->Render(*this, camera);
-			if (debugger && debugger->enabled && !animator->destroyOnFinish && animator->currentState != "AmberIdle")
+			Animator& animator = entity->GetComponent<Animator>();
+			animator.Render(*this, camera);
+			if (debugger && debugger->enabled && !animator.destroyOnFinish && animator.currentState != "AmberIdle")
 			{
-				Transform* transform = entity->GetComponent<Transform>();
-				std::string entityStr = "ID: " + std::to_string(entity->ID);
+				Transform* transform = &entity->GetComponent<Transform>();
+				std::string entityStr = "ID: " + std::to_string(entity->m_id);
 
 				SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 				Vec2f screenPos = WorldToScreen(transform->position.x - 20, transform->position.y + 30, camera);
@@ -246,14 +241,14 @@ void RenderingSystem::RenderScreen(EntityManager& entityManager)
 		}
 		else
 		{
-			Sprite* sprt = entity->GetComponent<Sprite>();
-			Transform* transform = entity->GetComponent<Transform>();
+			Sprite& sprt = entity->GetComponent<Sprite>();
+			Transform& transform = entity->GetComponent<Transform>();
 
 			SDL_FRect rect{};
-			rect.h = static_cast<float>(sprt->height);
-			rect.w = static_cast<float>(sprt->width);
-			rect.x = transform->position.x;
-			rect.y = transform->position.y;
+			rect.h = static_cast<float>(sprt.height);
+			rect.w = static_cast<float>(sprt.width);
+			rect.x = transform.position.x;
+			rect.y = transform.position.y;
 
 			SDL_FRect dst = WorldToScreen(rect, camera);
 
@@ -265,23 +260,23 @@ void RenderingSystem::RenderScreen(EntityManager& entityManager)
 				continue;
 			}
 
-			if (!sprt->texture)
+			if (!sprt.texture)
 			{
 				SDL_RenderFillRect(renderer, &dst);
 			}
 			else 
 			{
-				SDL_RenderTexture(renderer, sprt->texture, NULL, &dst);
+				SDL_RenderTexture(renderer, sprt.texture, NULL, &dst);
 			}
 		}
 
 		if (debugger && debugger->enabled)
 		{
-			Transform* transform = entity->GetComponent<Transform>();
-			std::string entityStr = "ID: " + std::to_string(entity->ID);
+			Transform& transform = entity->GetComponent<Transform>();
+			std::string entityStr = "ID: " + std::to_string(entity->m_id);
 
 			SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-			Vec2f screenPos = WorldToScreen(transform->position.x - 20, transform->position.y + 30, camera);
+			Vec2f screenPos = WorldToScreen(transform.position.x - 20, transform.position.y + 30, camera);
 			SDL_RenderDebugText(renderer, screenPos.x, screenPos.y, entityStr.c_str());
 		}
 	}

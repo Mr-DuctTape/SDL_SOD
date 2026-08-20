@@ -8,13 +8,6 @@
 #include <cstdlib>
 #include <crtdbg.h>
 
-enum color
-{
-	RED,
-	GREEN,
-	BLUE
-};
-
 void UpdateSettings(Game& game, Engine& engine)
 {
 	Settings& settings = game.GetSettings();
@@ -42,12 +35,21 @@ int main()
 	Engine engine;
 	engine.Initialize();
 
-	engine.audioManager.CreateAudioClip("Dash", "Assets/Audio/Dash.wav");
-	engine.audioManager.CreateAudioClip("Step", "Assets/Audio/Step.wav");
-	engine.audioManager.CreateAudioClip("Jump", "Assets/Audio/Jump2.wav");
-	engine.audioManager.CreateAudioClip("Jump2", "Assets/Audio/Jump.wav");
-	engine.audioManager.CreateAudioClip("Hover", "Assets/Audio/Hover.wav");
-	engine.audioManager.CreateAudioClip("Click", "Assets/Audio/Hover.wav");
+	constexpr std::pair<const char*, const char*> audioClips[] =
+	{
+		{"Dash", "Assets/Audio/Dash.wav"},
+		{"Step", "Assets/Audio/Step.wav"},
+		{"Jump", "Assets/Audio/Jump2.wav"},
+		{"Jump2", "Assets/Audio/Jump.wav"},
+		{"Hover", "Assets/Audio/Hover.wav"},
+		{"Click", "Assets/Audio/Hover.wav"},
+		{"TorchLight", "Assets/Audio/TorchLight.wav" }
+	};
+	 
+	for (auto& [name, filePath] : audioClips)
+	{
+		engine.audioManager.CreateAudioClip(name, filePath);
+	}
 
 	Game game(engine);
 
@@ -62,7 +64,7 @@ int main()
 		engine.inputSystem.Process();
 		engine.renderingSystem.ClearScreen();
 		//
-		
+
 		// Debugger stuff
 		if (game.GetSettings().debugMode &&
 			engine.inputSystem.GetButtonDown(SDL_SCANCODE_0))
@@ -73,7 +75,7 @@ int main()
 		else if (!game.GetSettings().debugMode)
 		{
 			engine.debugger.enabled = false;
-		}    
+		}
 
 		if (engine.debugger.enabled)
 		{
@@ -82,7 +84,7 @@ int main()
 
 		game.Update();
 
-		if (!game.playing) 
+		if (!game.playing)
 		{
 			UpdateSettings(game, engine);
 		}
@@ -90,7 +92,7 @@ int main()
 		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_L))
 		{
 			auto& obj = game.m_gameEntities.player;
-			std::cout << obj.value().GetEntity().GetComponent<Transform>()->position << "\n";
+			std::cout << obj.value().GetEntity().GetComponent<Transform>().position << "\n";
 		}
 
 		// End of frame

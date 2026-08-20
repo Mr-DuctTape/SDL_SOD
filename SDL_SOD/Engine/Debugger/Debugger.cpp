@@ -23,7 +23,7 @@ void Debugger::DrawPerformanceStats(SDL_Renderer* renderer, EntityManager& entit
 	debugStats.components = 0;
 	for (auto entity : entityManager.entities)
 	{
-		debugStats.components += entity->components.size();
+		debugStats.components += entity->m_components.size();
 	}
 	Vec2f pos = { 20,20 };
 
@@ -338,20 +338,20 @@ void Debugger::DrawAllColliders(EntityManager& entityManager)
 	{
 		if (e->HasComponent<TileMap>())
 		{
-			TileMap* tileMap = e->GetComponent<TileMap>();
-			auto& tiles = tileMap->GetTiles();
+			TileMap& tileMap = e->GetComponent<TileMap>();
+			auto& tiles = tileMap.GetTiles();
 			for (int y = 0; y < tiles.size(); y++)
 			{
 				for (int x = 0; x < tiles[y].size(); x++)
 				{
-					if (tileMap->IsTileSolid(x, y))
-						DrawBoxCollider2D(tileMap->GetTileBoxCollider2D(x, y), { 20,60,60, 255 });
+					if (tileMap.IsTileSolid(x, y))
+						DrawBoxCollider2D(tileMap.GetTileBoxCollider2D(x, y), { 20,60,60, 255 });
 				}
 			}
 		}
 		else if (e->HasComponent<BoxCollider2D>())
 		{
-			DrawBoxCollider2D(*e->GetComponent<BoxCollider2D>(), { 70,180,220, 255 });
+			DrawBoxCollider2D(e->GetComponent<BoxCollider2D>(), { 70,180,220, 255 });
 		}
 	}
 }

@@ -3,6 +3,67 @@
 SDL_AudioSpec AudioManager::m_deviceFormat = {};
 SDL_AudioSpec AudioManager::m_wavFormat = {};
 
+AudioManager::AudioManager()
+{
+	if (!SDL_InitSubSystem(SDL_INIT_AUDIO))
+	{
+		std::cout << "(CRITICAL ERROR) Unable to intialize SDL_Audio: ";
+		std::cout << SDL_GetError();
+		std::cout << "\n";
+	}
+
+	m_playBackDevice = GetAudioDevice();
+	m_playBackDevice = SDL_OpenAudioDevice(m_playBackDevice, NULL);
+
+	if (!SDL_GetAudioDeviceFormat(m_playBackDevice, &m_deviceFormat, nullptr))
+	{
+		PrintError();
+		return;
+	}
+
+	m_audioSources.resize(32);
+	for (auto& source : m_audioSources)
+	{
+		source.stream = SDL_CreateAudioStream(&m_deviceFormat, &m_deviceFormat);
+
+		if (!source.stream)
+		{
+			PrintError();
+			continue;
+		}
+
+		SDL_BindAudioStream(m_playBackDevice, source.stream);
+	}
+	if constexpr (DEBUGPRINT)
+		std::cout << "[" << "\033[39m" << "AUDIOSYSTEM" << "\033[37m" << "] " << " Initialized: " << this << "\n";
+}
+
+void AudioManager::RebindAudioDevice()
+{
+	m_playBackDevice = SDL_OpenAudioDevice(m_playBackDevice, NULL);
+
+	if (!SDL_GetAudioDeviceFormat(m_playBackDevice, &m_deviceFormat, nullptr))
+	{
+		PrintError();
+		return;
+	}
+
+	m_audioSources.resize(32);
+	for (auto& source : m_audioSources)
+	{
+		SDL_DestroyAudioStream(source.stream);
+		source.stream = SDL_CreateAudioStream(&m_deviceFormat, &m_deviceFormat);
+
+		if (!source.stream)
+		{
+			PrintError();
+			continue;
+		}
+
+		SDL_BindAudioStream(m_playBackDevice, source.stream);
+	}
+}
+
 void AudioManager::Update()
 {
 	for (auto& source : m_audioSources)
@@ -18,6 +79,21 @@ void AudioManager::Update()
 			SDL_ClearAudioStream(source.stream);
 		}
 	}
+}
+
+std::vector<uint32_t> AudioManager::GetAvailableDevices()
+{
+	int count;
+	SDL_AudioDeviceID* array = SDL_GetAudioPlaybackDevices(&count);
+	std::vector<uint32_t> devices;
+	for (int i = 0; i < count; i++)
+	{
+		if (SDL_IsAudioDevicePhysical(array[i]) && SDL_IsAudioDevicePlayback(array[i]))
+		{
+			devices.push_back(array[i]);
+		}
+	}
+	return devices;
 }
 
 void AudioManager::Play(const std::string& audioClip, float volume)

@@ -41,6 +41,8 @@ public:
 	};
 	std::vector<Dialog> m_dialogs;
 
+	static float dialogVolume;
+
 	void RenderDialogs(SDL_Renderer* renderer);
 	void Initialize(AudioManager& audioManager);
 

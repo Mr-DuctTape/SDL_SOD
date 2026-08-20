@@ -52,7 +52,7 @@ void Engine::Update()
 	std::vector<Entity*> destroyables;
 	for (auto& entity : entityManager.entities)
 	{
-		for (auto& component : entity->components)
+		for (auto& component : entity->m_components)
 		{
 			// Update which entities are destroyables
 			if (auto anim = dynamic_cast<Animator*>(component))

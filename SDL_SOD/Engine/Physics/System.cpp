@@ -5,13 +5,16 @@
 
 void PhysicSystem::TileMapCollision(Entity* entity, TileMap* tileMap)
 {
-	if (!entity || !tileMap) { std::cout << "Entity || tileMap == nullptr\n";  return; }
+	if (!entity || !tileMap) { return; }
 
-	BoxCollider2D* boxCollider = entity->GetComponent<BoxCollider2D>();
-	Transform* transform = entity->GetComponent<Transform>();
-	Physics2D* physics = entity->GetComponent<Physics2D>();
+	BoxCollider2D* boxCollider = entity->FindComponent<BoxCollider2D>();
+	Transform* transform = entity->FindComponent<Transform>();
+	Physics2D* physics = entity->FindComponent<Physics2D>();
+
 	if (!boxCollider || !transform || !physics)
+	{
 		return;
+	}
 
 	auto scale = tileMap->GetTileScale();
 
@@ -205,8 +208,10 @@ void PhysicSystem::Gravity(Entity* entity, float deltaTime)
 {
 	if (!entity) return;
 
-	Physics2D* physics = entity->GetComponent<Physics2D>();
-	if (!physics) return;
+	Physics2D* physics = entity->FindComponent<Physics2D>();
+
+	if (!physics)
+		return;
 
 	float gravity = 9000.0f;
 
@@ -217,10 +222,11 @@ void PhysicSystem::Movement(Entity* entity, float deltaTime)
 {
 	if (!entity) return;
 
-	Physics2D* physics = entity->GetComponent<Physics2D>();
-	Transform* transform = entity->GetComponent<Transform>();
+	Physics2D* physics = entity->FindComponent<Physics2D>();
+	Transform* transform = entity->FindComponent<Transform>();
 
-	if (!physics || !transform) return;
+	if (!physics || !transform) 
+		return;
 
 	physics->velocity += physics->acceleration * deltaTime;
 	float drag = powf(0.90f, deltaTime * 60.0f);
@@ -249,20 +255,28 @@ void PhysicSystem::Update(EntityManager& entityManager, float deltaTime)
 		if (!entity->HasComponent<BoxCollider2D>())
 			continue;
 
-		BoxCollider2D* boxCollider = entity->GetComponent<BoxCollider2D>();
-		boxCollider->UpdatePosition();
+		BoxCollider2D& boxCollider = entity->GetComponent<BoxCollider2D>();
+		boxCollider.UpdatePosition();
 	}
 
 	// Perform collisions
+	Entity* tileMapEntity = nullptr;
+	TileMap* tileMap = nullptr;
+
+	for (auto& mapEntity : entityManager.entities)
+	{
+		if (!mapEntity->HasComponent<TileMap>())
+			continue;
+
+		tileMapEntity = mapEntity;
+		tileMap = &mapEntity->GetComponent<TileMap>();
+	}
+
 	for (auto& entity : entityManager.entities)
 	{
-		for (auto& mapEntity : entityManager.entities)
-		{
-			if (entity == mapEntity) continue;
-			if (!mapEntity->HasComponent<TileMap>()) continue;
+		if (entity == tileMapEntity)
+			continue;
 
-			TileMap* tileMap = mapEntity->GetComponent<TileMap>();
-			TileMapCollision(entity, tileMap);
-		}
+		TileMapCollision(entity, tileMap);
 	}
 }

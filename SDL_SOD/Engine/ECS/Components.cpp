@@ -34,19 +34,14 @@ void Animator::Update(float dt)
 
 	SDL_FRect& dst = currentAnimation.dst;
 
-	Transform* transform = parent->GetComponent<Transform>();
-	Sprite* sprite = parent->GetComponent<Sprite>();
-	if (!sprite || !transform)
-	{
-		std::cout << "Sprite or Transform not found (Animator)\n";
-		return;
-	}
+	Transform& transform = parent->GetComponent<Transform>();
+	Sprite& sprite = parent->GetComponent<Sprite>();
 
-	dst.x = transform->position.x;
-	dst.y = transform->position.y;
+	dst.x = transform.position.x;
+	dst.y = transform.position.y;
 
-	dst.w = static_cast<float>(sprite->width);
-	dst.h = static_cast<float>(sprite->height);
+	dst.w = static_cast<float>(sprite.width);
+	dst.h = static_cast<float>(sprite.height);
 }
 Animator::Animation Animator::CreateAnimation(const std::string& name, int frames, int pixelWidth, int pixelHeight, SDL_Texture* spriteSheet)
 {
@@ -89,7 +84,7 @@ void Animator::Print() const
 
 	std::cout << "=== Animator Debug ===\n";
 
-	std::cout << "Parent Entity ID: " << parent->ID << "\n";
+	std::cout << "Parent Entity ID: " << parent->m_id << "\n";
 
 	std::cout << "Current State: " << currentState << "\n";
 
@@ -130,8 +125,17 @@ void Animator::Print() const
 // ==== PHYSICS2D COMPONENT ====
 void Physics2D::Init()
 {
-	auto transform = parent->GetComponent<Transform>();
-	if (!transform) return;
+	Transform* transform = parent->FindComponent<Transform>();
+	if (!transform)
+	{
+		if constexpr (DEBUGPRINT)
+		{
+			std::cout << "Physics2D init failed, missing transform Entity ID: " << parent->m_id << "\n";
+		}
+		return;
+	}
+
+	this->last_position = transform->position;
 }
 void Physics2D::Accelerate(Vec2f force)
 {
@@ -148,27 +152,27 @@ void BoxCollider2D::UpdatePosition()
 	if (!parent)
 		return;
 
-	Transform* transform = parent->GetComponent<Transform>();
+	Transform* transform = parent->FindComponent<Transform>();
 	if (!transform)
 	{
 		if (!errorDisplayed)
 		{
 			std::cout << "=== BoxCollider2D Error ===\n";
 			std::cout << "(BoxCollider2D): Transform component not found\n";
-			std::cout << "(BoxCollider2D): Entity ID: " << parent->ID << "\n";
+			std::cout << "(BoxCollider2D): Entity ID: " << parent->m_id << "\n";
 			errorDisplayed = true;
 		}
 		return;
 	}
 
-	Sprite* sprite = parent->GetComponent<Sprite>();
+	Sprite* sprite = parent->FindComponent<Sprite>();
 	if (!sprite)
 	{
 		if (!errorDisplayed)
 		{
 			std::cout << "=== BoxCollider2D Error ===\n";
 			std::cout << "(BoxCollider2D): Sprite component not found\n";
-			std::cout << "(BoxCollider2D): Entity ID: " << parent->ID << "\n";
+			std::cout << "(BoxCollider2D): Entity ID: " << parent->m_id << "\n";
 			errorDisplayed = true;
 		}
 		return;
@@ -180,7 +184,7 @@ void BoxCollider2D::UpdatePosition()
 		{
 			std::cout << "=== BoxCollider2D Error ===\n";
 			std::cout << "(BoxCollider2D): Sprite width & height too small!" << "\n";
-			std::cout << "(BoxCollider2D): Entity ID: " << parent->ID << "\n";
+			std::cout << "(BoxCollider2D): Entity ID: " << parent->m_id << "\n";
 			errorDisplayed = true;
 		}
 		return;
@@ -268,7 +272,7 @@ SDL_FRect TileMap::GetTileFRect(int x, int y)
 }
 BoxCollider2D TileMap::GetTileBoxCollider2D(int x, int y)
 {
-	Transform* transform = parent->GetComponent<Transform>();
+	Transform* transform = parent->FindComponent<Transform>();
 	if (!transform)
 		return BoxCollider2D{};
 

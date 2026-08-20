@@ -40,71 +40,13 @@ public:
 	std::unordered_map<std::string, AudioClip> m_audioClips;
 	SDL_AudioDeviceID m_playBackDevice;
 
+	AudioManager();
+
 	inline AudioClip& GetAudio(const std::string& name)
 	{
 		return m_audioClips[name];
 	}
 
-	AudioManager()
-	{
-		if (!SDL_InitSubSystem(SDL_INIT_AUDIO))
-		{
-			std::cout << "(CRITICAL ERROR) Unable to intialize SDL_Audio: ";
-			std::cout << SDL_GetError();
-			std::cout << "\n";
-		}
-
-		m_playBackDevice = GetAudioDevice();
-		m_playBackDevice = SDL_OpenAudioDevice(m_playBackDevice, NULL);
-
-		if (!SDL_GetAudioDeviceFormat(m_playBackDevice, &m_deviceFormat, nullptr))
-		{
-			PrintError();
-			return;
-		}
-
-		m_audioSources.resize(32);
-		for (auto& source : m_audioSources)
-		{
-			source.stream = SDL_CreateAudioStream(&m_deviceFormat, &m_deviceFormat);
-			
-			if (!source.stream)
-			{
-				PrintError();
-				continue;
-			}
-
-			SDL_BindAudioStream(m_playBackDevice, source.stream);
-		}
-		if constexpr (DEBUGPRINT)
-			std::cout << "[" << "\033[39m" << "AUDIOSYSTEM" << "\033[37m" << "] " << " Initialized: " << this << "\n";
-	}
-
-	void RebindAudioDevice()
-	{
-		m_playBackDevice = SDL_OpenAudioDevice(m_playBackDevice, NULL);
-
-		if (!SDL_GetAudioDeviceFormat(m_playBackDevice, &m_deviceFormat, nullptr))
-		{
-			PrintError();
-			return;
-		}
-
-		m_audioSources.resize(32);
-		for (auto& source : m_audioSources)
-		{
-			SDL_DestroyAudioStream(source.stream);
-			source.stream = SDL_CreateAudioStream(&m_deviceFormat, &m_deviceFormat);
-
-			if (!source.stream)
-			{
-				PrintError();
-				continue;
-			}
-
-			SDL_BindAudioStream(m_playBackDevice, source.stream);
-		}
-	}
 	AudioClip* CreateAudioClip(const std::string& name, const std::string& filePath);
 	void Update();
 	void Play(const std::string& audioClip, float volume);
@@ -113,20 +55,9 @@ public:
 	void ChangePitch(AudioSource& source, float pitch);
 	void RandomizePitch(AudioSource& source, float pitch);
 
-	std::vector<uint32_t> GetAvailableDevices()
-	{
-		int count;
-		SDL_AudioDeviceID* array = SDL_GetAudioPlaybackDevices(&count);
-		std::vector<uint32_t> devices;
-		for (int i = 0; i < count; i++)
-		{
-			if (SDL_IsAudioDevicePhysical(array[i]) && SDL_IsAudioDevicePlayback(array[i]))
-			{
-				devices.push_back(array[i]);
-			}
-		}
-		return devices;
-	}
+	void RebindAudioDevice();
+
+	std::vector<uint32_t> GetAvailableDevices();
 	const char* GetDeviceName(uint32_t id)
 	{
 		return SDL_GetAudioDeviceName(id);

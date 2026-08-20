@@ -3,15 +3,12 @@
 
 
 // Animator
-bool Player::AnimationKeyFrame(const std::string& animationName, Animator* animator, const std::vector<int>& frames)
+bool Player::AnimationKeyFrame(const std::string& animationName, Animator& animator, const std::vector<int>& frames)
 {
-	if (!animator)
+	if (animationName != animator.currentState)
 		return false;
 
-	if (animationName != animator->currentState)
-		return false;
-
-	int currentFrame = animator->currentAnimation.currentFrame;
+	int currentFrame = animator.currentAnimation.currentFrame;
 
 	for (int frame : frames)
 	{
@@ -29,18 +26,15 @@ void Player::PlaySoundOnAnimation(
 	const std::string& audioClip,
 	const std::string& animationName,
 	float volume,
-	Animator* animator,
+	Animator& animator,
 	const std::vector<int>& framesToPlayOn)
 {
 	static int lastFrame = -1;
 
-	if (!animator)
+	if (animationName != animator.currentState)
 		return;
 
-	if (animationName != animator->currentState)
-		return;
-
-	int currentFrame = animator->currentAnimation.currentFrame;
+	int currentFrame = animator.currentAnimation.currentFrame;
 
 	if (currentFrame == lastFrame)
 		return;
@@ -58,59 +52,56 @@ void Player::PlaySoundOnAnimation(
 }
 void Player::ChangeAnimatorStates(float playerMovingSpeed)
 {
-	if (!m_animator)
-		return;
-
-	if (m_animator->currentState == "WallIdle")
+	if (m_animator.currentState == "WallIdle")
 	{
-		if (!m_boxCollider2D->wallCollision)
+		if (!m_boxCollider2D.wallCollision)
 		{
 			if (playerMovingSpeed > 70)
 			{
-				m_animator->SetAnimation("Run");
-				m_animator->currentState = "Run";
+				m_animator.SetAnimation("Run");
+				m_animator.currentState = "Run";
 			}
 			else
 			{
-				m_animator->SetAnimation("Idle");
-				m_animator->currentState = "Idle";
+				m_animator.SetAnimation("Idle");
+				m_animator.currentState = "Idle";
 			}
 		}
 
-		m_animator->speed = 0.15f;
+		m_animator.speed = 0.15f;
 	}
-	else if (m_animator->currentState == "Jump" && m_animator->finished)
+	else if (m_animator.currentState == "Jump" && m_animator.finished)
 	{
 		if (playerMovingSpeed > 70)
 		{
-			m_animator->SetAnimation("Run");
-			m_animator->currentState = "Run";
+			m_animator.SetAnimation("Run");
+			m_animator.currentState = "Run";
 		}
 		else
 		{
-			m_animator->SetAnimation("Idle");
-			m_animator->currentState = "Idle";
+			m_animator.SetAnimation("Idle");
+			m_animator.currentState = "Idle";
 		}
 	}
-	else if (m_animator->currentState == "Idle")
+	else if (m_animator.currentState == "Idle")
 	{
 		if (playerMovingSpeed > 70)
 		{
-			m_animator->SetAnimation("Run");
-			m_animator->currentState = "Run";
+			m_animator.SetAnimation("Run");
+			m_animator.currentState = "Run";
 		}
 
-		m_animator->speed = 0.16f;
+		m_animator.speed = 0.16f;
 	}
-	else if (m_animator->currentState == "Run")
+	else if (m_animator.currentState == "Run")
 	{
 		if (playerMovingSpeed < 60)
 		{
-			m_animator->SetAnimation("Idle");
-			m_animator->currentState = "Idle";
+			m_animator.SetAnimation("Idle");
+			m_animator.currentState = "Idle";
 		}
 
-		m_animator->speed = 0.1f;
+		m_animator.speed = 0.1f;
 	}
 }
 
@@ -119,19 +110,16 @@ void Player::SpawnEffect(EntityManager& entityManager, Entity& effect, Vec2f pos
 {
 	Entity& fxObj = entityManager.CreateEntity(effect);
 
-	Animator* fxAnimator = fxObj.GetComponent<Animator>();
-	Transform* fxTransform = fxObj.GetComponent<Transform>();
+	Animator& fxAnimator = fxObj.GetComponent<Animator>();
+	Transform& fxTransform = fxObj.GetComponent<Transform>();
 
-	if (!fxAnimator || !fxTransform)
-		return;
+	fxTransform.position = { pos.x, pos.y };
 
-	fxTransform->position = { pos.x, pos.y };
-
-	fxAnimator->update = true;
-	fxAnimator->destroyOnFinish = true;
-	fxAnimator->finished = false;
-	fxAnimator->flippedX = flippedX;
-	fxAnimator->timer = 0.0f;
+	fxAnimator.update = true;
+	fxAnimator.destroyOnFinish = true;
+	fxAnimator.finished = false;
+	fxAnimator.flippedX = flippedX;
+	fxAnimator.timer = 0.0f;
 }
 void Player::SpawnRunningEffect(EntityManager& entityManager, Entity& effect, bool isGrounded, bool flippedX, float deltaTime)
 {
@@ -145,9 +133,9 @@ void Player::SpawnRunningEffect(EntityManager& entityManager, Entity& effect, bo
 		// Create visual effect
 		Vec2f pos;
 		if (flippedX)
-			pos = { m_transform->position.x, m_transform->position.y };
+			pos = { m_transform.position.x, m_transform.position.y };
 		else
-			pos = { m_transform->position.x, m_transform->position.y };
+			pos = { m_transform.position.x, m_transform.position.y };
 
 		SpawnEffect(entityManager, effect, pos, flippedX);
 		vfxTimer = 0;
@@ -198,7 +186,7 @@ bool Player::IsJumpBufferRunnning(float deltaTime, float jTime, float& jTimer, b
 	return jumpBuffer;
 }
 void Player::SlideDownWall(
-	BoxCollider2D* m_boxCollider2D,
+	BoxCollider2D& m_boxCollider2D,
 	InputSystem& inputSystem,
 	Vec2f& accel,
 	Vec2f& velocity,
@@ -210,8 +198,8 @@ void Player::SlideDownWall(
 	static bool slideExhausted = false;
 
 	bool validCollision =
-		!m_boxCollider2D->groundCollision &&
-		m_boxCollider2D->wallCollision;
+		!m_boxCollider2D.groundCollision &&
+		m_boxCollider2D.wallCollision;
 
 	bool validInput =
 		inputSystem.GetButton(SDL_SCANCODE_A) ||
@@ -234,18 +222,18 @@ void Player::SlideDownWall(
 	}
 
 	// Just entered the wall.
-	if (m_animator->currentState != "WallIdle")
+	if (m_animator.currentState != "WallIdle")
 	{
 		slideDownTimer = 0.0f;
 		slideExhausted = false;
 
-		m_animator->SetAnimation("WallIdle");
-		m_animator->currentState = "WallIdle";
+		m_animator.SetAnimation("WallIdle");
+		m_animator.currentState = "WallIdle";
 
 		if (inputSystem.GetButton(SDL_SCANCODE_A))
-			m_animator->flippedX = true;
+			m_animator.flippedX = true;
 		else if (inputSystem.GetButton(SDL_SCANCODE_D))
-			m_animator->flippedX = false;
+			m_animator.flippedX = false;
 
 		// Stick to wall.
 		velocity.y = 0.0f;
@@ -271,7 +259,7 @@ void Player::SlideDownWall(
 
 void Player::WallJump(EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem, Entity& effect, bool& gatherBuffer, float deltaTime)
 {
-	if (!m_boxCollider2D->wallCollision || m_boxCollider2D->groundCollision)
+	if (!m_boxCollider2D.wallCollision || m_boxCollider2D.groundCollision)
 		return;
 
 	static bool leftWallJumped = false;
@@ -293,7 +281,7 @@ void Player::WallJump(EntityManager& entityManager, AudioManager& audioManager, 
 
 	if (gatherBuffer)
 	{
-		Vec2f collisonVec = m_boxCollider2D->collisionVector.normalized();
+		Vec2f collisonVec = m_boxCollider2D.collisionVector.normalized();
 		float direction = (collisonVec.x < 0.0f) ? -1.0f : 1.0f;
 
 		if (direction > 0.0f)
@@ -311,19 +299,19 @@ void Player::WallJump(EntityManager& entityManager, AudioManager& audioManager, 
 			leftWallJumped = false;
 		}
 
-		m_physics2D->velocity = {
+		m_physics2D.velocity = {
 			direction * 1500.0f,
 			-4000.0f
 		};
 
-		Vec2f pos = m_transform->position;
+		Vec2f pos = m_transform.position;
 		pos.y += 0.0f;
-		if (m_animator->flippedX)
+		if (m_animator.flippedX)
 			pos.x += 30.0f;
 		else
 			pos.x -= 30.0f;
 
-		SpawnJumpEffect(entityManager, effect, pos, !m_animator->flippedX);
+		SpawnJumpEffect(entityManager, effect, pos, !m_animator.flippedX);
 		audioManager.Play("Jump", m_jumpVolume);
 		audioManager.Play("Step", m_stepVolume);
 	}
@@ -349,9 +337,9 @@ void Player::Dash(EntityManager& entityManager, AudioManager& audioManager, Inpu
 	{
 		float dirX = (accel.normalized().x > 0.0f) ? 1.0f : -1.0f;
 		Vec2f force = { dirX * 4000.0f, 0.0f };
-		m_physics2D->AddForce(force);
+		m_physics2D.AddForce(force);
 		dashing = true;
-		Vec2f spawnPos = m_transform->position;
+		Vec2f spawnPos = m_transform.position;
 		spawnPos.y += 25.0f;
 		if (dirX >= 1.0f)
 			spawnPos.x += 100.0f;
@@ -359,21 +347,21 @@ void Player::Dash(EntityManager& entityManager, AudioManager& audioManager, Inpu
 			spawnPos.x -= 100.0f;
 
 		audioManager.Play("Dash", m_dashVolume);
-		SpawnEffect(entityManager, dashEffect, spawnPos, m_animator->flippedX);
+		SpawnEffect(entityManager, dashEffect, spawnPos, m_animator.flippedX);
 	}
 }
 void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem, Entity& runningEffect, Entity& wallJumpEffect, Entity& jumpEffect, Entity& dashEffect, float deltaTime)
 {
 	if (freezeInput)
 	{
-		m_animator->SetAnimation("Idle");
+		m_animator.SetAnimation("Idle");
 		return;
 	}
 
 	Vec2f accel = { 0, 0 };
 	Vec2f force = { 0, 0 };
 
-	bool isGrounded = m_boxCollider2D->groundCollision;
+	bool isGrounded = m_boxCollider2D.groundCollision;
 	float m_movementSpeed = this->m_movementSpeed;
 
 	if (!isGrounded)
@@ -381,14 +369,14 @@ void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManage
 		m_movementSpeed = m_movementSpeed * 1.25f;
 	}
 
-	float speed = m_physics2D->velocity.Magnitude();
+	float speed = m_physics2D.velocity.Magnitude();
 	ChangeAnimatorStates(speed);
 
-	if (m_animator->currentState == "Run")
+	if (m_animator.currentState == "Run")
 	{
 		if (AnimationKeyFrame("Run", m_animator, { 1 }))
 		{
-			SpawnRunningEffect(entityManager, runningEffect, isGrounded, m_animator->flippedX, deltaTime);
+			SpawnRunningEffect(entityManager, runningEffect, isGrounded, m_animator.flippedX, deltaTime);
 		}
 	}
 
@@ -424,8 +412,8 @@ void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManage
 		gatherBuffer = false;
 		jumpBufferTimer = 0.0f;
 
-		m_animator->SetAnimation("Jump");
-		SpawnJumpEffect(entityManager, jumpEffect, m_transform->position, m_animator->flippedX);
+		m_animator.SetAnimation("Jump");
+		SpawnJumpEffect(entityManager, jumpEffect, m_transform.position, m_animator.flippedX);
 		audioManager.Play("Jump", m_jumpVolume);
 		audioManager.Play("Step", m_stepVolume);
 		force.y -= m_jumpForce;
@@ -433,14 +421,14 @@ void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManage
 
 	if (inputSystem.GetButton(SDL_SCANCODE_A))
 	{
-		m_animator->flippedX = true;
+		m_animator.flippedX = true;
 		accel.x -= m_movementSpeed;
 	}
 
 	if (inputSystem.GetButton(SDL_SCANCODE_D))
 	{
 
-		m_animator->flippedX = false;
+		m_animator.flippedX = false;
 		accel.x += m_movementSpeed;
 	}
 
@@ -449,35 +437,34 @@ void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManage
 	}
 
 	Dash(entityManager, audioManager, inputSystem, dashEffect, accel, deltaTime);
-	SlideDownWall(m_boxCollider2D, inputSystem, accel, m_physics2D->velocity, deltaTime);
+	SlideDownWall(m_boxCollider2D, inputSystem, accel, m_physics2D.velocity, deltaTime);
 	WallJump(entityManager, audioManager, inputSystem, wallJumpEffect, gatherBuffer, deltaTime);
 
-	m_physics2D->Accelerate(accel);
-	m_physics2D->AddForce(force);
+	m_physics2D.Accelerate(accel);
+	m_physics2D.AddForce(force);
 }
-void Player::Death(Entity& effect, EntityManager& entityManager)
+void Player::Death(Entity& effect, AudioManager& audioManager, EntityManager& entityManager)
 {
 	auto& deathFX = entityManager.CreateEntity(effect);
-	auto fxTransform = deathFX.GetComponent<Transform>();
-	if (!fxTransform) return;
+	auto& fxTransform = deathFX.GetComponent<Transform>();
+	fxTransform = m_transform;
 
-	*fxTransform = *m_transform;
+	Animator& fxAnim = deathFX.GetComponent<Animator>();
 
-	Animator* fxAnim = deathFX.GetComponent<Animator>();
-	if (!fxAnim) return;
+	fxAnim.destroyOnFinish = true;
+	fxAnim.update = true;
+	fxAnim.finished = false;
+	m_transform.position = m_respawnPosition;
 
-	fxAnim->destroyOnFinish = true;
-	fxAnim->update = true;
-	fxAnim->finished = false;
-	m_transform->position = m_respawnPosition;
+	audioManager.Play("Death", m_deathVolume);
 }
-void Player::Bounds(RenderingSystem& renderingSystem, EntityManager& entityManager, Entity& effect)
+void Player::Bounds(RenderingSystem& renderingSystem, AudioManager& audioManager, EntityManager& entityManager, Entity& effect)
 {
-	if (m_transform->position.y >= renderingSystem.renderResX * 4) {
-		Death(effect, entityManager);
+	if (m_transform.position.y >= renderingSystem.renderResX * 4) {
+		Death(effect, audioManager, entityManager);
 	}
 }
-void Player::SpikeCollision(EntityManager& entityManager, Entity& effect)
+void Player::SpikeCollision(AudioManager& audioManager, EntityManager& entityManager, Entity& effect)
 {
 	bool playerDeath = false;
 
@@ -489,18 +476,19 @@ void Player::SpikeCollision(EntityManager& entityManager, Entity& effect)
 		if (entity == &m_entity)
 			continue;
 
-		BoxCollider2D* entityBoxCollider = entity->GetComponent<BoxCollider2D>();
-		EntityTag* tag = entity->GetComponent<EntityTag>();
+		BoxCollider2D* entityBoxCollider = entity->FindComponent<BoxCollider2D>();
+		EntityTag* tag = entity->FindComponent<EntityTag>();
+
 		if (!tag || !entityBoxCollider)
 			continue;
 
-		if (tag->name == "Spikes" && IsColliding(*m_boxCollider2D, *entityBoxCollider))
+		if (tag->name == "Spikes" && IsColliding(*entityBoxCollider, m_boxCollider2D))
 		{
 			playerDeath = true;
 		}
 	}
 	if (playerDeath) {
-		Death(effect, entityManager);
+		Death(effect, audioManager, entityManager);
 	}
 }
 
@@ -508,8 +496,8 @@ void Player::CameraFollow(RenderingSystem& renderingSystem, float deltaTime)
 {
 	Vec2f target =
 	{
-		m_transform->position.x - renderingSystem.renderResX,
-		m_transform->position.y - renderingSystem.renderResY
+		m_transform.position.x - renderingSystem.renderResX,
+		m_transform.position.y - renderingSystem.renderResY
 	};
 
 	Camera& camera = renderingSystem.camera;
@@ -523,8 +511,19 @@ void Player::Update(RenderingSystem& renderingSystem, EntityManager& entityManag
 	m_dashVolume *= masterVolume;
 	m_stepVolume *= masterVolume;
 
-	AllMovement(entityManager, audioManager, inputSystem, runningEffect, wallJumpEffect, jumpingEffect, dashingEffect, deltaTime);
-	SpikeCollision(entityManager, deathEffect);
-	Bounds(renderingSystem, entityManager, deathEffect);
+	AllMovement
+	(
+		entityManager, 
+		audioManager, 
+		inputSystem, 
+		runningEffect,
+		wallJumpEffect,
+		jumpingEffect,
+		dashingEffect, 
+		deltaTime
+	);
+
+	SpikeCollision(audioManager, entityManager, deathEffect);
+	Bounds(renderingSystem, audioManager, entityManager, deathEffect);
 	CameraFollow(renderingSystem, deltaTime);
 }

@@ -1,5 +1,7 @@
 #include "Dialog.h"
 
+float DialogSystem::dialogVolume = 0.5f;
+
 void DialogSystem::Dialog::Update(AudioManager& audioManager, float deltaTime)
 {
 	auto IncreaseTimer = [deltaTime](float& timer)
@@ -45,7 +47,7 @@ void DialogSystem::Dialog::Update(AudioManager& audioManager, float deltaTime)
 					displayedLine += currentChar;
 
 					if (currentChar != ' ') {
-						audioManager.Play(audioClip, 1.0f);
+						audioManager.Play(audioClip, DialogSystem::dialogVolume);
 					}
 				}
 

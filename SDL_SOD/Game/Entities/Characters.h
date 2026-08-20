@@ -11,9 +11,9 @@ class Character
 protected:
 	Entity& m_entity;
 	DialogSystem& m_dialogSystem;
-	Sprite* m_sprite = nullptr;
-	Transform* m_transform = nullptr;
-	Animator* m_animator = nullptr;
+	Sprite& m_sprite;
+	Transform& m_transform;
+	Animator& m_animator;
 
 public:
 	using dialog = size_t;
@@ -22,23 +22,20 @@ public:
 	std::vector<std::pair<dialog, activator>> dependentDialogs;
 
 	Character(Entity& entity, DialogSystem& dialogSystem) :
-		m_entity(entity), m_dialogSystem(dialogSystem)
+		m_entity(entity),
+		m_dialogSystem(dialogSystem),
+		m_sprite(m_entity.GetComponent<Sprite>()),
+		m_animator(m_entity.GetComponent<Animator>()),
+		m_transform(m_entity.GetComponent<Transform>())
 	{
-		m_sprite = m_entity.GetComponent<Sprite>();
-		m_animator = m_entity.GetComponent<Animator>();
-		m_transform = m_entity.GetComponent<Transform>();
-
-		if (!m_sprite || !m_animator || !m_transform)
-		{
-			std::cout << "(Amber) One or more components are nullptr!\n";
-		}
 	}
 };
 
 class Bob : Character
 {
 public:
-	Bob(Entity& entity, DialogSystem& dialogSystem) : Character(entity, dialogSystem)
+	Bob(Entity& entity, DialogSystem& dialogSystem) : 
+		Character(entity, dialogSystem)
 	{
 		dependentDialogs =
 		{
@@ -59,7 +56,8 @@ public:
 	bool tutorialFinished = false;
 	std::vector<std::pair<dialog, activator>> tutorialDialogs;
 
-	Amber(Entity& entity, DialogSystem& dialogSystem) : Character(entity, dialogSystem)
+	Amber(Entity& entity, DialogSystem& dialogSystem) : 
+		Character(entity, dialogSystem)
 	{
 
 		auto GetDialogIndex = [&dialogSystem](const char* name) -> size_t
