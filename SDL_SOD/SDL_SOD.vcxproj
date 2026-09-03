@@ -20,7 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game\Entities\Characters.cpp" />
-    <ClCompile Include="Engine\Dialog.cpp" />
+    <ClCompile Include="Engine\Dialog\Dialog.cpp" />
     <ClCompile Include="Engine\Graphics\Camera.cpp" />
     <ClCompile Include="Engine\Audio\AudioSystem.cpp" />
     <ClCompile Include="Engine\Debugger\Debugger.cpp" />
@@ -43,7 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Entities\Characters.h" />
-    <ClInclude Include="Engine\Dialog.h" />
+    <ClInclude Include="Engine\Dialog\Dialog.h" />
     <ClInclude Include="Engine\Graphics\Camera.h" />
     <ClInclude Include="Engine\Audio\AudioSystem.h" />
     <ClInclude Include="Engine\Macros\DEBUGPRINT.h" />

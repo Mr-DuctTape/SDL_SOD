@@ -1,7 +1,7 @@
 #pragma once
 #include "../../Engine/Audio/AudioSystem.h"
 #include "../../Engine/ECS/Entities.h""
-#include "../../Engine/Dialog.h"
+#include "../../Engine/Dialog/Dialog.h"
 #include "Player.h"
 
 class Engine;
@@ -53,6 +53,7 @@ public:
 class Amber : Character
 {
 public:
+	const float followDistance = 500.0f;
 	bool tutorialFinished = false;
 	std::vector<std::pair<dialog, activator>> tutorialDialogs;
 

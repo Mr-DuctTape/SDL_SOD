@@ -30,9 +30,14 @@ private:
 	// Effect prefabs creation
 	void CreateJumpingFXPrefab(EntityManager& entityManager, AssetManager& assetManager);
 	void CreateRunningFXPrefab(EntityManager& entityManager, AssetManager& assetManager);
+	void CreateDashCoolDownFXPrefab(EntityManager& entityManager, AssetManager& assetManager);
+
 	void CreateDashFXPrefab(EntityManager& entityManager, AssetManager& assetManager);
 	void CreateExplosionFXPrefab(EntityManager& entityManager, AssetManager& assetManager);
 	void CreateWallJumpFXPrefab(EntityManager& entityManager, AssetManager& assetManager);
+
+	void CreateDashCoolDownDestroyFXPrefab(EntityManager& entityManager, AssetManager& assetManager);
+
 	void CreateAllEffectPrefabs(EntityManager& entityManager, AssetManager& assetManager);
 
 	// Prefabs creation
@@ -74,6 +79,7 @@ public:
 		std::optional<Amber> amber;
 		std::optional<Bob> bob;
 	};
+
 	GameEntities m_gameEntities;
 
 	bool playing = false;

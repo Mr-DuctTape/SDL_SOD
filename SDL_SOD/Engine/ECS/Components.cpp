@@ -23,17 +23,24 @@ void Animator::Update(float dt)
 		timer = 0;
 	}
 
-	if (currentAnimation.currentFrame >= currentAnimation.frames)
+	if (currentAnimation.currentFrame >= currentAnimation.totalFrames)
 	{
-		currentAnimation.currentFrame = 0;
-		finished = true;
+		if (destroyOnFinish)
+		{
+			currentAnimation.currentFrame == currentAnimation.totalFrames;
+			finished = true;
+		}
+		else
+		{
+			currentAnimation.currentFrame = 0;
+			finished = true;
+		}
 	}
 
 	frame.x = static_cast<float>(currentAnimation.currentFrame * currentAnimation.pixelWidth);
 	frame.y = 0;
 
 	SDL_FRect& dst = currentAnimation.dst;
-
 	Transform& transform = parent->GetComponent<Transform>();
 	Sprite& sprite = parent->GetComponent<Sprite>();
 
@@ -47,7 +54,7 @@ Animator::Animation Animator::CreateAnimation(const std::string& name, int frame
 {
 	static int Increase = 0;
 	Animation anim;
-	anim.frames = frames;
+	anim.totalFrames = frames;
 	anim.pixelHeight = pixelHeight;
 	anim.pixelWidth = pixelWidth;
 	anim.spriteSheet = spriteSheet;
@@ -98,7 +105,7 @@ void Animator::Print() const
 
 	std::cout << "--- Current Animation ---\n";
 	std::cout << "ID: " << currentAnimation.ID << "\n";
-	std::cout << "Frames: " << currentAnimation.frames << "\n";
+	std::cout << "Frames: " << currentAnimation.totalFrames << "\n";
 	std::cout << "Current Frame: " << currentAnimation.currentFrame << "\n";
 	std::cout << "Pixel Width: " << currentAnimation.pixelWidth << "\n";
 	std::cout << "Pixel Height: " << currentAnimation.pixelHeight << "\n";

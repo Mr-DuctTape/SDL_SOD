@@ -114,7 +114,6 @@ void Player::SpawnEffect(EntityManager& entityManager, Entity& effect, Vec2f pos
 	Transform& fxTransform = fxObj.GetComponent<Transform>();
 
 	fxTransform.position = { pos.x, pos.y };
-
 	fxAnimator.update = true;
 	fxAnimator.destroyOnFinish = true;
 	fxAnimator.finished = false;
@@ -317,11 +316,19 @@ void Player::WallJump(EntityManager& entityManager, AudioManager& audioManager, 
 	}
 }
 
-void Player::Dash(EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem, Entity& dashEffect, Vec2f accel, float deltaTime)
+void Player::Dash(EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem, Entity& dashEffect, Entity& dashCooldownEffect, Entity& dashCoolDownEffectDestroy, Vec2f accel, float deltaTime)
 {
 	static bool dashing = false;
+
 	static float dashCoolDownTimer = 0.0f;
 	constexpr float dashCoolDownTime = 1.5f;
+
+	static Entity* dashCoolDownObj = nullptr;
+
+	if (dashCoolDownObj)
+	{
+		dashCoolDownObj->GetComponent<Transform>().position = Vec2f{ m_transform.position.x - 50.0f, m_transform.position.y - 30.0f };
+	}
 
 	if (dashing && dashCoolDownTimer < dashCoolDownTime)
 	{
@@ -330,17 +337,35 @@ void Player::Dash(EntityManager& entityManager, AudioManager& audioManager, Inpu
 		{
 			dashing = false;
 			dashCoolDownTimer = 0.0f;
+
+			if (dashCoolDownObj)
+			{
+				dashCoolDownObj->GetComponent<Animator>().destroyOnFinish = true;
+				SpawnEffect(entityManager, dashCoolDownEffectDestroy, Vec2f{ m_transform.position.x - 50.0f, m_transform.position.y - 30.0f }, false);
+				dashCoolDownObj = nullptr;
+			}
 		}
 	}
+
 
 	if (inputSystem.GetButtonDown(SDL_SCANCODE_LSHIFT) && !dashing)
 	{
 		float dirX = (accel.normalized().x > 0.0f) ? 1.0f : -1.0f;
+
 		Vec2f force = { dirX * 4000.0f, 0.0f };
 		m_physics2D.AddForce(force);
+
 		dashing = true;
+		dashCoolDownTimer = 0.0f;
+
+		dashCoolDownObj = &entityManager.CreateEntity(dashCooldownEffect);
+		Animator& animator = dashCoolDownObj->GetComponent<Animator>();
+		animator.update = true;
+		animator.speed = dashCoolDownTime / animator.GetCurrentAnimationFrames();
+
 		Vec2f spawnPos = m_transform.position;
 		spawnPos.y += 25.0f;
+
 		if (dirX >= 1.0f)
 			spawnPos.x += 100.0f;
 		else
@@ -350,7 +375,7 @@ void Player::Dash(EntityManager& entityManager, AudioManager& audioManager, Inpu
 		SpawnEffect(entityManager, dashEffect, spawnPos, m_animator.flippedX);
 	}
 }
-void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem, Entity& runningEffect, Entity& wallJumpEffect, Entity& jumpEffect, Entity& dashEffect, float deltaTime)
+void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem, Entity& runningEffect, Entity& wallJumpEffect, Entity& jumpEffect, Entity& dashEffect, Entity& dashCooldownEffect, Entity& dashCoolDownEffectDestroy, float deltaTime)
 {
 	if (freezeInput)
 	{
@@ -436,7 +461,7 @@ void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManage
 		PlaySoundOnAnimation(audioManager, "Step", "Run", m_stepVolume, m_animator, { 1 });
 	}
 
-	Dash(entityManager, audioManager, inputSystem, dashEffect, accel, deltaTime);
+	Dash(entityManager, audioManager, inputSystem, dashEffect, dashCooldownEffect, dashCoolDownEffectDestroy, accel, deltaTime);
 	SlideDownWall(m_boxCollider2D, inputSystem, accel, m_physics2D.velocity, deltaTime);
 	WallJump(entityManager, audioManager, inputSystem, wallJumpEffect, gatherBuffer, deltaTime);
 
@@ -473,7 +498,7 @@ void Player::SpikeCollision(AudioManager& audioManager, EntityManager& entityMan
 		if (!entity)
 			continue;
 
-		if (entity == &m_entity)
+		if (entity == &m_playerEntity)
 			continue;
 
 		BoxCollider2D* entityBoxCollider = entity->FindComponent<BoxCollider2D>();
@@ -504,8 +529,23 @@ void Player::CameraFollow(RenderingSystem& renderingSystem, float deltaTime)
 
 	camera.pos += (target - camera.pos) * m_cameraFollowSpeed * deltaTime;
 }
-void Player::Update(RenderingSystem& renderingSystem, EntityManager& entityManager, AudioManager& audioManager, InputSystem& inputSystem,
-	Entity& deathEffect, Entity& runningEffect, Entity& wallJumpEffect, Entity& jumpingEffect, Entity& dashingEffect, float masterVolume, float deltaTime)
+void Player::Update
+(
+	RenderingSystem& renderingSystem, 
+	EntityManager& entityManager, 
+	AudioManager& audioManager, 
+	InputSystem& inputSystem,
+
+	Entity& deathEffect, 
+	Entity& runningEffect,
+	Entity& wallJumpEffect,
+	Entity& jumpingEffect, 
+	Entity& dashingEffect, 
+	Entity& dashCooldownEffect,
+	Entity& dashCooldownEffectDestroy, 
+	
+	float masterVolume,
+	float deltaTime)
 {
 	m_jumpVolume *= masterVolume;
 	m_dashVolume *= masterVolume;
@@ -513,13 +553,15 @@ void Player::Update(RenderingSystem& renderingSystem, EntityManager& entityManag
 
 	AllMovement
 	(
-		entityManager, 
-		audioManager, 
-		inputSystem, 
+		entityManager,
+		audioManager,
+		inputSystem,
 		runningEffect,
 		wallJumpEffect,
 		jumpingEffect,
-		dashingEffect, 
+		dashingEffect,
+		dashCooldownEffect,
+		dashCooldownEffectDestroy,
 		deltaTime
 	);
 

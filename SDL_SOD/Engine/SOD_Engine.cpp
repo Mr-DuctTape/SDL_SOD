@@ -1,6 +1,4 @@
 #include "SOD_Engine.h"
-#include <chrono>
-#include <thread>
 
 void Engine::Initialize()
 {

@@ -88,11 +88,14 @@ int main()
 		{
 			UpdateSettings(game, engine);
 		}
+		else
+		{
+		}
 
 		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_L))
 		{
 			auto& obj = game.m_gameEntities.player;
-			std::cout << obj.value().GetEntity().GetComponent<Transform>().position << "\n";
+			std::cout << obj.value().m_transform.position << "\n";
 		}
 
 		// End of frame

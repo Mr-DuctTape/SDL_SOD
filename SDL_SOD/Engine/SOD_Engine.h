@@ -1,14 +1,14 @@
 #pragma once
-#include "../Engine/Core/Application.h"
-#include "../Engine/Graphics/Rendering.h"
-#include "../Engine/Input/Input.h"
-#include "../Engine/ECS/Entities.h"
-#include "../Engine/Physics/System.h"
-#include "../Engine/Textures/AssetManager.h"
-#include "../Engine/Debugger/Debugger.h"
-#include "../Engine/Audio/AudioSystem.h"
-#include "../Engine/UI/UIManager.h"
-#include "../Engine/Dialog.h"
+#include "Core/Application.h"
+#include "Graphics/Rendering.h"
+#include "Input/Input.h"
+#include "ECS/Entities.h"
+#include "Physics/System.h"
+#include "Textures/AssetManager.h"
+#include "Debugger/Debugger.h"
+#include "Audio/AudioSystem.h"
+#include "UI/UIManager.h"
+#include "Dialog/Dialog.h"
 
 class Engine
 {

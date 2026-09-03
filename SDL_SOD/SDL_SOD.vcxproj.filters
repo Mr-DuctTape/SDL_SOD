@@ -72,7 +72,7 @@
     <ClCompile Include="Game\Entities\Torch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Dialog.cpp">
+    <ClCompile Include="Engine\Dialog\Dialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Game\Entities\Characters.cpp">
@@ -134,7 +134,7 @@
     <ClInclude Include="Game\GameUI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Dialog.h">
+    <ClInclude Include="Engine\Dialog\Dialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Game\Entities\Characters.h">

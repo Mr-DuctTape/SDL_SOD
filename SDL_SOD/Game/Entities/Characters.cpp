@@ -36,7 +36,7 @@ void Amber::Update(Engine& engine, Player& player, float deltaTime)
 	Transform& playerTransform = player.GetEntity().GetComponent<Transform>();
 	Vec2f playerDir = playerTransform.position - m_transform.position;
 
-	if (playerDir.Magnitude() >= 200.0f)
+	if (playerDir.Magnitude() >= followDistance)
 	{
 		m_transform.position += playerDir * deltaTime;
 	}
@@ -61,7 +61,7 @@ void Amber::Update(Engine& engine, Player& player, float deltaTime)
 
 	if (!IsFinished("Amber_Intro"))
 	{
-		player.freezeInput = true;
+		player.freezeInput = false;
 	}
 
 	if (IsActive("Amber_Intro") && engine.inputSystem.GetButton(SDL_SCANCODE_S))
@@ -182,7 +182,7 @@ void Amber::AmberIntro(Engine& engine, Vec2f playerDir)
 	amber_intro.position =
 		WorldToScreen((int)m_transform.position.x, (int)m_transform.position.y, engine.renderingSystem.camera);
 
-	if (playerDir.Magnitude() <= 200.0f)
+	if (playerDir.Magnitude() <= followDistance)
 	{
 		engine.dialogSystem.ActivateDialog(amber_intro);
 	}

@@ -253,11 +253,12 @@ public:
 
 		int pixelWidth = 0;
 		int pixelHeight = 0;
-		int frames = 0;
+		int totalFrames = 0;
 		int currentFrame = 0;
 
 		int ID = 0;
 	};
+
 	Animation currentAnimation;
 private:
 	static std::unordered_map<std::string, Animator::Animation> animations;
@@ -283,6 +284,12 @@ public:
 	Animation GetAnimation(const std::string& anim);
 	void SetAnimation(const Animation& animation);
 	void SetAnimation(const std::string& name);
+	inline size_t GetCurrentAnimationFrames() const
+	{
+		return currentAnimation.totalFrames;
+	}
+
+	//void PlaySoundOnFrame(const std::string& animation, AudioManager::AudioClip& audioClip, const std::vector<int>& frames);
 
 	void Print() const;
 	void Update(float dt) override;

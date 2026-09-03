@@ -5,7 +5,6 @@
 #include "../Macros/DEBUGPRINT.h"
 #include <typeindex>
 #include <unordered_map>
-#include <optional>
 
 template<typename T>
 concept ValidComponent = std::is_base_of_v<Component, T>;

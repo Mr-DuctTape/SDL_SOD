@@ -41,6 +41,9 @@ void Game::LoadAllTextures(AssetManager& assetManager)
 	assetManager.CreateTexture("JumpEffect", "Assets/Textures/JumpFX.png");
 	assetManager.CreateTexture("DashEffect", "Assets/Textures/Dash.png");
 	assetManager.CreateTexture("ExplosionEffect", "Assets/Textures/Explosion.png");
+
+	assetManager.CreateTexture("HeloLoad", "Assets/Textures/HeloLoad.png");
+	assetManager.CreateTexture("BangSheet", "Assets/Textures/Bang.png");
 }
 
 void Game::CreateJumpingFXPrefab(EntityManager& entityManager, AssetManager& assetManager)
@@ -143,13 +146,57 @@ void Game::CreateExplosionFXPrefab(EntityManager& entityManager, AssetManager& a
 
 	m_prefabs.emplace("DeathFX", &explosionEffectObj);
 }
+void Game::CreateDashCoolDownFXPrefab(EntityManager& entityManager, AssetManager& assetManager)
+{
+	Entity& heloObj = entityManager.CreateEntity();
+	heloObj.AddComponent<Transform>();
+
+	Sprite* sprite = heloObj.AddComponent<Sprite>();
+	sprite->height = SPRT_HEIGHT;
+	sprite->width = SPRT_WIDTH;
+
+	Animator* dashCooldownFXAnimator = heloObj.AddComponent<Animator>();
+	dashCooldownFXAnimator->CreateAnimation("HeloLoad", 7, 16, 16, assetManager.GetTexture("HeloLoad"));
+	dashCooldownFXAnimator->SetAnimation("HeloLoad");
+	dashCooldownFXAnimator->speed = 0.1f;
+	dashCooldownFXAnimator->scaleAnimationX = 1.0f;
+	dashCooldownFXAnimator->scaleAnimationY = 1.0f;
+	dashCooldownFXAnimator->update = false;
+	dashCooldownFXAnimator->effectBase = true;
+
+	m_prefabs.emplace("HeloLoad", &heloObj);
+}
+
+void Game::CreateDashCoolDownDestroyFXPrefab(EntityManager& entityManager, AssetManager& assetManager)
+{
+	Entity& entityObj = entityManager.CreateEntity();
+	Transform* entityTransform = entityObj.AddComponent<Transform>();
+	Sprite* entitySprite = entityObj.AddComponent<Sprite>();
+	entitySprite->height = SPRT_HEIGHT;
+	entitySprite->width = SPRT_WIDTH;
+
+	Animator* entityAnimator = entityObj.AddComponent<Animator>();
+	entityAnimator->CreateAnimation("Boom", 4, 16, 16, assetManager.GetTexture("BangSheet"));
+	entityAnimator->SetAnimation("Boom");
+	entityAnimator->speed = 0.1f;
+	entityAnimator->scaleAnimationX = 1.0f;
+	entityAnimator->scaleAnimationY = 1.0f;
+	entityAnimator->update = false;
+	entityAnimator->effectBase = true;
+
+	m_prefabs.emplace("HeloDestroy", &entityObj);
+}
+
 void Game::CreateAllEffectPrefabs(EntityManager& entityManager, AssetManager& assetManager)
 {
 	CreateWallJumpFXPrefab(entityManager, assetManager);
 	CreateJumpingFXPrefab(entityManager, assetManager);
 	CreateRunningFXPrefab(entityManager, assetManager);
-	CreateDashFXPrefab(entityManager, assetManager);
 	CreateExplosionFXPrefab(entityManager, assetManager);
+
+	CreateDashFXPrefab(entityManager, assetManager);
+	CreateDashCoolDownFXPrefab(entityManager, assetManager);
+	CreateDashCoolDownDestroyFXPrefab(entityManager, assetManager);
 }
 
 void Game::CreateSpikePrefab(EntityManager& entityManager, AssetManager& assetManager)
@@ -351,8 +398,10 @@ void Game::Update(RenderingSystem& renderingSystem, EntityManager& entityManager
 	Entity* runFX = GetPrefab("RunFX");
 	Entity* dashFX = GetPrefab("DashFX");
 	Entity* wallJumpFX = GetPrefab("WallJumpFX");
+	Entity* dashCooldownFX = GetPrefab("HeloLoad");
+	Entity* dashCooldownFXDestroy = GetPrefab("HeloDestroy");
 
-	if (!deathFX || !jumpFX || !runFX || !dashFX || !wallJumpFX)
+	if (!deathFX || !jumpFX || !runFX || !dashFX || !wallJumpFX || !dashCooldownFX || !dashCooldownFXDestroy)
 	{
 		std::cout << "(ERROR): Unable to find effect prefabs\n";
 		return;
@@ -366,7 +415,7 @@ void Game::Update(RenderingSystem& renderingSystem, EntityManager& entityManager
 	}
 
 	player.value().Update(renderingSystem, entityManager, audioManager,
-		inputSystem, *deathFX, *runFX, *wallJumpFX, *jumpFX, *dashFX,
+		inputSystem, *deathFX, *runFX, *wallJumpFX, *jumpFX, *dashFX, *dashCooldownFX, *dashCooldownFXDestroy,
 		m_settings.masterVolume, deltaTime);
 
 	for (Torch& torch : m_gameEntities.torches)

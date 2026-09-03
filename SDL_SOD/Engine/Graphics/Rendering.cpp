@@ -5,7 +5,7 @@
 #include "../ECS/Components.h"
 #include "../Debugger/Debugger.h"
 #include "../UI/UIManager.h"
-#include "../Dialog.h"
+#include "../Dialog/Dialog.h"
 
 void RenderingSystem::Initialize(Debugger& debugger, UIManager& uiManager, DialogSystem& dialogSystem)
 {

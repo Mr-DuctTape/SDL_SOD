@@ -1,6 +1,6 @@
 #pragma once
-#include "../Engine/Audio/AudioSystem.h"
-#include "../Engine/Math/Vector2.h"
+#include "../Audio/AudioSystem.h"
+#include "../Math/Vector2.h"
 #include <SDL3/SDL.h>
 #include <vector>
 #include <unordered_map>

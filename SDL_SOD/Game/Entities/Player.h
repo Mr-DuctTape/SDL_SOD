@@ -9,13 +9,6 @@ class InputSystem;
 class Player
 {
 private:
-	Entity& m_entity;
-	Sprite& m_sprite;
-	Transform& m_transform;
-	Animator& m_animator;
-	Physics2D& m_physics2D;
-	BoxCollider2D& m_boxCollider2D;
-
 	Vec2f m_respawnPosition{290.0f, 960.0f};
 
 	float m_cameraFollowSpeed = 4.0f;
@@ -90,8 +83,10 @@ private:
 	(
 		BoxCollider2D& m_boxCollider2D,
 		InputSystem& inputSystem,
+
 		Vec2f& accel,
 		Vec2f& velocity,
+
 		float deltaTime
 	);
 
@@ -101,6 +96,7 @@ private:
 		AudioManager& audioManager,
 		InputSystem& inputSystem,
 		Entity& effect, 
+
 		bool& gatherBuffer, 
 		float deltaTime
 	);
@@ -109,7 +105,11 @@ private:
 		EntityManager& entityManager, 
 		AudioManager& audioManager,
 		InputSystem& inputSystem,
+
 		Entity& dashEffect, 
+		Entity& dashCooldownEffect,
+		Entity& dashCoolDownEffectDestroy,
+		
 		Vec2f accel, 
 		float deltaTime
 	);
@@ -123,6 +123,9 @@ private:
 		Entity& wallJumpEffect, 
 		Entity& jumpEffect, 
 		Entity& dashEffect,
+		Entity& dashCooldownEffect,
+		Entity& dashCoolDownEffectDestroy,
+
 		float deltaTime
 	);
 
@@ -150,11 +153,19 @@ private:
 	void CameraFollow(RenderingSystem& renderingSystem, float deltaTime);
 
 public:
+	Entity& m_playerEntity;
+
+	Sprite& m_sprite;
+	Transform& m_transform;
+	Animator& m_animator;
+	Physics2D& m_physics2D;
+	BoxCollider2D& m_boxCollider2D;
+
 	bool freezeInput = false;
 
 	Entity& GetEntity()
 	{
-		return m_entity;
+		return m_playerEntity;
 	}
 	Vec2f& GetRespawnPosition()
 	{
@@ -173,18 +184,20 @@ public:
 		Entity& wallJumpEffect, 
 		Entity& jumpingEffect,
 		Entity& dashingEffect, 
+		Entity& dashCooldownEffect,
+		Entity& dashCoolDownEffectDestroy,
 
 		float masterVolume,
 		float deltaTime
 	);
 
 	Player(Entity& entity) : 
-		m_entity(entity),
-		m_sprite(m_entity.GetComponent<Sprite>()),
-		m_animator(m_entity.GetComponent<Animator>()),
-		m_transform(m_entity.GetComponent<Transform>()),
-		m_boxCollider2D(m_entity.GetComponent<BoxCollider2D>()),
-		m_physics2D(m_entity.GetComponent<Physics2D>())
+		m_playerEntity(entity),
+		m_sprite(m_playerEntity.GetComponent<Sprite>()),
+		m_animator(m_playerEntity.GetComponent<Animator>()),
+		m_transform(m_playerEntity.GetComponent<Transform>()),
+		m_boxCollider2D(m_playerEntity.GetComponent<BoxCollider2D>()),
+		m_physics2D(m_playerEntity.GetComponent<Physics2D>())
 	{
 
 	}
