@@ -33,6 +33,11 @@ void Bob::Update(Engine& engine, Player& player, float deltaTime)
 
 void Amber::Update(Engine& engine, Player& player, float deltaTime)
 {
+	if constexpr (DEBUGPRINT)
+	{
+		return;
+	}
+
 	Transform& playerTransform = player.GetEntity().GetComponent<Transform>();
 	Vec2f playerDir = playerTransform.position - m_transform.position;
 

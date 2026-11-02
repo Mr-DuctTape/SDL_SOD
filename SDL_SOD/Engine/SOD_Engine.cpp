@@ -55,6 +55,18 @@ void Engine::Update()
 			// Update which entities are destroyables
 			if (auto anim = dynamic_cast<Animator*>(component))
 			{
+				for (auto& keyFrame : anim->currentAnimation.audioKeyFrames)
+				{
+					if (keyFrame.frame >= 0 && keyFrame.frame == anim->currentAnimation.currentFrame &&
+						keyFrame.audioClip && !keyFrame.played)
+					{
+						std::cout << "Keyframe: " << keyFrame.frame << " anim currentframe: " << anim->currentAnimation.currentFrame << "\n";
+						audioManager.Play(*keyFrame.audioClip, 1.0f);
+						keyFrame.played = true;
+						break;
+					}
+				}
+
 				if (anim->destroyOnFinish && anim->finished) 
 				{
 					destroyables.push_back(entity);

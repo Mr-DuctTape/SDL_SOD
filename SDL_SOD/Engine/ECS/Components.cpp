@@ -50,7 +50,7 @@ void Animator::Update(float dt)
 	dst.w = static_cast<float>(sprite.width);
 	dst.h = static_cast<float>(sprite.height);
 }
-Animator::Animation Animator::CreateAnimation(const std::string& name, int frames, int pixelWidth, int pixelHeight, SDL_Texture* spriteSheet)
+Animator::Animation& Animator::CreateAnimation(const std::string& name, int frames, int pixelWidth, int pixelHeight, SDL_Texture* spriteSheet)
 {
 	static int Increase = 0;
 	Animation anim;
@@ -58,10 +58,10 @@ Animator::Animation Animator::CreateAnimation(const std::string& name, int frame
 	anim.pixelHeight = pixelHeight;
 	anim.pixelWidth = pixelWidth;
 	anim.spriteSheet = spriteSheet;
-	anim.ID = Increase++;
-	anim.AnimationName = name;
+	anim.id = Increase++;
+	anim.animationName = name;
 	animations.emplace(name, anim);
-	return anim;
+	return animations.find(name)->second;
 }
 Animator::Animation Animator::GetAnimation(const std::string& anim)
 {
@@ -70,7 +70,7 @@ Animator::Animation Animator::GetAnimation(const std::string& anim)
 }
 void Animator::SetAnimation(const Animation& animation)
 {
-	if (currentAnimation.ID != animation.ID)
+	if (currentAnimation.id != animation.id)
 		currentAnimation = animation;
 
 	finished = false;
@@ -78,7 +78,7 @@ void Animator::SetAnimation(const Animation& animation)
 void Animator::SetAnimation(const std::string& name)
 {
 	auto anim = GetAnimation(name);
-	if (currentAnimation.ID != anim.ID)
+	if (currentAnimation.id != anim.id)
 		currentAnimation = anim;
 
 	currentState = name;
@@ -104,7 +104,7 @@ void Animator::Print() const
 	std::cout << "Flipped X: " << (flippedX ? "true" : "false") << "\n";
 
 	std::cout << "--- Current Animation ---\n";
-	std::cout << "ID: " << currentAnimation.ID << "\n";
+	std::cout << "ID: " << currentAnimation.id << "\n";
 	std::cout << "Frames: " << currentAnimation.totalFrames << "\n";
 	std::cout << "Current Frame: " << currentAnimation.currentFrame << "\n";
 	std::cout << "Pixel Width: " << currentAnimation.pixelWidth << "\n";
@@ -127,6 +127,63 @@ void Animator::Print() const
 		<< "\n";
 
 	std::cout << "========================\n";
+}
+
+void Animator::Render(RenderingSystem& renderingSystem, Camera& camera)
+{
+	if (!currentAnimation.spriteSheet && !errorDisplayed)
+	{
+		std::cout << "=== Animator Error ===\n";
+		std::cout << "(Animator Rendering): Animator spritesheet not found " << currentAnimation.animationName << "\n";
+		std::cout << "(Animator): Entity ID: " << parent->m_id << "\n";
+		errorDisplayed = true;
+		return;
+	}
+
+	SDL_FlipMode flip = flippedX ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
+	SDL_FRect dst = WorldToScreen(currentAnimation.dst, camera);
+
+	if (dst.x + dst.w < 0.0f ||
+		dst.x > renderingSystem.renderResX ||
+		dst.y + dst.h < 0.0f ||
+		dst.y > renderingSystem.renderResY)
+	{
+		return;
+	}
+
+	SDL_RenderTextureRotated(
+		renderingSystem.renderer,
+		currentAnimation.spriteSheet,
+		&currentAnimation.src,
+		&dst,
+		0.0f,
+		nullptr,
+		flip
+	);
+
+	int x = static_cast<int>(std::round(dst.x));
+	int y = static_cast<int>(std::round(dst.y));
+
+	Debugger* debugger = renderingSystem.GetDebugger();
+
+	// some debugging for the animator
+	if (debugger->enabled)
+	{
+		if (destroyOnFinish)
+		{
+			SDL_SetRenderDrawColor(renderingSystem.renderer, 170, 140, 255, 255);
+			SDL_RenderDebugText(renderingSystem.renderer, x, y + 20, "Destroyable");
+		}
+		else
+		{
+			SDL_SetRenderDrawColor(renderingSystem.renderer, 120, 180, 255, 255);
+			SDL_RenderDebugText(renderingSystem.renderer, x - 10, y - 20, "Animator: ");
+			SDL_RenderDebugText(renderingSystem.renderer, x - 10, y - 10, ("State: " + currentState).c_str());
+			SDL_RenderDebugText(renderingSystem.renderer, x - 10, y, ("FlippedX: " + std::string(flippedX ? "true" : "false")).c_str());
+		}
+		debugger->debugStats.spritesRendered++;
+		debugger->debugStats.drawCalls++;
+	}
 }
 
 // ==== PHYSICS2D COMPONENT ====
@@ -349,5 +406,45 @@ void TileMap::TestPrint()
 			std::cout << tiles[y][x];
 		}
 		std::cout << "\n";
+	}
+}
+
+void TileMap::Render(RenderingSystem& renderingSystem, Camera& camera)
+{
+	Transform& transform = parent->GetComponent<Transform>();
+
+	for (int y = 0; y < tiles.size(); y++)
+	{
+		for (int x = 0; x < tiles[y].size(); x++)
+		{
+			// Get the position on screen
+			SDL_FRect dst = WorldToScreen(GetTileBoxCollider2D(x, y).rect, camera);
+
+			//TODO: Change tiles[y][x] == 3
+			if (dst.x + dst.w < 0.0f ||
+				dst.x > renderingSystem.renderResX ||
+				dst.y + dst.h < 0.0f ||
+				dst.y > renderingSystem.renderResY || tiles[y][x] == 3)
+			{
+				continue;
+			}
+
+			// Get the correct tile on texture
+			SDL_FRect src{};
+			int ID = GetTileID(x, y);
+			src.h = tilePixelHeight;
+			src.w = tilePixelWidth;
+			src.x = ID * tilePixelWidth;
+			src.y = 0;
+
+			// Draw tile onto screen
+			SDL_RenderTexture(renderingSystem.renderer, spriteSheet, &src, &dst);
+			Debugger* debugger = renderingSystem.GetDebugger();
+			if (debugger && debugger->enabled)
+			{
+				debugger->debugStats.tilesRendered++;
+				debugger->debugStats.drawCalls++;
+			}
+		}
 	}
 }

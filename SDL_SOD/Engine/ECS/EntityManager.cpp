@@ -65,7 +65,7 @@ std::vector<EntityManager::ParsedObject> EntityManager::LoadObjectFile(const std
 
 	std::string line;
 
-	constexpr float offsetX = 85.0f;
+	constexpr float offsetX = 180.0f;
 	constexpr float offsetY = 178.0f;
 
 	//Load objects

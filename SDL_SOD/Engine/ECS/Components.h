@@ -5,6 +5,7 @@
 #include <string>
 #include "../Math/Vector2.h"
 #include "../Macros/DEBUGPRINT.h"
+#include "../Audio/AudioSystem.h"
 
 class Entity;
 
@@ -242,11 +243,20 @@ public:
 
 class Animator : public Component
 {
+private:
+	struct AudioKeyFrame
+	{
+		AudioManager::AudioClip* audioClip = nullptr;
+		int frame = -1;
+		bool played = false;
+	};
 public:
 	struct Animation
 	{
 		SDL_Texture* spriteSheet = nullptr;
-		std::string AnimationName;
+		std::vector<AudioKeyFrame> audioKeyFrames;
+
+		std::string animationName;
 
 		SDL_FRect src = {};
 		SDL_FRect dst = {};
@@ -255,8 +265,12 @@ public:
 		int pixelHeight = 0;
 		int totalFrames = 0;
 		int currentFrame = 0;
+		int id = 0;
 
-		int ID = 0;
+		void SetAudioKeyFrame(AudioManager::AudioClip* audioClip, int frame)
+		{
+			audioKeyFrames.push_back(AudioKeyFrame{ audioClip, frame });
+		}
 	};
 
 	Animation currentAnimation;
@@ -280,7 +294,7 @@ public:
 	bool destroyOnFinish = false;
 	bool flippedX = false;
 
-	Animation CreateAnimation(const std::string& name, int frames, int pixelWidth, int pixelHeight, SDL_Texture* spriteSheet);
+	Animation& CreateAnimation(const std::string& name, int frames, int pixelWidth, int pixelHeight, SDL_Texture* spriteSheet);
 	Animation GetAnimation(const std::string& anim);
 	void SetAnimation(const Animation& animation);
 	void SetAnimation(const std::string& name);

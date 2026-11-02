@@ -38,6 +38,7 @@ int main()
 	constexpr std::pair<const char*, const char*> audioClips[] =
 	{
 		{"Dash", "Assets/Audio/Dash.wav"},
+		{"Death", "Assets/Audio/Death.wav"},
 		{"Step", "Assets/Audio/Step.wav"},
 		{"Jump", "Assets/Audio/Jump2.wav"},
 		{"Jump2", "Assets/Audio/Jump.wav"},
@@ -63,8 +64,7 @@ int main()
 		engine.DeltaTimeUpdate();
 		engine.inputSystem.Process();
 		engine.renderingSystem.ClearScreen();
-		//
-
+		
 		// Debugger stuff
 		if (game.GetSettings().debugMode &&
 			engine.inputSystem.GetButtonDown(SDL_SCANCODE_0))
@@ -101,7 +101,6 @@ int main()
 		// End of frame
 		engine.Update();
 		engine.renderingSystem.RenderScreen(engine.entityManager);
-		//
 
 		// IGNORE BELOW THIS IS NOT IMPORTANT ONLY FPS LIMITER
 		float frameTime =

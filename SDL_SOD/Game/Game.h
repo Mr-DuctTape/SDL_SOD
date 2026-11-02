@@ -51,7 +51,7 @@ private:
 
 	// Loading 
 	void LoadAllTextures(AssetManager& assetManager);
-	void LoadTilemap(EntityManager& entityManager, AssetManager& assetManager, const std::string& level);
+	void LoadTilemap(EntityManager& entityManager, AssetManager& assetManager, const Vec2f offset, const std::string& level, const std::string& renderingLayer);
 	void LoadObjects(EntityManager& entityManager, const std::string& level);
 
 	// Spawning
@@ -88,6 +88,15 @@ public:
 		m_engine(engine),
 		m_gameUI(engine, *this)
 	{
+		if constexpr (DEBUGPRINT)
+			m_settings.debugMode = true;
+
+		engine.renderingSystem.CreateRenderingLayer("Background");
+		engine.renderingSystem.CreateRenderingLayer("Foreground");
+		engine.renderingSystem.CreateRenderingLayer("Spikes");
+		engine.renderingSystem.CreateRenderingLayer("Npc");
+		engine.renderingSystem.CreateRenderingLayer("Player");
+
 		LoadTexturesAndPrefabs(m_engine.entityManager, m_engine.assetManager);
 		CreateDialogs(m_engine.dialogSystem);
 		m_engine.renderingSystem.camera.pos = { -5000.0f, -5000.0f };
@@ -99,6 +108,6 @@ public:
 	}
 
 	void LoadTexturesAndPrefabs(EntityManager& entityManager, AssetManager& assetManager);
-	void LoadLevel(EntityManager& entityManager, AssetManager& assetManager, const std::string& level);
+	void LoadLevel(EntityManager& entityManager, AssetManager& assetManager, const Vec2f offset, const std::string& level, const std::string& renderingLayer);
 	void Update();
 };

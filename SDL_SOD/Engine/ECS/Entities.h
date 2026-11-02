@@ -37,6 +37,7 @@ private:
 	}
 
 	std::unordered_map<std::type_index, size_t> m_componentsIndex;
+	std::string m_renderingLayer = "Default";
 
 public: 
 	std::vector<Component*> m_components;
@@ -106,6 +107,15 @@ public:
 		return nullptr;
 	}
 
+	const std::string& GetRenderingLayer() const
+	{
+		return m_renderingLayer;
+	}
+	void SetRenderingLayer(const std::string& name)
+	{
+		m_renderingLayer = name;
+	}
+
 	~Entity()
 	{
 		DestroyComponents();
@@ -118,6 +128,7 @@ public:
 		m_id(other.m_id)
 	{
 		other.m_id = -1;
+		SetRenderingLayer(other.GetRenderingLayer());
 		for (Component* c : m_components) {
 			c->parent = this;
 		}
@@ -128,6 +139,8 @@ public:
 	Entity(const Entity& other) // Copy construct
 	{
 		// Create copies
+		SetRenderingLayer(other.GetRenderingLayer());
+
 		for (auto* component : other.m_components)
 		{
 			if (!component)
@@ -150,6 +163,7 @@ public:
 		DestroyComponents();
 
 		m_id = other.m_id;
+		SetRenderingLayer(other.GetRenderingLayer());
 		other.m_id = -1;
 
 		// Move the pointers
@@ -170,6 +184,8 @@ public:
 
 		// Free any memory already in use
 		DestroyComponents();
+
+		SetRenderingLayer(other.GetRenderingLayer());
 
 		// Create copies
 		for (Component* component : other.m_components)

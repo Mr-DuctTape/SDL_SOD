@@ -6,7 +6,7 @@ Entity* Game::GetPrefab(const std::string& name)
 	auto it = m_prefabs.find(name);
 	if (it == m_prefabs.end())
 	{
-		std::cout << "could not find : " << name << "\n";
+		std::cout << "could not find prefab : " << name << "\n";
 		return nullptr;
 	}
 	return it->second;
@@ -117,7 +117,7 @@ void Game::CreateDashFXPrefab(EntityManager& entityManager, AssetManager& assetM
 	dashEffectSprite->width = SPRT_WIDTH;
 
 	Animator* dashEffectAnimator = dashEffectObj.AddComponent<Animator>();
-	dashEffectAnimator->CreateAnimation("DashFX", 6, 16, 16, assetManager.GetTexture("DashEffect"));
+	dashEffectAnimator->CreateAnimation("DashFX", 5, 16, 16, assetManager.GetTexture("DashEffect"));
 	dashEffectAnimator->SetAnimation("DashFX");
 	dashEffectAnimator->speed = 0.1f;
 	dashEffectAnimator->scaleAnimationX = 1.0f;
@@ -156,7 +156,15 @@ void Game::CreateDashCoolDownFXPrefab(EntityManager& entityManager, AssetManager
 	sprite->width = SPRT_WIDTH;
 
 	Animator* dashCooldownFXAnimator = heloObj.AddComponent<Animator>();
-	dashCooldownFXAnimator->CreateAnimation("HeloLoad", 7, 16, 16, assetManager.GetTexture("HeloLoad"));
+	Animator::Animation& animation = dashCooldownFXAnimator->CreateAnimation("HeloLoad", 7, 16, 16, assetManager.GetTexture("HeloLoad"));
+
+	auto& clip = m_engine.audioManager.GetAudio("Click");
+
+	//for (int i = 1; i < 6; i++)
+	//{
+	//	animation.SetAudioKeyFrame(&clip, i);
+	//}
+
 	dashCooldownFXAnimator->SetAnimation("HeloLoad");
 	dashCooldownFXAnimator->speed = 0.1f;
 	dashCooldownFXAnimator->scaleAnimationX = 1.0f;
@@ -176,7 +184,11 @@ void Game::CreateDashCoolDownDestroyFXPrefab(EntityManager& entityManager, Asset
 	entitySprite->width = SPRT_WIDTH;
 
 	Animator* entityAnimator = entityObj.AddComponent<Animator>();
-	entityAnimator->CreateAnimation("Boom", 4, 16, 16, assetManager.GetTexture("BangSheet"));
+	Animator::Animation& animation = entityAnimator->CreateAnimation("Boom", 4, 16, 16, assetManager.GetTexture("BangSheet"));
+	auto& clip = m_engine.audioManager.GetAudio("Death");
+
+	/*animation.SetAudioKeyFrame(&clip, 1);*/
+
 	entityAnimator->SetAnimation("Boom");
 	entityAnimator->speed = 0.1f;
 	entityAnimator->scaleAnimationX = 1.0f;
@@ -203,6 +215,7 @@ void Game::CreateSpikePrefab(EntityManager& entityManager, AssetManager& assetMa
 {
 	Entity& spikeObject = entityManager.CreateEntity();
 	spikeObject.AddComponent<EntityTag>()->name = "Spikes";
+	spikeObject.SetRenderingLayer("Spikes");
 
 	spikeObject.AddComponent<Transform>()->position = { -999999.0f, -999999.0f };
 	BoxCollider2D* spikeCollider = spikeObject.AddComponent<BoxCollider2D>();
@@ -331,26 +344,28 @@ void Game::CreateAllPrefabs(EntityManager& entityManager, AssetManager& assetMan
 void Game::SpawnPlayer(EntityManager& entityManager, const Vec2f position)
 {
 	auto& player = m_gameEntities.player;
-	if (player){
+	if (player) {
 		player.value().m_transform.position = position;
 		return;
 	}
 
 	Entity& entity = entityManager.CreateEntity(GetPrefab("Player"));
 	entity.GetComponent<Transform>().position = position;
+	entity.SetRenderingLayer("Player");
 	player.emplace(Player(entity));
 }
 
 void Game::SpawnBob(EntityManager& entityManager, const Vec2f position)
 {
 	auto& bob = m_gameEntities.bob;
-	if (bob){
+	if (bob) {
 		bob.value().m_transform.position = position;
 		return;
 	}
 
 	Entity& entity = entityManager.CreateEntity(GetPrefab("Bob"));
 	entity.GetComponent<Transform>().position = position;
+	entity.SetRenderingLayer("Npc");
 
 	bob.emplace(Bob(entity, m_engine.dialogSystem));
 }
@@ -358,13 +373,14 @@ void Game::SpawnBob(EntityManager& entityManager, const Vec2f position)
 void Game::SpawnAmber(EntityManager& entityManager, const Vec2f position)
 {
 	auto& amber = m_gameEntities.amber;
-	if (amber){
+	if (amber) {
 		amber.value().m_transform.position = position;
 		return;
 	}
 
 	Entity& entity = entityManager.CreateEntity(GetPrefab("Amber"));
 	entity.GetComponent<Transform>().position = position;
+	entity.SetRenderingLayer("Npc");
 
 	amber.emplace(Amber(entity, m_engine.dialogSystem));
 }
@@ -373,6 +389,7 @@ void Game::SpawnTorch(EntityManager& entityManager, const Vec2f position)
 {
 	Entity& entity = entityManager.CreateEntity(GetPrefab("Torch"));
 	entity.GetComponent<Transform>().position = position;
+	entity.SetRenderingLayer("Foreground");
 
 	auto& torches = m_gameEntities.torches;
 	torches.emplace_back(Torch(entity));
@@ -385,9 +402,9 @@ void Game::LoadTexturesAndPrefabs(EntityManager& entityManager, AssetManager& as
 	CreateAllEffectPrefabs(entityManager, assetManager);
 }
 
-void Game::LoadLevel(EntityManager& entityManager, AssetManager& assetManager, const std::string& level)
+void Game::LoadLevel(EntityManager& entityManager, AssetManager& assetManager, const Vec2f offset, const std::string& level, const std::string& renderingLayer)
 {
-	LoadTilemap(entityManager, assetManager, level);
+	LoadTilemap(entityManager, assetManager, offset, level, renderingLayer);
 	LoadObjects(entityManager, level);
 }
 
@@ -424,12 +441,12 @@ void Game::Update(RenderingSystem& renderingSystem, EntityManager& entityManager
 	}
 
 	auto& bob = m_gameEntities.bob;
-	if (bob){
+	if (bob) {
 		bob.value().Update(m_engine, player.value(), deltaTime);
 	}
 
 	auto& amber = m_gameEntities.amber;
-	if (amber){
+	if (amber) {
 		amber.value().Update(m_engine, player.value(), deltaTime);
 	}
 }
@@ -446,7 +463,10 @@ void Game::Update()
 
 		if (!loaded) // TODO: in the future there will be different levels loaded so keep that in mind.
 		{
-			LoadLevel(m_engine.entityManager, m_engine.assetManager, "Assets/Levels/Tutorial");
+			LoadTilemap(m_engine.entityManager, m_engine.assetManager, { 424.0f, -254.0f }, "Assets/Levels/Tutorial", "Background");
+
+			LoadLevel(m_engine.entityManager, m_engine.assetManager, {200.0f, 200.0f}, "Assets/Levels/Tutorial", "Foreground");
+
 			SpawnPlayer(m_engine.entityManager, Vec2f{ 290.3f, 300.0f });
 
 			SpawnTorch(m_engine.entityManager, Vec2f{ 5197.52f, 800.0f });
@@ -460,12 +480,12 @@ void Game::Update()
 		Update(m_engine.renderingSystem, m_engine.entityManager,
 			m_engine.audioManager, m_engine.inputSystem, m_engine.deltaTime);
 	}
-	else if (m_gameUI.MainMenu()){
+	else if (m_gameUI.MainMenu()) {
 		m_engine.Quit();
 	}
 }
 
-void Game::LoadTilemap(EntityManager& entityManager, AssetManager& assetManager, const std::string& level)
+void Game::LoadTilemap(EntityManager& entityManager, AssetManager& assetManager, const Vec2f offset, const std::string& level, const std::string& renderingLayer)
 {
 	std::filesystem::path levelPath = level;
 	if (!std::filesystem::is_directory(levelPath))
@@ -484,15 +504,16 @@ void Game::LoadTilemap(EntityManager& entityManager, AssetManager& assetManager,
 	}
 	if (tilemapFile.empty())
 	{
-		std::cout << "Could not find .sodobj file : " << level << "\n";
+		std::cout << "Could not find .sodmap file : " << level << "\n";
 		return;
 	}
 
-
 	Entity& tilemapObj = entityManager.CreateEntity();
-	tilemapObj.AddComponent<Transform>()->position = { 100.0f, 200.0f };
+	tilemapObj.AddComponent<Transform>()->position = { offset.x, offset.y};
+	tilemapObj.AddComponent<TileMap>();
+	tilemapObj.SetRenderingLayer(renderingLayer);
 
-	auto& tileMap = *tilemapObj.AddComponent<TileMap>();
+	TileMap& tileMap = tilemapObj.GetComponent<TileMap>();
 	tileMap.LoadTileMap(tilemapFile);
 	tileMap.SetTilePixelSize(16, 16);
 	tileMap.SetTileScale(8.0f, 8.0f);
@@ -502,7 +523,7 @@ void Game::LoadTilemap(EntityManager& entityManager, AssetManager& assetManager,
 	properties.solid = true;
 	for (int i = 0; i < 26; i++)
 	{
-		if (i == 3 || i == 4 || i == 15)
+		if (i == 3 || i == 4 || i == 15) // I forgot what this does
 			continue;
 
 		tileMap.SetTileProperties(i, properties);
@@ -566,7 +587,7 @@ void Game::CreateDialogs(DialogSystem& dialogSystem)
 	const char* BobVoiceLine = "Jump2";
 
 	dialog = &CreateDialog("Amber_Intro");
-	AddLine("You're awake!"); 
+	AddLine("You're awake!");
 	AddLine("Hi! I'm Amber.");
 	AddLine("Amber will help you learn!");
 	SetAudio(AmberVoiceLine);
