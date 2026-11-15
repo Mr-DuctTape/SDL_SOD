@@ -1,5 +1,6 @@
 #include "Game.h"
 #include "GameUI.h"
+#include <fstream>
 
 Entity* Game::GetPrefab(const std::string& name)
 {
@@ -15,6 +16,7 @@ Entity* Game::GetPrefab(const std::string& name)
 void Game::LoadAllTextures(AssetManager& assetManager)
 {
 	assetManager.CreateTexture("TileSet", "Assets/Textures/tiles.png");
+	assetManager.CreateTexture("Background", "Assets/Textures/Back.png");
 
 	assetManager.CreateTexture("SpikeTexture", "Assets/Textures/Spike.png");
 
@@ -215,7 +217,6 @@ void Game::CreateSpikePrefab(EntityManager& entityManager, AssetManager& assetMa
 {
 	Entity& spikeObject = entityManager.CreateEntity();
 	spikeObject.AddComponent<EntityTag>()->name = "Spikes";
-	spikeObject.SetRenderingLayer("Spikes");
 
 	spikeObject.AddComponent<Transform>()->position = { -999999.0f, -999999.0f };
 	BoxCollider2D* spikeCollider = spikeObject.AddComponent<BoxCollider2D>();
@@ -351,10 +352,9 @@ void Game::SpawnPlayer(EntityManager& entityManager, const Vec2f position)
 
 	Entity& entity = entityManager.CreateEntity(GetPrefab("Player"));
 	entity.GetComponent<Transform>().position = position;
-	entity.SetRenderingLayer("Player");
+
 	player.emplace(Player(entity));
 }
-
 void Game::SpawnBob(EntityManager& entityManager, const Vec2f position)
 {
 	auto& bob = m_gameEntities.bob;
@@ -365,11 +365,9 @@ void Game::SpawnBob(EntityManager& entityManager, const Vec2f position)
 
 	Entity& entity = entityManager.CreateEntity(GetPrefab("Bob"));
 	entity.GetComponent<Transform>().position = position;
-	entity.SetRenderingLayer("Npc");
 
 	bob.emplace(Bob(entity, m_engine.dialogSystem));
 }
-
 void Game::SpawnAmber(EntityManager& entityManager, const Vec2f position)
 {
 	auto& amber = m_gameEntities.amber;
@@ -380,7 +378,6 @@ void Game::SpawnAmber(EntityManager& entityManager, const Vec2f position)
 
 	Entity& entity = entityManager.CreateEntity(GetPrefab("Amber"));
 	entity.GetComponent<Transform>().position = position;
-	entity.SetRenderingLayer("Npc");
 
 	amber.emplace(Amber(entity, m_engine.dialogSystem));
 }
@@ -389,7 +386,6 @@ void Game::SpawnTorch(EntityManager& entityManager, const Vec2f position)
 {
 	Entity& entity = entityManager.CreateEntity(GetPrefab("Torch"));
 	entity.GetComponent<Transform>().position = position;
-	entity.SetRenderingLayer("Foreground");
 
 	auto& torches = m_gameEntities.torches;
 	torches.emplace_back(Torch(entity));
@@ -401,10 +397,9 @@ void Game::LoadTexturesAndPrefabs(EntityManager& entityManager, AssetManager& as
 	CreateAllPrefabs(entityManager, assetManager);
 	CreateAllEffectPrefabs(entityManager, assetManager);
 }
-
-void Game::LoadLevel(EntityManager& entityManager, AssetManager& assetManager, const Vec2f offset, const std::string& level, const std::string& renderingLayer)
+void Game::LoadLevel(EntityManager& entityManager, AssetManager& assetManager, const Vec2f offset, const std::string& level, const std::string& tileSet)
 {
-	LoadTilemap(entityManager, assetManager, offset, level, renderingLayer);
+	LoadTilemap(entityManager, assetManager, offset, level, tileSet, true);
 	LoadObjects(entityManager, level);
 }
 
@@ -463,9 +458,7 @@ void Game::Update()
 
 		if (!loaded) // TODO: in the future there will be different levels loaded so keep that in mind.
 		{
-			LoadTilemap(m_engine.entityManager, m_engine.assetManager, { 424.0f, -254.0f }, "Assets/Levels/Tutorial", "Background");
-
-			LoadLevel(m_engine.entityManager, m_engine.assetManager, {200.0f, 200.0f}, "Assets/Levels/Tutorial", "Foreground");
+			LoadLevel(m_engine.entityManager, m_engine.assetManager, { 100.0f, 200.0f }, "Assets/Levels/Tutorial", "TileSet");
 
 			SpawnPlayer(m_engine.entityManager, Vec2f{ 290.3f, 300.0f });
 
@@ -485,7 +478,7 @@ void Game::Update()
 	}
 }
 
-void Game::LoadTilemap(EntityManager& entityManager, AssetManager& assetManager, const Vec2f offset, const std::string& level, const std::string& renderingLayer)
+void Game::LoadTilemap(EntityManager& entityManager, AssetManager& assetManager, const Vec2f offset, const std::string& level, const std::string& tileSet, bool collidable)
 {
 	std::filesystem::path levelPath = level;
 	if (!std::filesystem::is_directory(levelPath))
@@ -509,21 +502,23 @@ void Game::LoadTilemap(EntityManager& entityManager, AssetManager& assetManager,
 	}
 
 	Entity& tilemapObj = entityManager.CreateEntity();
-	tilemapObj.AddComponent<Transform>()->position = { offset.x, offset.y};
+	tilemapObj.AddComponent<Transform>()->position = { offset.x, offset.y };
 	tilemapObj.AddComponent<TileMap>();
-	tilemapObj.SetRenderingLayer(renderingLayer);
+	tilemapObj.GetComponent<TileMap>().collidable = collidable;
 
 	TileMap& tileMap = tilemapObj.GetComponent<TileMap>();
 	tileMap.LoadTileMap(tilemapFile);
 	tileMap.SetTilePixelSize(16, 16);
 	tileMap.SetTileScale(8.0f, 8.0f);
-	tileMap.SetSpriteSheet(assetManager.GetTexture("TileSet"));
+
+	tileMap.SetSpriteSheet(assetManager.GetTexture(tileSet));
 
 	TileMap::TileProperties properties;
 	properties.solid = true;
+
 	for (int i = 0; i < 26; i++)
 	{
-		if (i == 3 || i == 4 || i == 15) // I forgot what this does
+		if (i == 3 || i == 4 || i == 14 || i == 15) // I forgot what this does
 			continue;
 
 		tileMap.SetTileProperties(i, properties);
@@ -576,110 +571,65 @@ void Game::CreateDialogs(DialogSystem& dialogSystem)
 			dialog->entireDialog.emplace_back(str);
 		};
 
+	auto SetColor = [&dialog](SDL_Color color) -> void
+		{
+			dialog->color = color;
+		};
+
 	AudioManager& audioManager = m_engine.audioManager;
 	auto SetAudio = [&dialog, &audioManager](const char* name) -> void
 		{
 			dialog->audioClip = audioManager.GetAudio(name);
 		};
 
+	// Turn into file reading
+	std::ifstream file("Assets/Audio/NPCDialog/Dialogs.txt");
+	if (!file.is_open())
+	{
+		std::cout << "[ ERROR ] Failed to open file containing dialogs : " << "\n";
+		return;
+	}
+
+	std::string line;
+
+	const char* Dialog = "Dialog: ";
+	const char* Voice = "Voice: ";
 
 	const char* AmberVoiceLine = "Click";
 	const char* BobVoiceLine = "Jump2";
 
-	dialog = &CreateDialog("Amber_Intro");
-	AddLine("You're awake!");
-	AddLine("Hi! I'm Amber.");
-	AddLine("Amber will help you learn!");
-	SetAudio(AmberVoiceLine);
+	SDL_Color AmberColor = { 255, 145, 55, 255 }; // Fiery orange
+	SDL_Color BobColor = { 100, 175, 255, 255 }; // Blob blue
 
-	dialog = &CreateDialog("Amber_Move_Start");
-	AddLine("Try to move!");
-	AddLine("Use your ( A,D ) keys.");
-	SetAudio(AmberVoiceLine);
+	while (std::getline(file, line))
+	{
+		if (line.starts_with(Dialog))
+		{
+			line.erase(0, strlen(Dialog));
+			dialog = &CreateDialog(line.c_str());
+			continue;
+		}
 
-	dialog = &CreateDialog("Amber_Move_End");
-	AddLine("That's it!");
-	AddLine("Amber is proud!");
-	SetAudio(AmberVoiceLine);
+		if (line.starts_with(Voice)) 
+		{
+			line.erase(0, strlen(Voice));
+			if (line == "AmberVoiceLine")
+			{
+				SetAudio(AmberVoiceLine);
+				SetColor(AmberColor);
+			}
+			else if (line == "BobVoiceLine")
+			{
+				SetAudio(BobVoiceLine);
+				SetColor(BobColor);
+			}
+			continue;
+		}
 
-	dialog = &CreateDialog("Amber_Jump_Start");
-	AddLine("Amber thinks you should jump!");
-	AddLine("Press your ( SPACE ) key to jump!");
-	SetAudio(AmberVoiceLine);
+		if (!line.empty()) {
+			AddLine(line.c_str());
+		}
+	}
 
-	dialog = &CreateDialog("Amber_Jump_End");
-	AddLine("Perfect!");
-	AddLine("Now put these two together!");
-	SetAudio(AmberVoiceLine);
-
-	dialog = &CreateDialog("Amber_Spikes_Start");
-	AddLine("SPIKES are bad..");
-	AddLine("Jump over them!");
-	SetAudio(AmberVoiceLine);
-
-	dialog = &CreateDialog("Amber_Spikes_End");
-	SetAudio(AmberVoiceLine);
-
-	dialog = &CreateDialog("Amber_Torch_Start");
-	AddLine("Torches light up when you get close!");
-	AddLine("They allow you to respawn at them!");
-	SetAudio(AmberVoiceLine);
-
-	dialog = &CreateDialog("Amber_Dash_Start");
-	AddLine("You can't jump over this one.");
-	AddLine("Jump and pair it with a dash!");
-	AddLine("To dash press ( SHIFT )");
-	SetAudio(AmberVoiceLine);
-
-	dialog = &CreateDialog("Amber_Dash_End");
-	AddLine("Amazing!");
-	SetAudio(AmberVoiceLine);
-
-	dialog = &CreateDialog("Amber_Fall");
-	AddLine("Jump down.");
-	AddLine("Amber will catch you!");
-	AddLine("Probably.");
-	SetAudio(AmberVoiceLine);
-
-	dialog = &CreateDialog("Amber_WallJump_Start");
-	AddLine("Now for Amber's favorite.");
-	AddLine("Wall jumping!");
-	AddLine("You can cling to walls with ( A,D )");
-	AddLine("Then you can jump off them with ( SPACE )");
-	SetAudio(AmberVoiceLine);
-
-	dialog = &CreateDialog("Amber_WallJump_End");
-	AddLine("You did it!");
-	AddLine("Amber is not needed anymore...");
-	AddLine("But don't worry!");
-	AddLine("Amber will always be here!");
-	SetAudio(AmberVoiceLine);
-
-	dialog = &CreateDialog("Amber_Response");
-	AddLine("Yes Amber is teaching!");
-	AddLine("Amber will teach everything!");
-	SetAudio(AmberVoiceLine);
-
-	dialog = &CreateDialog("Amber_Tutorial_End");
-	AddLine("If you got this as a playtest there is sadly nothing more.");
-	AddLine("Feel free to move around and test out everything you learned.");
-	AddLine("Amber is looking forward to seeing you again!");
-	SetAudio(AmberVoiceLine);
-
-
-	// Bob voice lines
-
-	dialog = &CreateDialog("Bob_Intro");
-	AddLine("I am the mysterious Blob...");
-	AddLine("But friends call me BOB!");
-	AddLine("You seem quite new around here..");
-	AddLine("No matter! You're now Bob's friend!");
-	AddLine("Amber are you teaching my friend?");
-	SetAudio(BobVoiceLine);
-
-	dialog = &CreateDialog("Bob_Response");
-	AddLine("Whenever Amber is done teaching you.");
-	AddLine("Come meet me here!");
-	AddLine("I need help with something important.");
-	SetAudio(BobVoiceLine);
+	file.close();
 }

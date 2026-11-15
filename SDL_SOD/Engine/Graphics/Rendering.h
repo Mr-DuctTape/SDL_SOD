@@ -20,35 +20,6 @@ private:
 	UIManager* uiManager = nullptr;
 	DialogSystem* dialogSystem = nullptr;
 
-	struct RenderingLayer
-	{
-		std::vector<Entity*> entities;
-	};
-	std::unordered_map<std::string, int> m_renderingLayerIndex;
-	std::vector<RenderingLayer> m_renderingLayers;
-
-	std::string StrToUpper(const std::string str)
-	{
-		std::string upper;
-		upper.resize(str.size());
-		for (size_t i = 0; i < str.size(); i++)
-		{
-			upper[i] = std::toupper(str[i]);
-		}
-
-		return upper;
-	}
-
-	void ClearRenderingLayers()
-	{
-		for (RenderingLayer& layer : m_renderingLayers)
-		{
-			layer.entities.clear();
-		}
-	}
-	void PopulateRenderingLayers(EntityManager& entityManager);
-	void DrawRenderingLayers();
-
 public:
 	Camera camera;
 
@@ -59,11 +30,6 @@ public:
 	const int renderResY = 720;
 
 	Debugger* GetDebugger();
-
-	std::vector<RenderingLayer>& GetRenderingLayers();
-	RenderingLayer& GetRenderingLayer(const std::string& name);
-	RenderingLayer* FindRenderingLayer(const std::string& name);
-	void CreateRenderingLayer(const std::string& name);
 
 	void PresentScreen();
 	void RenderText(const std::string& text, Vec2f pos);

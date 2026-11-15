@@ -18,49 +18,8 @@ void RenderingSystem::Initialize(Debugger& debugger, UIManager& uiManager, Dialo
 	this->uiManager = &uiManager;
 	this->dialogSystem = &dialogSystem;
 
-	CreateRenderingLayer("Default");
-
 	if constexpr (DEBUGPRINT)
 		std::cout << "[" << "\033[33m" << "RENDERINGSYSTEM" << "\033[37m" << "] " << " Initialized: " << this << "\n";
-}
-
-void RenderingSystem::CreateRenderingLayer(const std::string& name)
-{
-	int index = m_renderingLayers.size();
-
-	std::string upperCaseName = StrToUpper(name);
-
-	m_renderingLayerIndex.emplace(upperCaseName, index);
-	m_renderingLayers.emplace_back();
-}
-
-std::vector<RenderingSystem::RenderingLayer>& RenderingSystem::GetRenderingLayers()
-{
-	return m_renderingLayers;
-}
-
-RenderingSystem::RenderingLayer& RenderingSystem::GetRenderingLayer(const std::string& name)
-{
-	std::string upperCaseName = StrToUpper(name);
-
-	auto it = m_renderingLayerIndex.find(upperCaseName);
-	if (it == m_renderingLayerIndex.end()) {
-		throw std::runtime_error("Error, could not get rendering layer");
-	}
-
-	return m_renderingLayers[it->second];
-}
-
-RenderingSystem::RenderingLayer* RenderingSystem::FindRenderingLayer(const std::string& name)
-{
-	std::string upperCaseName = StrToUpper(name);
-
-	auto it = m_renderingLayerIndex.find(upperCaseName);
-	if (it == m_renderingLayerIndex.end()) {
-		return nullptr;
-	}
-
-	return &m_renderingLayers[it->second];
 }
 
 Debugger* RenderingSystem::GetDebugger()
@@ -80,117 +39,6 @@ void RenderingSystem::RenderText(const std::string& text, Vec2f pos)
 	SDL_RenderDebugText(renderer, pos.x, pos.y, text.c_str());
 }
 
-void RenderingSystem::PopulateRenderingLayers(EntityManager& entityManager)
-{
-	for (Entity* entity : entityManager.entities)
-	{
-		auto& entityLayer = entity->GetRenderingLayer();
-		auto& renderingLayer = GetRenderingLayer(entityLayer);
-		renderingLayer.entities.push_back(entity);
-	}
-}
-
-void RenderingSystem::DrawRenderingLayers()
-{
-	for (auto& layer : m_renderingLayers)
-	{
-		for (Entity* entity : layer.entities)
-		{
-			if (entity->HasComponent<TileMap>())
-			{
-				TileMap& tileMap = entity->GetComponent<TileMap>();
-				tileMap.Render(*this, camera);
-				continue;
-			}
-
-			if (!entity->HasComponent<Transform>() || !entity->HasComponent<Sprite>())
-				continue;
-
-			if (debugger && debugger->enabled && entity->HasComponent<Physics2D>())
-			{
-				Transform& transform = entity->GetComponent<Transform>();
-				Physics2D& physics = entity->GetComponent<Physics2D>();
-
-				Vec2f previous = transform.position;
-				Vec2f velocity = physics.velocity;
-
-				previous.y += 100.0f;
-				previous.x += 50.0f;
-
-				Vec2f position = previous;
-
-				for (float t = 0; t < 0.5f; t += 0.05f)
-				{
-					velocity += physics.acceleration * 0.05f;
-					position += velocity * 0.05f;
-
-					debugger->DrawTrajectory(previous, position);
-
-					previous = position;
-				}
-			}
-
-			if (entity->HasComponent<Animator>())
-			{
-				Animator& animator = entity->GetComponent<Animator>();
-				animator.Render(*this, camera);
-				if (debugger && debugger->enabled && !animator.destroyOnFinish && animator.currentState != "AmberIdle")
-				{
-					Transform* transform = &entity->GetComponent<Transform>();
-					std::string entityStr = "ID: " + std::to_string(entity->m_id);
-
-					SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-					Vec2f screenPos = WorldToScreen(transform->position.x - 20, transform->position.y + 30, camera);
-					SDL_RenderDebugText(renderer, screenPos.x, screenPos.y, entityStr.c_str());
-
-					std::string posX("X: " + std::to_string(transform->position.x));
-					std::string posY("Y: " + std::to_string(transform->position.y));
-					SDL_RenderDebugText(renderer, screenPos.x, screenPos.y - 100, posX.c_str());
-					SDL_RenderDebugText(renderer, screenPos.x, screenPos.y - 110, posY.c_str());
-				}
-			}
-			else
-			{
-				Sprite& sprt = entity->GetComponent<Sprite>();
-				Transform& transform = entity->GetComponent<Transform>();
-
-				SDL_FRect rect{};
-				rect.h = static_cast<float>(sprt.height);
-				rect.w = static_cast<float>(sprt.width);
-				rect.x = transform.position.x;
-				rect.y = transform.position.y;
-
-				SDL_FRect dst = WorldToScreen(rect, camera);
-
-				if (dst.x + dst.w < 0.0f || dst.x > renderResX ||
-					dst.y + dst.h < 0.0f || dst.y > renderResY)
-				{
-					continue;
-				}
-
-				if (!sprt.texture)
-				{
-					SDL_RenderFillRect(renderer, &dst);
-				}
-				else
-				{
-					SDL_RenderTexture(renderer, sprt.texture, NULL, &dst);
-				}
-			}
-
-			if (debugger && debugger->enabled)
-			{
-				Transform& transform = entity->GetComponent<Transform>();
-				std::string entityStr = "ID: " + std::to_string(entity->m_id);
-
-				SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-				Vec2f screenPos = WorldToScreen(transform.position.x - 20, transform.position.y + 30, camera);
-				SDL_RenderDebugText(renderer, screenPos.x, screenPos.y, entityStr.c_str());
-			}
-		}
-	}
-}
-
 void RenderingSystem::RenderScreen(EntityManager& entityManager)
 {
 	Uint64 startDraw = SDL_GetPerformanceCounter();
@@ -198,9 +46,100 @@ void RenderingSystem::RenderScreen(EntityManager& entityManager)
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 	SDL_SetRenderTarget(renderer, renderTexture);
 
-	ClearRenderingLayers();
-	PopulateRenderingLayers(entityManager);
-	DrawRenderingLayers();
+	for (Entity* entity : entityManager.entities)
+	{
+		if (entity->HasComponent<TileMap>())
+		{
+			TileMap& tileMap = entity->GetComponent<TileMap>();
+			tileMap.Render(*this, camera);
+			continue;
+		}
+
+		if (!entity->HasComponent<Transform>() || !entity->HasComponent<Sprite>())
+			continue;
+
+		if (debugger && debugger->enabled && entity->HasComponent<Physics2D>())
+		{
+			Transform& transform = entity->GetComponent<Transform>();
+			Physics2D& physics = entity->GetComponent<Physics2D>();
+
+			Vec2f previous = transform.position;
+			Vec2f velocity = physics.velocity;
+
+			previous.y += 100.0f;
+			previous.x += 50.0f;
+
+			Vec2f position = previous;
+
+			for (float t = 0; t < 0.5f; t += 0.05f)
+			{
+				velocity += physics.acceleration * 0.05f;
+				position += velocity * 0.05f;
+
+				debugger->DrawTrajectory(previous, position);
+
+				previous = position;
+			}
+		}
+
+		if (entity->HasComponent<Animator>())
+		{
+			Animator& animator = entity->GetComponent<Animator>();
+			animator.Render(*this, camera);
+			if (debugger && debugger->enabled && !animator.destroyOnFinish && animator.currentState != "AmberIdle")
+			{
+				Transform* transform = &entity->GetComponent<Transform>();
+				std::string entityStr = "ID: " + std::to_string(entity->m_id);
+
+				SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+				Vec2f screenPos = WorldToScreen(transform->position.x - 20, transform->position.y + 30, camera);
+				SDL_RenderDebugText(renderer, screenPos.x, screenPos.y, entityStr.c_str());
+
+				std::string posX("X: " + std::to_string(transform->position.x));
+				std::string posY("Y: " + std::to_string(transform->position.y));
+				SDL_RenderDebugText(renderer, screenPos.x, screenPos.y - 100, posX.c_str());
+				SDL_RenderDebugText(renderer, screenPos.x, screenPos.y - 110, posY.c_str());
+			}
+		}
+		else
+		{
+			Sprite& sprt = entity->GetComponent<Sprite>();
+			Transform& transform = entity->GetComponent<Transform>();
+
+			SDL_FRect rect{};
+			rect.h = static_cast<float>(sprt.height);
+			rect.w = static_cast<float>(sprt.width);
+			rect.x = transform.position.x;
+			rect.y = transform.position.y;
+
+			SDL_FRect dst = WorldToScreen(rect, camera);
+
+			if (dst.x + dst.w < 0.0f || dst.x > renderResX ||
+				dst.y + dst.h < 0.0f || dst.y > renderResY)
+			{
+				continue;
+			}
+
+			if (!sprt.texture)
+			{
+				SDL_RenderFillRect(renderer, &dst);
+			}
+			else
+			{
+				SDL_RenderTexture(renderer, sprt.texture, NULL, &dst);
+			}
+		}
+
+		if (debugger && debugger->enabled)
+		{
+			Transform& transform = entity->GetComponent<Transform>();
+			std::string entityStr = "ID: " + std::to_string(entity->m_id);
+
+			SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+			Vec2f screenPos = WorldToScreen(transform.position.x - 20, transform.position.y + 30, camera);
+			SDL_RenderDebugText(renderer, screenPos.x, screenPos.y, entityStr.c_str());
+		}
+	}
 
 	Uint64 endDraw = SDL_GetPerformanceCounter();
 	if (debugger)

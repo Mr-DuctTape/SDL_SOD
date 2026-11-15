@@ -11,3 +11,4 @@ public:
 
 extern inline Vec2f WorldToScreen(float x, float y, const Camera& camera);
 extern inline SDL_FRect WorldToScreen(SDL_FRect rect, const Camera& camera);
+extern inline SDL_FRect ScaledWorldToScreen(SDL_FRect rect, const Camera& camera, float parallax, float scale);

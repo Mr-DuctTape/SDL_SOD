@@ -6,6 +6,7 @@
 #include "../Math/Vector2.h"
 #include "../Macros/DEBUGPRINT.h"
 #include "../Audio/AudioSystem.h"
+#include "../Graphics/Rendering.h"
 
 class Entity;
 
@@ -218,6 +219,7 @@ private:
 	};
 	TileMapData GetMapData(const char* file);
 public:
+	bool collidable = true;
 	void LoadTileMap(const std::string& filePath);
 	void Render(RenderingSystem& renderingSystem, Camera& camera); // Defined in Rendering.cpp
 	void TestPrint();

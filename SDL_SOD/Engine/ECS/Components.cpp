@@ -211,7 +211,7 @@ void Physics2D::AddForce(Vec2f force)
 }
 
 // ==== BOXCOLLIDER2D COMPONENT ====
-void BoxCollider2D::UpdatePosition() 
+void BoxCollider2D::UpdatePosition()
 {
 	if (!parent)
 		return;
@@ -256,7 +256,7 @@ void BoxCollider2D::UpdatePosition()
 
 	rect.x = transform->position.x + offsetX;
 	rect.y = transform->position.y + offsetY;
- 
+
 	rect.w = width;
 	rect.h = height;
 
@@ -287,7 +287,7 @@ TileMap::TileMap(const TileMap& other)
 	memcpy(tileProperties, other.tileProperties, sizeof(other.tileProperties));
 }
 
-void TileMap::SetTilePixelSize(int width, int height) 
+void TileMap::SetTilePixelSize(int width, int height)
 {
 	tilePixelWidth = width;
 	tilePixelHeight = height;
@@ -424,7 +424,7 @@ void TileMap::Render(RenderingSystem& renderingSystem, Camera& camera)
 			if (dst.x + dst.w < 0.0f ||
 				dst.x > renderingSystem.renderResX ||
 				dst.y + dst.h < 0.0f ||
-				dst.y > renderingSystem.renderResY || tiles[y][x] == 3)
+				dst.y > renderingSystem.renderResY)
 			{
 				continue;
 			}

@@ -1,3 +1,3 @@
 #pragma once
 
-#define DEBUGPRINT 1
+#define DEBUGPRINT 0

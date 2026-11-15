@@ -51,7 +51,7 @@ private:
 
 	// Loading 
 	void LoadAllTextures(AssetManager& assetManager);
-	void LoadTilemap(EntityManager& entityManager, AssetManager& assetManager, const Vec2f offset, const std::string& level, const std::string& renderingLayer);
+	void LoadTilemap(EntityManager& entityManager, AssetManager& assetManager, const Vec2f offset, const std::string& level, const std::string& tileSet, bool collidable);
 	void LoadObjects(EntityManager& entityManager, const std::string& level);
 
 	// Spawning
@@ -71,7 +71,7 @@ private:
 
 public:
 	// Wrappers referencing entities managed by EntityManager, 
-	// Do not own anything
+	// Does not own anything
 	struct GameEntities 
 	{
 		std::vector<Torch> torches;
@@ -91,12 +91,6 @@ public:
 		if constexpr (DEBUGPRINT)
 			m_settings.debugMode = true;
 
-		engine.renderingSystem.CreateRenderingLayer("Background");
-		engine.renderingSystem.CreateRenderingLayer("Foreground");
-		engine.renderingSystem.CreateRenderingLayer("Spikes");
-		engine.renderingSystem.CreateRenderingLayer("Npc");
-		engine.renderingSystem.CreateRenderingLayer("Player");
-
 		LoadTexturesAndPrefabs(m_engine.entityManager, m_engine.assetManager);
 		CreateDialogs(m_engine.dialogSystem);
 		m_engine.renderingSystem.camera.pos = { -5000.0f, -5000.0f };
@@ -108,6 +102,6 @@ public:
 	}
 
 	void LoadTexturesAndPrefabs(EntityManager& entityManager, AssetManager& assetManager);
-	void LoadLevel(EntityManager& entityManager, AssetManager& assetManager, const Vec2f offset, const std::string& level, const std::string& renderingLayer);
+	void LoadLevel(EntityManager& entityManager, AssetManager& assetManager, const Vec2f offset, const std::string& level, const std::string& tileSet);
 	void Update();
 };

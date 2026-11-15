@@ -27,6 +27,8 @@ public:
 		float lineTimer = 0.0f;
 		float timeBetweenLines = 18.0f;
 
+		SDL_Color color{ 255, 255, 255, 255 };
+
 		AudioManager::AudioClip audioClip;
 
 		std::vector<std::string> entireDialog;

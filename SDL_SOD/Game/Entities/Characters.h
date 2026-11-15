@@ -18,8 +18,9 @@ protected:
 public:
 	using dialog = size_t;
 	using activator = size_t;
+	using dialogActivation = std::pair<dialog, activator>;
 
-	std::vector<std::pair<dialog, activator>> dependentDialogs;
+	std::vector<dialogActivation> dependentDialogs;
 
 	Character(Entity& entity, DialogSystem& dialogSystem) :
 		m_entity(entity),
@@ -53,9 +54,9 @@ public:
 class Amber : Character
 {
 public:
-	const float followDistance = 500.0f;
+	const float followDistance = 250.0f;
 	bool tutorialFinished = false;
-	std::vector<std::pair<dialog, activator>> tutorialDialogs;
+	std::vector<dialogActivation> tutorialDialogs;
 
 	Amber(Entity& entity, DialogSystem& dialogSystem) : 
 		Character(entity, dialogSystem)

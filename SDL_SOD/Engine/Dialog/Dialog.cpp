@@ -80,10 +80,14 @@ void DialogSystem::UpdateDialogs(float deltaTime)
 
 void DialogSystem::RenderDialogs(SDL_Renderer* renderer)
 {
+	SDL_Color color;
+	SDL_GetRenderDrawColor(renderer, &color.r, &color.g, &color.b, &color.a);
 	for (const auto& dialog : m_dialogs)
 	{
+		SDL_SetRenderDrawColor(renderer, dialog.color.r, dialog.color.g, dialog.color.b, dialog.color.a);
 		SDL_RenderDebugText(renderer, dialog.position.x, dialog.position.y, dialog.displayedLine.c_str());
 	}
+	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 }
 
 void DialogSystem::Initialize(AudioManager& audioManager)

@@ -28,13 +28,11 @@ void UpdateSettings(Game& game, Engine& engine)
 
 int main()
 {
-	if constexpr (DEBUGPRINT) {
-		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	}
-
+	// Initialize engine
 	Engine engine;
 	engine.Initialize();
 
+	// Load sounds
 	constexpr std::pair<const char*, const char*> audioClips[] =
 	{
 		{"Dash", "Assets/Audio/Dash.wav"},
@@ -52,6 +50,7 @@ int main()
 		engine.audioManager.CreateAudioClip(name, filePath);
 	}
 
+	// Initialize game
 	Game game(engine);
 
 	// Game loop
@@ -88,9 +87,6 @@ int main()
 		{
 			UpdateSettings(game, engine);
 		}
-		else
-		{
-		}
 
 		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_L))
 		{
@@ -116,19 +112,6 @@ int main()
 			engine.Quit();
 
 		engine.debugger.DebuggerEndTime();
-	}
-
-	if constexpr (DEBUGPRINT) {
-		FILE* file;
-
-		fopen_s(&file, "MemoryLeaks.txt", "w");
-
-		_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
-		_CrtSetReportFile(_CRT_WARN, file);
-
-		_CrtDumpMemoryLeaks();
-
-		fclose(file);
 	}
 	return 0;
 }

@@ -5,7 +5,10 @@
 
 void PhysicSystem::TileMapCollision(Entity* entity, TileMap* tileMap)
 {
-	if (!entity || !tileMap) { return; }
+	if (!entity || !tileMap || !tileMap->collidable) { return; }
+
+	if (tileMap->collidable == false)
+		return;
 
 	BoxCollider2D* boxCollider = entity->FindComponent<BoxCollider2D>();
 	Transform* transform = entity->FindComponent<Transform>();
