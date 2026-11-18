@@ -51,6 +51,11 @@ private:
 public:
 	SDL_Gamepad* m_gamePad = nullptr;
 
+	SDL_GamepadType GetGamepadType()
+	{
+		return SDL_GetGamepadType(m_gamePad);
+	}
+
 	void Initialize(SDL_Window& window, RenderingSystem& renderingSystem);
 
 	const bool GetKeyboardButton(SDL_Scancode key);

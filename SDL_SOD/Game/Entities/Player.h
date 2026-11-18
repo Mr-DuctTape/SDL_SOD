@@ -24,7 +24,7 @@ private:
 	float m_coyoteTime = 0.10f;
 
 	float m_jumpBufferTimer = 0.0f;
-	float m_jumpBufferTime = 0.2f;
+	float m_jumpBufferTime = 0.12f;
 
 	// Sounds
 	void PlaySoundOnAnimation

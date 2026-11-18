@@ -107,7 +107,7 @@ void Amber::Update(Engine& engine, Player& player, float deltaTime)
 			ActivateDialog(dialog);
 		}
 
-		if (IsDialog("Amber_Jump_End") && engine.inputSystem.GetKeyboardButton(SDL_SCANCODE_SPACE))
+		if (IsDialog("Amber_Jump_End") && engine.inputSystem.GetKeyboardButton(SDL_SCANCODE_SPACE) || IsDialog("Amber_Jump_End") && engine.inputSystem.GetGamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH))
 		{
 			ActivateDialog(dialog);
 		}

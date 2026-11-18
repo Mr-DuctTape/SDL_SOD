@@ -93,6 +93,77 @@ public:
 
 		LoadTexturesAndPrefabs(m_engine.entityManager, m_engine.assetManager);
 		CreateDialogs(m_engine.dialogSystem);
+
+		// Edit dialogs to have correct controls
+
+		DialogSystem::Dialog& AmberStart = m_engine.dialogSystem.GetDialog("Amber_Move_Start");
+		DialogSystem::Dialog& AmberJump = m_engine.dialogSystem.GetDialog("Amber_Jump_Start");
+		DialogSystem::Dialog& AmberDash = m_engine.dialogSystem.GetDialog("Amber_Dash_Start");
+		DialogSystem::Dialog& AmberWallJump = m_engine.dialogSystem.GetDialog("Amber_WallJump_Start");
+
+		auto ReplaceText = [](std::vector<std::string>& dialog,
+			const std::string& from,
+			const std::string& to)
+			{
+				for (std::string& line : dialog)
+				{
+					size_t pos = line.find(from);
+
+					while (pos != std::string::npos)
+					{
+						line.replace(pos, from.length(), to);
+						pos = line.find(from, pos + to.length());
+					}
+				}
+			};
+
+
+		SDL_GamepadType controller = m_engine.inputSystem.GetGamepadType();
+		std::string jumpControl;
+		std::string dashControl;
+		std::string moveControl;
+
+		switch (controller)
+		{
+		case SDL_GAMEPAD_TYPE_PS3:
+		case SDL_GAMEPAD_TYPE_PS4:
+		case SDL_GAMEPAD_TYPE_PS5:
+			dashControl = "( R1 )";
+			jumpControl = "( X )";
+			moveControl = "( Left stick )";
+			break;
+		case SDL_GAMEPAD_TYPE_XBOX360:
+		case SDL_GAMEPAD_TYPE_XBOXONE:
+			dashControl = "( RB )";
+			jumpControl = "( A )";
+			moveControl = "( Left stick )";
+			break;
+		case SDL_GAMEPAD_TYPE_GAMECUBE:
+			dashControl = "( R )";
+			jumpControl = "( A )";
+			moveControl = "( Control stick )";
+			break;
+
+		case SDL_GAMEPAD_TYPE_STANDARD:
+		default:
+			break;
+		}
+
+		if (!jumpControl.empty())
+		{
+			ReplaceText(AmberJump.entireDialog, "( SPACE )", jumpControl);
+			ReplaceText(AmberWallJump.entireDialog, "( SPACE )", jumpControl);
+		}
+
+		if (!dashControl.empty())
+			ReplaceText(AmberDash.entireDialog, "( SHIFT )", dashControl);
+
+		if (!moveControl.empty())
+		{
+			ReplaceText(AmberStart.entireDialog, "( A, D )", moveControl);
+			ReplaceText(AmberWallJump.entireDialog, "( A, D )", moveControl);
+		}
+
 		m_engine.renderingSystem.camera.pos = { -5000.0f, -5000.0f };
 	}
 
