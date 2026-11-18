@@ -12,6 +12,7 @@ void UpdateSettings(Game& game, Engine& engine)
 {
 	Settings& settings = game.GetSettings();
 
+	engine.renderingSystem.enableLighting = settings.lightMode;
 	SDL_SetRenderVSync(engine.renderingSystem.renderer, settings.vsync);
 
 	switch (settings.displayMode)
@@ -66,7 +67,7 @@ int main()
 		
 		// Debugger stuff
 		if (game.GetSettings().debugMode &&
-			engine.inputSystem.GetButtonDown(SDL_SCANCODE_0))
+			engine.inputSystem.GetKeyboardButtonDown(SDL_SCANCODE_0))
 		{
 			engine.debugger.enabled = !engine.debugger.enabled;
 			engine.debugger.boxColliders.clear();
@@ -88,7 +89,7 @@ int main()
 			UpdateSettings(game, engine);
 		}
 
-		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_L))
+		if (engine.inputSystem.GetKeyboardButtonDown(SDL_SCANCODE_L))
 		{
 			auto& obj = game.m_gameEntities.player;
 			std::cout << obj.value().m_transform.position << "\n";
@@ -99,17 +100,18 @@ int main()
 		engine.renderingSystem.RenderScreen(engine.entityManager);
 
 		// IGNORE BELOW THIS IS NOT IMPORTANT ONLY FPS LIMITER
-		float frameTime =
-			(float)(SDL_GetPerformanceCounter() - engine.debugger.GetStartTime()) /
-			SDL_GetPerformanceFrequency();
+		float frameTime = (float)(SDL_GetPerformanceCounter() - engine.debugger.GetStartTime()) / SDL_GetPerformanceFrequency();
 
 		if (frameTime < targetFrameTime)
 		{
 			float delay = (targetFrameTime - frameTime) * 1000.0f;
 			SDL_Delay((Uint32)delay);
 		}
-		if (engine.inputSystem.GetButtonDown(SDL_SCANCODE_ESCAPE))
+
+		if (engine.inputSystem.GetKeyboardButtonDown(SDL_SCANCODE_ESCAPE)) 
+		{
 			engine.Quit();
+		}
 
 		engine.debugger.DebuggerEndTime();
 	}

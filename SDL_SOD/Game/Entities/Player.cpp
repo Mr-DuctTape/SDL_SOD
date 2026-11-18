@@ -201,8 +201,10 @@ void Player::SlideDownWall(
 		m_boxCollider2D.wallCollision;
 
 	bool validInput =
-		inputSystem.GetButton(SDL_SCANCODE_A) ||
-		inputSystem.GetButton(SDL_SCANCODE_D);
+		inputSystem.GetGamepadAxis(SDL_GAMEPAD_AXIS_LEFTX) == Axis::left ||
+		inputSystem.GetGamepadAxis(SDL_GAMEPAD_AXIS_LEFTX) == Axis::right || 
+		inputSystem.GetKeyboardButton(SDL_SCANCODE_A) ||
+		inputSystem.GetKeyboardButton(SDL_SCANCODE_D);
 
 	// Not touching a wall.
 	if (!validCollision)
@@ -229,9 +231,9 @@ void Player::SlideDownWall(
 		m_animator.SetAnimation("WallIdle");
 		m_animator.currentState = "WallIdle";
 
-		if (inputSystem.GetButton(SDL_SCANCODE_A))
+		if (inputSystem.GetGamepadAxis(SDL_GAMEPAD_AXIS_LEFTX) == Axis::left || inputSystem.GetKeyboardButton(SDL_SCANCODE_A))
 			m_animator.flippedX = true;
-		else if (inputSystem.GetButton(SDL_SCANCODE_D))
+		else if (inputSystem.GetGamepadAxis(SDL_GAMEPAD_AXIS_LEFTX) == Axis::right || inputSystem.GetKeyboardButton(SDL_SCANCODE_D))
 			m_animator.flippedX = false;
 
 		// Stick to wall.
@@ -348,7 +350,7 @@ void Player::Dash(EntityManager& entityManager, AudioManager& audioManager, Inpu
 	}
 
 
-	if (inputSystem.GetButtonDown(SDL_SCANCODE_LSHIFT) && !dashing)
+	if (inputSystem.GetGamepadButtonDown(SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER) && !dashing || inputSystem.GetKeyboardButtonDown(SDL_SCANCODE_LSHIFT) && !dashing)
 	{
 		float dirX = (accel.normalized().x > 0.0f) ? 1.0f : -1.0f;
 
@@ -405,37 +407,33 @@ void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManage
 		}
 	}
 
-	static float jumpBufferTimer = 0.0f;
 	static bool gatherBuffer = false;
-	float jumpBufferTime = 0.2f;
-	bool jumpBuffer = false;
+	static bool jumpBuffer = false;
 
-	if (inputSystem.GetButtonDown(SDL_SCANCODE_SPACE) && gatherBuffer)
+	if (inputSystem.GetGamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH) && gatherBuffer || inputSystem.GetKeyboardButtonDown(SDL_SCANCODE_SPACE) && gatherBuffer)
 	{
 		gatherBuffer = false;
 	}
-	else if (inputSystem.GetButtonDown(SDL_SCANCODE_SPACE))
+	else if (inputSystem.GetGamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH) || inputSystem.GetKeyboardButtonDown(SDL_SCANCODE_SPACE))
 	{
 		gatherBuffer = true;
-		jumpBufferTimer = 0.0f;
+		m_jumpBufferTimer = 0.0f;
 	}
 
 	if (gatherBuffer)
 	{
-		gatherBuffer = IsJumpBufferRunnning(deltaTime, jumpBufferTime, jumpBufferTimer, jumpBuffer);
+		gatherBuffer = IsJumpBufferRunnning(deltaTime, m_jumpBufferTime, m_jumpBufferTimer, jumpBuffer);
 	}
 
 
-	static float coyoteTimer = 0.0f;
-	float coyoteTime = 0.10f;
 	bool coyoteAvailable = false;
-	IsCoyoteAvailable(deltaTime, coyoteTime, coyoteTimer, coyoteAvailable, isGrounded);
+	IsCoyoteAvailable(deltaTime, m_coyoteTime, m_coyoteTimer, coyoteAvailable, isGrounded);
 
 	bool jumpAvailable = isGrounded || coyoteAvailable;
 	if (gatherBuffer && jumpAvailable)
 	{
 		gatherBuffer = false;
-		jumpBufferTimer = 0.0f;
+		m_jumpBufferTimer = 0.0f;
 
 		m_animator.SetAnimation("Jump");
 		SpawnJumpEffect(entityManager, jumpEffect, m_transform.position, m_animator.flippedX);
@@ -444,13 +442,13 @@ void Player::AllMovement(EntityManager& entityManager, AudioManager& audioManage
 		force.y -= m_jumpForce;
 	}
 
-	if (inputSystem.GetButton(SDL_SCANCODE_A))
+	if (inputSystem.GetGamepadAxis(SDL_GAMEPAD_AXIS_LEFTX) == Axis::left || inputSystem.GetKeyboardButton(SDL_SCANCODE_A))
 	{
 		m_animator.flippedX = true;
 		accel.x -= m_movementSpeed;
 	}
 
-	if (inputSystem.GetButton(SDL_SCANCODE_D))
+	if (inputSystem.GetGamepadAxis(SDL_GAMEPAD_AXIS_LEFTX) == Axis::right || inputSystem.GetKeyboardButton(SDL_SCANCODE_D))
 	{
 
 		m_animator.flippedX = false;

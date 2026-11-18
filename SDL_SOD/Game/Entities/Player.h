@@ -12,13 +12,19 @@ private:
 	Vec2f m_respawnPosition{290.0f, 960.0f};
 
 	float m_cameraFollowSpeed = 4.0f;
-	float m_movementSpeed = 3500.0f;
-	float m_jumpForce = 4000.0f;
+	float m_movementSpeed = 3600.0f;
+	float m_jumpForce = 3800.0f;
 
 	float m_dashVolume = 0.1f;
 	float m_jumpVolume = 0.5f;
 	float m_stepVolume = 0.02f;
 	float m_deathVolume = 0.2f;
+
+	float m_coyoteTimer = 0.0f;
+	float m_coyoteTime = 0.10f;
+
+	float m_jumpBufferTimer = 0.0f;
+	float m_jumpBufferTime = 0.2f;
 
 	// Sounds
 	void PlaySoundOnAnimation

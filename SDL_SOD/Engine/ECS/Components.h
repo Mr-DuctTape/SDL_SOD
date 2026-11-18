@@ -132,6 +132,16 @@ struct Sprite : Component
 	}
 };
 
+class Light2D : public Component
+{
+public:
+	float range = 10000.0f;
+	Light2D* Clone() override
+	{
+		return new Light2D(*this);
+	}
+};
+
 // This is the number of different tiles that can be loaded into a tilemap since each tile has its own properties
 constexpr int MAX_TILE_PROPERTIES = 64;
 

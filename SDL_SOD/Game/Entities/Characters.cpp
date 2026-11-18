@@ -64,15 +64,11 @@ void Amber::Update(Engine& engine, Player& player, float deltaTime)
 			return dialogSystem.IsActive(name);
 		};
 
-	if (!IsFinished("Amber_Intro"))
-	{
-		player.freezeInput = false;
-	}
 
-	if (IsActive("Amber_Intro") && engine.inputSystem.GetButton(SDL_SCANCODE_S))
+	if (playerTransform.position >= Vec2f{ 20280.0f, 1950.0f })
 	{
-		player.freezeInput = false;
-		m_dialogSystem.SetFinished("Amber_Intro");
+		ActivateDialog(dialogSystem.GetDialogIndex("Amber_Tutorial_End"));
+		m_dialogSystem.GetDialog("Amber_Tutorial_End").position = WorldToScreen((int)m_transform.position.x, (int)m_transform.position.y, engine.renderingSystem.camera);
 	}
 
 	for (auto& [dialog, activator] : tutorialDialogs)
@@ -80,15 +76,14 @@ void Amber::Update(Engine& engine, Player& player, float deltaTime)
 		if (!IsFinished(activator))
 			continue;
 
-		m_dialogSystem.GetDialog(dialog).position =
-			WorldToScreen((int)m_transform.position.x, (int)m_transform.position.y, engine.renderingSystem.camera);
+		m_dialogSystem.GetDialog(dialog).position = WorldToScreen((int)m_transform.position.x, (int)m_transform.position.y, engine.renderingSystem.camera);
 
 		auto IsDialog = [&dialogSystem, dialog](const std::string& name)
 			{
 				return dialogSystem.GetDialogIndex(name) == dialog;
 			};
 
-		if (engine.inputSystem.GetButton(SDL_SCANCODE_2))
+		if (engine.inputSystem.GetKeyboardButton(SDL_SCANCODE_2))
 		{
 			dialogSystem.SetFinished(dialog);
 		}
@@ -97,15 +92,6 @@ void Amber::Update(Engine& engine, Player& player, float deltaTime)
 		{
 			if (playerDir.Magnitude() <= 300.0f) {
 				dialogSystem.ActivateDialog(dialog);
-			}
-
-			if (!IsFinished("Amber_Move_Start"))
-			{
-				playerPhys.velocity = { 0,0 };
-			}
-			else
-			{
-				player.freezeInput = false;
 			}
 		}
 
@@ -121,7 +107,7 @@ void Amber::Update(Engine& engine, Player& player, float deltaTime)
 			ActivateDialog(dialog);
 		}
 
-		if (IsDialog("Amber_Jump_End") && engine.inputSystem.GetButton(SDL_SCANCODE_SPACE))
+		if (IsDialog("Amber_Jump_End") && engine.inputSystem.GetKeyboardButton(SDL_SCANCODE_SPACE))
 		{
 			ActivateDialog(dialog);
 		}

@@ -53,6 +53,8 @@ void Game::CreateJumpingFXPrefab(EntityManager& entityManager, AssetManager& ass
 	Entity& jumpFxObj = entityManager.CreateEntity();
 	jumpFxObj.AddComponent<Transform>()->position = { -999999.0f, -999999.0f };
 
+	jumpFxObj.AddComponent<Light2D>()->range = 1500;
+
 	Sprite* jmpFxSprt = jumpFxObj.AddComponent<Sprite>();
 	jmpFxSprt->height = SPRT_HEIGHT;
 	jmpFxSprt->width = SPRT_WIDTH;
@@ -72,6 +74,8 @@ void Game::CreateWallJumpFXPrefab(EntityManager& entityManager, AssetManager& as
 {
 	Entity& jumpFxObj = entityManager.CreateEntity();
 	jumpFxObj.AddComponent<Transform>()->position = { -999999.0f, -999999.0f };
+
+	jumpFxObj.AddComponent<Light2D>()->range = 1500;
 
 	Sprite* jmpFxSprt = jumpFxObj.AddComponent<Sprite>();
 	jmpFxSprt->height = SPRT_HEIGHT;
@@ -94,6 +98,8 @@ void Game::CreateRunningFXPrefab(EntityManager& entityManager, AssetManager& ass
 	runningEffectObj.AddComponent<EntityTag>()->name = "RunningFX";
 	runningEffectObj.AddComponent<Transform>()->position = { -999999.0f, -999999.0f };
 
+	runningEffectObj.AddComponent<Light2D>()->range = 500;
+
 	Sprite* runningEffectSprite = runningEffectObj.AddComponent<Sprite>();
 	runningEffectSprite->height = SPRT_HEIGHT;
 	runningEffectSprite->width = SPRT_WIDTH;
@@ -113,6 +119,8 @@ void Game::CreateDashFXPrefab(EntityManager& entityManager, AssetManager& assetM
 	Entity& dashEffectObj = entityManager.CreateEntity();
 	dashEffectObj.AddComponent<EntityTag>()->name = "RunningFX";
 	dashEffectObj.AddComponent<Transform>()->position = { -999999.0f, -999999.0f };
+
+	dashEffectObj.AddComponent<Light2D>()->range = 1500;
 
 	Sprite* dashEffectSprite = dashEffectObj.AddComponent<Sprite>();
 	dashEffectSprite->height = SPRT_HEIGHT;
@@ -161,11 +169,6 @@ void Game::CreateDashCoolDownFXPrefab(EntityManager& entityManager, AssetManager
 	Animator::Animation& animation = dashCooldownFXAnimator->CreateAnimation("HeloLoad", 7, 16, 16, assetManager.GetTexture("HeloLoad"));
 
 	auto& clip = m_engine.audioManager.GetAudio("Click");
-
-	//for (int i = 1; i < 6; i++)
-	//{
-	//	animation.SetAudioKeyFrame(&clip, i);
-	//}
 
 	dashCooldownFXAnimator->SetAnimation("HeloLoad");
 	dashCooldownFXAnimator->speed = 0.1f;
@@ -353,6 +356,8 @@ void Game::SpawnPlayer(EntityManager& entityManager, const Vec2f position)
 	Entity& entity = entityManager.CreateEntity(GetPrefab("Player"));
 	entity.GetComponent<Transform>().position = position;
 
+	entity.AddComponent<Light2D>();
+
 	player.emplace(Player(entity));
 }
 void Game::SpawnBob(EntityManager& entityManager, const Vec2f position)
@@ -386,7 +391,6 @@ void Game::SpawnTorch(EntityManager& entityManager, const Vec2f position)
 {
 	Entity& entity = entityManager.CreateEntity(GetPrefab("Torch"));
 	entity.GetComponent<Transform>().position = position;
-
 	auto& torches = m_gameEntities.torches;
 	torches.emplace_back(Torch(entity));
 }
@@ -451,9 +455,9 @@ void Game::Update()
 	static bool loaded = false;
 	if (playing)
 	{
-		if (m_engine.inputSystem.GetButtonDown(SDL_SCANCODE_ESCAPE))
+		if (m_engine.inputSystem.GetKeyboardButtonDown(SDL_SCANCODE_ESCAPE))
 		{
-			m_gameUI.MenuVisible(m_gameUI.m_mainMenu, true);
+			m_gameUI.MenuVisible(m_gameUI.m_mainMenu, false);
 		}
 
 		if (!loaded) // TODO: in the future there will be different levels loaded so keep that in mind.
@@ -464,6 +468,9 @@ void Game::Update()
 
 			SpawnTorch(m_engine.entityManager, Vec2f{ 5197.52f, 800.0f });
 			SpawnTorch(m_engine.entityManager, Vec2f{ 11852.8f, 3650.0f });
+
+			SpawnTorch(m_engine.entityManager, Vec2f{ 17000.0f, 2400.0f });
+			SpawnTorch(m_engine.entityManager, Vec2f{ 20280.0f, 1950.0f });
 
 			SpawnBob(m_engine.entityManager, Vec2f{ 14206.9f, 2145.0f });
 			SpawnAmber(m_engine.entityManager, Vec2f{ 8000.0f, -600.0f });

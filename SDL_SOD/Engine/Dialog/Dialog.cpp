@@ -11,7 +11,7 @@ void DialogSystem::Dialog::Update(AudioManager& audioManager, float deltaTime)
 
 	// Reserve memory to avoid unessecarry memory allocations
 	constexpr int reserved = 128;
-	if(displayedLine.capacity() != reserved)
+	if(displayedLine.capacity() < reserved)
 	{
 		displayedLine.reserve(reserved);
 	}

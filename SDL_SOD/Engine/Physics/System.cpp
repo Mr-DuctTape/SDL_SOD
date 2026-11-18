@@ -216,8 +216,6 @@ void PhysicSystem::Gravity(Entity* entity, float deltaTime)
 	if (!physics)
 		return;
 
-	float gravity = 9000.0f;
-
 	physics->acceleration.y += gravity;
 }
 

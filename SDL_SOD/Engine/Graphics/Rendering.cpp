@@ -1,5 +1,6 @@
 #include <SDL3/SDL.h>
 #include <vector>
+
 #include "Rendering.h"
 #include "../ECS/Entities.h"
 #include "../ECS/Components.h"
@@ -7,12 +8,128 @@
 #include "../UI/UIManager.h"
 #include "../Dialog/Dialog.h"
 
+// ty chatbbpt
+
+SDL_Texture* CreateCircleLightTexture(SDL_Renderer* renderer)
+{
+	constexpr int size = 128;
+	constexpr float radius = size / 2.0f;
+
+	constexpr int bayer4x4[4][4] =
+	{
+		{  0,  8,  2, 10 },
+		{ 12,  4, 14,  6 },
+		{  3, 11,  1,  9 },
+		{ 15,  7, 13,  5 }
+	};
+
+	constexpr int patternScale = 3;
+	constexpr float ditherStrength = 0.12f;
+
+	std::vector<Uint32> pixels(size * size);
+
+	for (int y = 0; y < size; ++y)
+	{
+		for (int x = 0; x < size; ++x)
+		{
+			float dx = x - radius;
+			float dy = y - radius;
+
+			float distance = std::sqrt(dx * dx + dy * dy);
+			float t = std::clamp(distance / radius, 0.0f, 1.0f);
+
+			// Large surrounding glow.
+			float glow = std::exp(-t * 2.2f);
+
+			// Distinct, concentrated bright centre.
+			float hotspot = std::exp(-t * t * 90.0f);
+
+			// Combine both light sources.
+			float intensity = glow * 0.35f + hotspot * 0.90f;
+
+			// Preserve a smooth outer fade.
+			float edge = 1.0f - t;
+			edge = edge * edge * (3.0f - 2.0f * edge);
+
+			intensity *= edge;
+
+			// Increase contrast between centre and surrounding glow.
+			intensity = std::pow(
+				std::clamp(intensity, 0.0f, 1.0f),
+				0.8f
+			);
+
+			// Bayer dithering towards the edges.
+			float threshold =
+				(bayer4x4[(y / patternScale) % 4]
+					[(x / patternScale) % 4] + 0.5f) / 16.0f;
+
+			float strength = std::pow(t, 1.5f) * ditherStrength;
+
+			float alpha = intensity + (threshold - 0.5f) * strength;
+
+			Uint8 value = static_cast<Uint8>(
+				std::clamp(alpha, 0.0f, 1.0f) * 255.0f
+				);
+
+			pixels[y * size + x] =
+				(static_cast<Uint32>(value) << 24) |
+				(static_cast<Uint32>(value) << 16) |
+				(static_cast<Uint32>(value) << 8) |
+				255u;
+		}
+	}
+
+	SDL_Surface* surface = SDL_CreateSurfaceFrom(
+		size,
+		size,
+		SDL_PIXELFORMAT_RGBA8888,
+		pixels.data(),
+		size * sizeof(Uint32)
+	);
+
+	if (!surface)
+		return nullptr;
+
+	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+	SDL_DestroySurface(surface);
+
+	if (!texture)
+		return nullptr;
+
+	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_ADD);
+	SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
+
+	return texture;
+}
+
+
+
+
 void RenderingSystem::Initialize(Debugger& debugger, UIManager& uiManager, DialogSystem& dialogSystem)
 {
-	renderTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, renderResX, renderResY);
-	SDL_SetTextureScaleMode(renderTexture, SDL_SCALEMODE_PIXELART);
+	renderLayer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, renderResX, renderResY);
+	SDL_SetTextureScaleMode(renderLayer, SDL_SCALEMODE_PIXELART);
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-	SDL_SetTextureBlendMode(renderTexture, SDL_BLENDMODE_BLEND);
+	SDL_SetTextureBlendMode(renderLayer, SDL_BLENDMODE_BLEND);
+
+	spriteLayer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, renderResX, renderResY);
+	SDL_SetTextureScaleMode(renderLayer, SDL_SCALEMODE_PIXELART);
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+	SDL_SetTextureBlendMode(renderLayer, SDL_BLENDMODE_BLEND);
+
+	uiLayer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, renderResX, renderResY);
+	SDL_SetTextureScaleMode(renderLayer, SDL_SCALEMODE_PIXELART);
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+	SDL_SetTextureBlendMode(renderLayer, SDL_BLENDMODE_BLEND);
+
+	lightLayer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, renderResX, renderResY);
+	SDL_SetTextureScaleMode(renderLayer, SDL_SCALEMODE_PIXELART);
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+	SDL_SetTextureBlendMode(renderLayer, SDL_BLENDMODE_BLEND);
+
+	lightTexture = CreateCircleLightTexture(renderer);
 
 	this->debugger = &debugger;
 	this->uiManager = &uiManager;
@@ -30,7 +147,19 @@ Debugger* RenderingSystem::GetDebugger()
 // Global rendering
 void RenderingSystem::PresentScreen()
 {
-	SDL_RenderTexture(renderer, renderTexture, nullptr, nullptr);
+	SDL_SetTextureBlendMode(spriteLayer, SDL_BLENDMODE_BLEND);
+	SDL_SetTextureBlendMode(lightLayer, SDL_BLENDMODE_MOD);
+	SDL_SetTextureBlendMode(renderLayer, SDL_BLENDMODE_BLEND);
+
+	SDL_RenderTexture(renderer, spriteLayer, nullptr, nullptr);
+
+	if(enableLighting)
+		SDL_RenderTexture(renderer, lightLayer, nullptr, nullptr);
+
+	SDL_RenderTexture(renderer, renderLayer, nullptr, nullptr);
+
+	SDL_RenderTexture(renderer, uiLayer, nullptr, nullptr);
+
 	SDL_RenderPresent(renderer);
 }
 
@@ -39,13 +168,50 @@ void RenderingSystem::RenderText(const std::string& text, Vec2f pos)
 	SDL_RenderDebugText(renderer, pos.x, pos.y, text.c_str());
 }
 
+void RenderingSystem::RenderLights(EntityManager& entityManager)
+{
+	bool foundLight = false;
+
+	std::vector<Entity*> lightEntities;
+	lightEntities.reserve(32);
+	for (auto& entity : entityManager.entities)
+	{
+		if (entity->HasComponent<Light2D>())
+		{
+			lightEntities.emplace_back(entity);
+			foundLight = true;
+		}
+	}
+
+	if (!foundLight)
+		return;
+
+	SDL_SetRenderTarget(renderer, lightLayer);
+	for (auto& entity : lightEntities)
+	{
+		Light2D& light = entity->GetComponent<Light2D>();
+		Transform& transform = entity->GetComponent<Transform>();
+
+		SDL_FRect lightPosition;
+		lightPosition.w = light.range;
+		lightPosition.h = light.range;
+		lightPosition.x = transform.position.x - lightPosition.w * 0.5f;
+		lightPosition.y = transform.position.y - lightPosition.h * 0.5f;
+
+		lightPosition = WorldToScreen(lightPosition, camera);
+
+		SDL_RenderTexture(renderer, lightTexture, NULL, &lightPosition);
+	}
+}
+
 void RenderingSystem::RenderScreen(EntityManager& entityManager)
 {
 	Uint64 startDraw = SDL_GetPerformanceCounter();
 
 	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-	SDL_SetRenderTarget(renderer, renderTexture);
+	SDL_SetRenderTarget(renderer, spriteLayer);
 
+	// Sprite & Component rendering
 	for (Entity* entity : entityManager.entities)
 	{
 		if (entity->HasComponent<TileMap>())
@@ -141,11 +307,16 @@ void RenderingSystem::RenderScreen(EntityManager& entityManager)
 		}
 	}
 
+	// Lighting pass
+	if(enableLighting)
+		RenderLights(entityManager);
+
 	Uint64 endDraw = SDL_GetPerformanceCounter();
 	if (debugger)
 		debugger->debugStats.drawingMs = (endDraw - startDraw) * 1000.0f / SDL_GetPerformanceFrequency();
 
 	// --- Debugging ---
+	SDL_SetRenderTarget(renderer, uiLayer);
 	if (debugger && debugger->enabled)
 	{
 		Uint64 startDebugDraw = SDL_GetPerformanceCounter();
@@ -190,13 +361,18 @@ void RenderingSystem::ClearScreen()
 	SDL_GetRenderDrawColor(renderer, &color.r, &color.g, &color.b, &color.a);
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 
-	// clear renderTexture
-	SDL_SetRenderTarget(renderer, renderTexture);
-	SDL_RenderClear(renderer);
+	SDL_Renderer* r = renderer;
+	auto ClearLayer = [&r](SDL_Texture* texture) -> void
+		{
+			SDL_SetRenderTarget(r, texture);
+			SDL_RenderClear(r);
+		};
 
-	// clear renderer
-	SDL_SetRenderTarget(renderer, nullptr);
-	SDL_RenderClear(renderer);
+	ClearLayer(spriteLayer);
+	ClearLayer(lightLayer);
+	ClearLayer(renderLayer);
+	ClearLayer(uiLayer);
+	ClearLayer(nullptr);
 
 	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 

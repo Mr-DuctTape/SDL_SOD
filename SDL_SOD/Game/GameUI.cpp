@@ -5,9 +5,9 @@
 
 void GameUI::CreateMainMenuButtons()
 {
-	constexpr float buttonHeight = 100.0f;
+	constexpr float buttonHeight = 80.0f;
 	constexpr float buttonWidth = 500.0f;
-	constexpr float offset = 200.0f;
+	constexpr float offset = 150.0f;
 
 	Vec2f startPos{ m_renderingSystem.renderResX * 0.5f - buttonWidth * 0.5f, 100.0f };
 
@@ -28,6 +28,13 @@ void GameUI::CreateMainMenuButtons()
 	button.screenPos = { startPos.x, startPos.y += offset };
 
 	m_uiManager.WindowAddButton(window, button, "Settings");
+
+	button.height = buttonHeight;
+	button.width = buttonWidth;
+	button.displayText = "[ Credits ]";
+	button.screenPos = { startPos.x, startPos.y += offset };
+
+	m_uiManager.WindowAddButton(window, button, "Credits");
 
 	button.height = buttonHeight;
 	button.width = buttonWidth;
@@ -85,18 +92,24 @@ void GameUI::CreateSettingsButtons()
 
 	button.height = buttonHeight;
 	button.width = buttonWidth;
-	button.name = "Main Volume:";
-	button.displayText = "[";
-
-	for (int i = 0; i < 12; i++)
-	{
-		button.displayText += '-';
-	}
-
-	button.displayText += "]";
+	button.name = "Lighting:";
+	button.displayText = "[ON]";
 	button.screenPos = { 100.0f, startPos.y += yOffset };
 
-	//m_uiManager.WindowAddButton(window, button, "MainSound");
+	m_uiManager.WindowAddButton(window, button, "PotatoMode");
+
+	//button.height = buttonHeight;
+	//button.width = buttonWidth;
+	//button.name = "Main Volume:";
+	//button.displayText = "[";
+
+	//for (int i = 0; i < 12; i++)
+	//{
+	//	button.displayText += '-';
+	//}
+
+	//button.displayText += "]";
+	//button.screenPos = { 100.0f, startPos.y += yOffset };
 
 	button.displayText = "[" + std::string(m_audioManager.GetDeviceName(m_audioManager.m_playBackDevice)) + "]";
 	button.height = buttonHeight;
@@ -179,8 +192,11 @@ bool GameUI::MainMenu()  // returns true on quit
 	}
 	else if (MenuButtonPress(m_mainMenu, "Settings"))
 	{
-		MenuVisible(m_mainMenu, false);
 		MenuVisible(m_settingsMenu, true);
+	}
+	else if (MenuButtonPress(m_mainMenu, "Credits"))
+	{
+		//MenuVisible(m_creditsMenu, true);
 	}
 	else if (MenuButtonPress(m_mainMenu, "Quit"))
 	{
@@ -334,9 +350,25 @@ void GameUI::SettingsMenu(Settings& settings)
 		}
 	}
 
+	if (MenuButtonPress(m_settingsMenu, "PotatoMode"))
+	{
+		UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
+		UIButton& button = m_uiManager.WindowGetButton(window, "PotatoMode");
+
+		settings.lightMode = !settings.lightMode;
+		switch (settings.lightMode)
+		{
+		case false:
+			button.displayText = "[OFF]";
+			break;
+		case true:
+			button.displayText = "[ON]";
+			break;
+		}
+	}
+
 	if (MenuButtonPress(m_settingsMenu, "Back"))
 	{
-		MenuVisible(m_settingsMenu, false);
 		MenuVisible(m_mainMenu, true);
 	}
 

@@ -17,6 +17,8 @@ private:
 	void Movement(Entity* entity, float deltaTime);
 public:
 
+	float gravity = 9000.0f;
+
 	void Intialize(Debugger* debugger) 
 	{
 		this->debugger = debugger;

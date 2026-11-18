@@ -25,6 +25,7 @@ private:
 	bool CheckPlayerTrigger(AudioManager& audioManager, Transform& player);
 
 public:
+	float m_lightRange = 12000.0f;
 	float m_lightVolume = 0.4f;
 	void Update(AudioManager& audioManager, Player& player);
 

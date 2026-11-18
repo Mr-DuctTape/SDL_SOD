@@ -70,7 +70,7 @@ public:
 		dependentDialogs =
 		{
 			{GetDialogIndex("Amber_Response"), GetDialogIndex("Bob_Intro")},
-			{GetDialogIndex("Amber_Tutorial_End"), GetDialogIndex("Bob_Response")}
+			{GetDialogIndex("Amber_Bob_Response"), GetDialogIndex("Bob_Response")}
 		};
 
 		tutorialDialogs =

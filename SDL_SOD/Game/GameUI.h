@@ -1,8 +1,6 @@
 #pragma once
 #include "../Engine/SOD_Engine.h"
 
-using Menu = size_t;
-
 struct Settings
 {
 	enum class DisplayMode
@@ -59,6 +57,7 @@ struct Settings
 	float musicVolume = 0.0f;
 	float sfxVolume = 0.0f;
 
+	bool lightMode = true;
 	bool vsync = true;
 	bool debugMode = false;
 };
@@ -79,16 +78,35 @@ private:
 public:
 	UIManager& m_uiManager;
 	
+	using Menu = size_t;
 	Menu m_mainMenu;
 	Menu m_settingsMenu;
 	Menu m_pausedMenu;
+	Menu m_creditsMenu;
 
 	inline void MenuVisible(Menu menu, bool visible)
 	{
-		m_uiManager.GetWindow(menu).visible = visible;
+		Menu menus[] =
+		{
+			m_mainMenu,
+			m_settingsMenu,
+			m_pausedMenu, 
+			m_creditsMenu
+		};
+
+		for (size_t i : menus)
+		{
+			if (i != menu)
+			{
+				m_uiManager.GetWindow(i).visible = false;
+			}
+			else if(i == menu)
+			{
+				m_uiManager.GetWindow(i).visible = visible;
+			}
+		}
 	}
 
-	//[[nodiscard]] bool MenuButtonHover(Menu menu, const std::string& name);
 	[[nodiscard]] bool MenuButtonPress(Menu menu, const std::string& name);
 	[[nodiscard]] bool MainMenu(); // returns true on quit
 
@@ -100,9 +118,11 @@ public:
 		m_uiManager(engine.uiManager),
 		m_renderingSystem(engine.renderingSystem),
 		m_audioManager(engine.audioManager),
+
 		m_mainMenu(m_uiManager.CreateWindow("MainMenu")),
 		m_pausedMenu(m_uiManager.CreateWindow("PauseMenu")),
-		m_settingsMenu(m_uiManager.CreateWindow("SettingsMenu"))
+		m_settingsMenu(m_uiManager.CreateWindow("SettingsMenu")),
+		m_creditsMenu(m_uiManager.CreateWindow("CreditsMenu"))
 	{
 		CreateMainMenuButtons();
 		CreateSettingsButtons();

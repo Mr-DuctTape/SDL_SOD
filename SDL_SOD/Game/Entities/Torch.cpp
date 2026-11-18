@@ -26,6 +26,10 @@ void Torch::ChangeAnimatorState()
 	switch (m_state)
 	{
 	case State::LIT:
+		if (!m_entity.HasComponent<Light2D>())
+		{
+			m_entity.AddComponent<Light2D>()->range = m_lightRange;
+		}
 		if (m_animator.currentState != "TorchLIT")
 		{
 			m_animator.SetAnimation("TorchLIT");
