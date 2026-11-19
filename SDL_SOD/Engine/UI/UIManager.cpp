@@ -122,7 +122,7 @@ void UIManager::Update(const float deltaTime)
 				button.pressed = true;
 			}
 			// Button hover
-			else if (button.MouseHoverOver(*inputSystem))
+			else if (button.MouseHoverOver(*inputSystem) || button.hovered)
 			{
 				if (!button.playedAudio)
 				{

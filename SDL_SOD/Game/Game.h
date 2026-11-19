@@ -72,6 +72,12 @@ private:
 public:
 	// Wrappers referencing entities managed by EntityManager, 
 	// Does not own anything
+
+	Engine& GetEngine()
+	{
+		return m_engine;
+	}
+
 	struct GameEntities 
 	{
 		std::vector<Torch> torches;

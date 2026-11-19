@@ -70,6 +70,7 @@ private:
 	Game& m_game;
 	RenderingSystem& m_renderingSystem;
 	AudioManager& m_audioManager;
+	InputSystem& m_inputSystem;
 
 	void CreateMainMenuButtons();
 	void CreateSettingsButtons();
@@ -107,6 +108,10 @@ public:
 		}
 	}
 
+	bool IsMenuVisible(Menu menu)
+	{
+		return m_uiManager.GetWindow(menu).visible;
+	}
 	[[nodiscard]] bool MenuButtonPress(Menu menu, const std::string& name);
 	[[nodiscard]] bool MainMenu(); // returns true on quit
 
@@ -114,6 +119,7 @@ public:
 
 	GameUI(Engine& engine, Game& game)
 		:
+		m_inputSystem(engine.inputSystem),
 		m_game(game),
 		m_uiManager(engine.uiManager),
 		m_renderingSystem(engine.renderingSystem),

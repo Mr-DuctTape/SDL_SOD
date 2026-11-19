@@ -8,14 +8,14 @@ SDL_Texture* LoadIMG(const char* filePath, SDL_Renderer* renderer)
     SDL_Surface* surface = IMG_Load(filePath);
     if (!surface)
     {
-        std::cout << "IMG_Load failed: " << "\n";
+        std::cout << "[ ERROR ] IMG_Load failed: " << "\n";
         return nullptr;
     }
 
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
     if (!texture)
     {
-        std::cout << "CreateTextureFromSurface failed: " << SDL_GetError() << "\n";
+        std::cout << "[ ERROR ] CreateTextureFromSurface failed: " << SDL_GetError() << "\n";
         return nullptr;
     }
 
@@ -29,7 +29,7 @@ SDL_Texture* AssetManager::CreateTexture(std::string name, const std::string& fi
     SDL_Texture* texture = LoadIMG(filePath.c_str(), renderer);
     if (!texture)
     {
-        std::cout << "Unable to create texture " << name << "\n";
+        std::cout << "[ ERROR ] Unable to create texture " << name << "\n";
         std::cout << "Path: " << filePath << "\n";
         return nullptr;
     }

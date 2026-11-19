@@ -135,7 +135,7 @@ struct Sprite : Component
 class Light2D : public Component
 {
 public:
-	float range = 8000.0f;
+	float range = 3000.0f;
 	Light2D* Clone() override
 	{
 		return new Light2D(*this);

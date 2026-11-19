@@ -98,7 +98,7 @@ void Game::CreateRunningFXPrefab(EntityManager& entityManager, AssetManager& ass
 	runningEffectObj.AddComponent<EntityTag>()->name = "RunningFX";
 	runningEffectObj.AddComponent<Transform>()->position = { -999999.0f, -999999.0f };
 
-	runningEffectObj.AddComponent<Light2D>()->range = 500;
+	runningEffectObj.AddComponent<Light2D>()->range = 1000;
 
 	Sprite* runningEffectSprite = runningEffectObj.AddComponent<Sprite>();
 	runningEffectSprite->height = SPRT_HEIGHT;
@@ -120,7 +120,7 @@ void Game::CreateDashFXPrefab(EntityManager& entityManager, AssetManager& assetM
 	dashEffectObj.AddComponent<EntityTag>()->name = "RunningFX";
 	dashEffectObj.AddComponent<Transform>()->position = { -999999.0f, -999999.0f };
 
-	dashEffectObj.AddComponent<Light2D>()->range = 1500;
+	dashEffectObj.AddComponent<Light2D>()->range = 2000;
 
 	Sprite* dashEffectSprite = dashEffectObj.AddComponent<Sprite>();
 	dashEffectSprite->height = SPRT_HEIGHT;
@@ -268,31 +268,33 @@ void Game::CreatePlayerPrefab(EntityManager& entityManager, AssetManager& assetM
 }
 void Game::CreateBobPrefab(EntityManager& entityManager, AssetManager& assetManager)
 {
-	Entity& torchObject = entityManager.CreateEntity();
-	torchObject.AddComponent<EntityTag>()->name = "Bob";
-	torchObject.AddComponent<Transform>()->position = { -99999.0f, -9999.0f };
+	Entity& bobObject = entityManager.CreateEntity();
+	bobObject.AddComponent<EntityTag>()->name = "Bob";
+	bobObject.AddComponent<Transform>()->position = { -99999.0f, -9999.0f };
 
-	Sprite* torchSprite = torchObject.AddComponent<Sprite>();
-	torchSprite->height = SPRT_HEIGHT;
-	torchSprite->width = SPRT_WIDTH;
+	Sprite* bobSprite = bobObject.AddComponent<Sprite>();
+	bobSprite->height = SPRT_HEIGHT;
+	bobSprite->width = SPRT_WIDTH;
 
-	Animator* torchAnimator = torchObject.AddComponent<Animator>();
-	torchAnimator->effectBase = true;
-	torchAnimator->update = true;
-	torchAnimator->scaleAnimationX = 1.0f;
-	torchAnimator->scaleAnimationY = 1.0f;
-	torchAnimator->speed = 0.15f;
+	Animator* bobAnimator = bobObject.AddComponent<Animator>();
+	bobAnimator->effectBase = true;
+	bobAnimator->update = true;
+	bobAnimator->scaleAnimationX = 1.0f;
+	bobAnimator->scaleAnimationY = 1.0f;
+	bobAnimator->speed = 0.15f;
 
-	torchAnimator->CreateAnimation("BobIdle", 4, 16, 16, assetManager.GetTexture("Bob"));
-	torchAnimator->SetAnimation("BobIdle");
+	bobAnimator->CreateAnimation("BobIdle", 4, 16, 16, assetManager.GetTexture("Bob"));
+	bobAnimator->SetAnimation("BobIdle");
 
-	m_prefabs.emplace("Bob", &torchObject);
+	m_prefabs.emplace("Bob", &bobObject);
 }
 void Game::CreateAmberPrefab(EntityManager& entityManager, AssetManager& assetManager)
 {
 	Entity& emberObj = entityManager.CreateEntity();
 	emberObj.AddComponent<EntityTag>()->name = "Amber";
 	emberObj.AddComponent<Transform>()->position = { -99999.0f, -9999.0f };
+
+	emberObj.AddComponent<Light2D>()->range = 1000.0f;
 
 	Sprite* emberSprite = emberObj.AddComponent<Sprite>();
 	emberSprite->height = SPRT_HEIGHT;

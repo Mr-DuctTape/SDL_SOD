@@ -67,7 +67,7 @@ int main()
 		
 		// Debugger stuff
 		if (game.GetSettings().debugMode &&
-			engine.inputSystem.GetKeyboardButtonDown(SDL_SCANCODE_0))
+			engine.inputSystem.GetKeyboardButtonDown(SDL_SCANCODE_0) || engine.inputSystem.GetGamepadButtonDown(SDL_GAMEPAD_BUTTON_EAST))
 		{
 			engine.debugger.enabled = !engine.debugger.enabled;
 			engine.debugger.boxColliders.clear();

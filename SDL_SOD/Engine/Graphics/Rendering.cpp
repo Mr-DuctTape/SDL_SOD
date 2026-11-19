@@ -12,100 +12,69 @@
 
 SDL_Texture* CreateCircleLightTexture(SDL_Renderer* renderer)
 {
-	constexpr int size = 128;
-	constexpr float radius = size / 2.0f;
+	constexpr int size = 64;
 
-	constexpr int bayer4x4[4][4] =
-	{
-		{  0,  8,  2, 10 },
-		{ 12,  4, 14,  6 },
-		{  3, 11,  1,  9 },
-		{ 15,  7, 13,  5 }
-	};
-
-	constexpr int patternScale = 3;
-	constexpr float ditherStrength = 0.12f;
-
-	std::vector<Uint32> pixels(size * size);
-
-	for (int y = 0; y < size; ++y)
-	{
-		for (int x = 0; x < size; ++x)
-		{
-			float dx = x - radius;
-			float dy = y - radius;
-
-			float distance = std::sqrt(dx * dx + dy * dy);
-			float t = std::clamp(distance / radius, 0.0f, 1.0f);
-
-			// Large surrounding glow.
-			float glow = std::exp(-t * 2.2f);
-
-			// Distinct, concentrated bright centre.
-			float hotspot = std::exp(-t * t * 90.0f);
-
-			// Combine both light sources.
-			float intensity = glow * 0.35f + hotspot * 0.90f;
-
-			// Preserve a smooth outer fade.
-			float edge = 1.0f - t;
-			edge = edge * edge * (3.0f - 2.0f * edge);
-
-			intensity *= edge;
-
-			// Increase contrast between centre and surrounding glow.
-			intensity = std::pow(
-				std::clamp(intensity, 0.0f, 1.0f),
-				0.8f
-			);
-
-			// Bayer dithering towards the edges.
-			float threshold =
-				(bayer4x4[(y / patternScale) % 4]
-					[(x / patternScale) % 4] + 0.5f) / 16.0f;
-
-			float strength = std::pow(t, 1.5f) * ditherStrength;
-
-			float alpha = intensity + (threshold - 0.5f) * strength;
-
-			Uint8 value = static_cast<Uint8>(
-				std::clamp(alpha, 0.0f, 1.0f) * 255.0f
-				);
-
-			pixels[y * size + x] =
-				(static_cast<Uint32>(value) << 24) |
-				(static_cast<Uint32>(value) << 16) |
-				(static_cast<Uint32>(value) << 8) |
-				255u;
-		}
-	}
-
-	SDL_Surface* surface = SDL_CreateSurfaceFrom(
-		size,
-		size,
+	SDL_Texture* texture = SDL_CreateTexture(
+		renderer,
 		SDL_PIXELFORMAT_RGBA8888,
-		pixels.data(),
-		size * sizeof(Uint32)
+		SDL_TEXTUREACCESS_STREAMING,
+		size,
+		size
 	);
-
-	if (!surface)
-		return nullptr;
-
-	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-	SDL_DestroySurface(surface);
 
 	if (!texture)
 		return nullptr;
 
 	SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_ADD);
+
+	void* pixels = nullptr;
+	int pitch = 0;
+
+	if (!SDL_LockTexture(texture, nullptr, &pixels, &pitch))
+	{
+		SDL_DestroyTexture(texture);
+		return nullptr;
+	}
+
+	constexpr float center = size / 2.0f;
+	constexpr float radius = size / 2.0f;
+
+	auto* pixelData = static_cast<Uint32*>(pixels);
+
+	const SDL_PixelFormatDetails* format =
+		SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGBA8888);
+
+	for (int y = 0; y < size; y++)
+	{
+		for (int x = 0; x < size; x++)
+		{
+			float dx = x - center;
+			float dy = y - center;
+
+			float distance = sqrtf(dx * dx + dy * dy);
+			float d = distance / radius;
+
+			float glow = expf(-d * d * 3.0f);
+			float core = expf(-d * d * 12.0f);
+
+			float intensity = std::clamp(
+				glow * 0.65f + core * 0.65f,
+				0.0f,
+				1.0f
+			);
+
+			Uint8 alpha = static_cast<Uint8>(intensity * 255.0f);
+
+			pixelData[y * (pitch / 4) + x] =
+				SDL_MapRGBA(format, nullptr, 255, 255, 255, alpha);
+		}
+	}
+
 	SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
+	SDL_UnlockTexture(texture);
 
 	return texture;
 }
-
-
-
 
 void RenderingSystem::Initialize(Debugger& debugger, UIManager& uiManager, DialogSystem& dialogSystem)
 {
@@ -362,17 +331,20 @@ void RenderingSystem::ClearScreen()
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
 
 	SDL_Renderer* r = renderer;
-	auto ClearLayer = [&r](SDL_Texture* texture) -> void
+	auto ClearLayer = [&r](SDL_Texture* texture, SDL_Color color) -> void
 		{
 			SDL_SetRenderTarget(r, texture);
+			SDL_SetRenderDrawColor(r, color.r, color.g, color.b, color.a);
 			SDL_RenderClear(r);
 		};
 
-	ClearLayer(spriteLayer);
-	ClearLayer(lightLayer);
-	ClearLayer(renderLayer);
-	ClearLayer(uiLayer);
-	ClearLayer(nullptr);
+	SDL_Color defColor = { 0,0,0,0 };
+
+	ClearLayer(spriteLayer, defColor);
+	ClearLayer(lightLayer, { 0, 0, 0, 255 });
+	ClearLayer(renderLayer, defColor);
+	ClearLayer(uiLayer, defColor);
+	ClearLayer(nullptr, defColor);
 
 	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
 

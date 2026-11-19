@@ -8,12 +8,34 @@ class InputSystem;
 
 class Player
 {
+public:
+	struct Controls
+	{
+		enum Actions
+		{
+			LeftMovement,
+			RightMovement,
+			Jump,
+			Dash,
+			ActionCount
+		};
+
+		struct ControlBinds
+		{
+			SDL_Scancode keyboard;
+			SDL_GamepadButton gamepadButton;
+			SDL_GamepadAxis gamepadAxis;
+		};
+
+		ControlBinds controlBinds[ActionCount];
+	};
+	Controls controls;
 private:
 	Vec2f m_respawnPosition{290.0f, 960.0f};
 
 	float m_cameraFollowSpeed = 4.0f;
 	float m_movementSpeed = 3600.0f;
-	float m_jumpForce = 3800.0f;
+	float m_jumpForce = 3900.0f;
 
 	float m_dashVolume = 0.1f;
 	float m_jumpVolume = 0.5f;

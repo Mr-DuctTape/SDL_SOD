@@ -20,6 +20,7 @@ public:
 
 	bool playedAudio = false;
 	bool pressed = false;
+	bool hovered = false;
 	bool displayName = false;
 
 	std::string name{};

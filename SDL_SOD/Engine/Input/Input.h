@@ -67,6 +67,10 @@ public:
 	const bool GetGamepadButtonUp(SDL_GamepadButton button);
 
 	[[nodiscard]] const int GetGamepadAxis(SDL_GamepadAxis axis); // -1 for right and 1 for left
+	const bool HasGamepad()
+	{
+		return (m_gamePad) ? true : false;
+	}
 
 	const bool GetMouseButtonDown(Mouse button);
 	const bool GetMouseButton(Mouse button);

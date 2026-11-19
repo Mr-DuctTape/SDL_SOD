@@ -8,12 +8,13 @@ void Engine::Initialize()
 
 	// Initialize rendering system, give references/pointers to others
 	renderingSystem.Initialize(debugger, uiManager, dialogSystem);
+	assetManager.Initialize(renderingSystem.renderer);
+
 	dialogSystem.Initialize(audioManager);
 
 	uiManager.Initialize(inputSystem, renderingSystem, audioManager);
 	debugger.Initialize(&renderingSystem.camera);
 
-	assetManager.Initialize(renderingSystem.renderer);
 	physics.Intialize(&debugger);
 	
 	isRunning = true;

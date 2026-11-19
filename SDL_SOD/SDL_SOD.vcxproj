@@ -27,7 +27,6 @@
     <ClCompile Include="Engine\ECS\EntityManager.cpp" />
     <ClCompile Include="Engine\Textures\AssetManager.cpp" />
     <ClCompile Include="Engine\Core\Application.cpp" />
-    <ClCompile Include="Engine\Core\deltaTime.cpp" />
     <ClCompile Include="Engine\ECS\Components.cpp" />
     <ClCompile Include="Engine\Graphics\Rendering.cpp" />
     <ClCompile Include="Engine\Input\Input.cpp" />

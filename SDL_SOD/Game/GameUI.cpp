@@ -185,211 +185,494 @@ bool GameUI::MenuButtonPress(Menu menu, const std::string& name)
 
 bool GameUI::MainMenu()  // returns true on quit
 {
-	if (MenuButtonPress(m_mainMenu, "Start"))
+	if (m_inputSystem.HasGamepad())
 	{
-		MenuVisible(m_mainMenu, false);
-		m_game.playing = true;
-	}
-	else if (MenuButtonPress(m_mainMenu, "Settings"))
-	{
-		MenuVisible(m_settingsMenu, true);
-	}
-	else if (MenuButtonPress(m_mainMenu, "Credits"))
-	{
-		//MenuVisible(m_creditsMenu, true);
-	}
-	else if (MenuButtonPress(m_mainMenu, "Quit"))
-	{
-		return true;
+		const char* buttons[] =
+		{
+			"Start",
+			"Settings",
+			"Credits",
+			"Quit"
+		};
+		const int size = sizeof(buttons) / sizeof(const char*);
+		static int selected = 0;
+		if (m_inputSystem.GetGamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_DOWN))
+		{
+			selected++;
+			if (selected >= size)
+				selected = size - 1;
+		}
+		else if (m_inputSystem.GetGamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_UP))
+		{
+			selected--;
+			if (selected <= 0)
+				selected = 0;
+		}
+		UIWindow& window = m_uiManager.GetWindow(m_mainMenu);
+		for (auto c : buttons) {
+			auto& button = window.buttons[window.buttonIndex[c]];
+			button.hovered = false;
+		}
+		auto& button = window.buttons[window.buttonIndex[buttons[selected]]];
+		button.hovered = true;
+		if (m_inputSystem.GetGamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH) && IsMenuVisible(m_mainMenu))
+		{
+			button.pressed = true;
+		}
+
+		if (MenuButtonPress(m_mainMenu, "Start"))
+		{
+			MenuVisible(m_mainMenu, false);
+			m_game.playing = true;
+		}
+		else if (MenuButtonPress(m_mainMenu, "Settings"))
+		{
+			MenuVisible(m_settingsMenu, true);
+		}
+		else if (MenuButtonPress(m_mainMenu, "Credits"))
+		{
+			//MenuVisible(m_creditsMenu, true);
+		}
+		else if (MenuButtonPress(m_mainMenu, "Quit"))
+		{
+			return true;
+		}
+		else
+		{
+			SettingsMenu(m_game.GetSettings());
+		}
 	}
 	else
 	{
-		SettingsMenu(m_game.GetSettings());
+		if (MenuButtonPress(m_mainMenu, "Start"))
+		{
+			MenuVisible(m_mainMenu, false);
+			m_game.playing = true;
+		}
+		else if (MenuButtonPress(m_mainMenu, "Settings"))
+		{
+			MenuVisible(m_settingsMenu, true);
+		}
+		else if (MenuButtonPress(m_mainMenu, "Credits"))
+		{
+			//MenuVisible(m_creditsMenu, true);
+		}
+		else if (MenuButtonPress(m_mainMenu, "Quit"))
+		{
+			return true;
+		}
+		else
+		{
+			SettingsMenu(m_game.GetSettings());
+		}
 	}
 	return false;
 }
 
 void GameUI::SettingsMenu(Settings& settings)
 {
-	if (MenuButtonPress(m_settingsMenu, "DisplayMode"))
+	if (m_inputSystem.HasGamepad() && IsMenuVisible(m_settingsMenu))
 	{
-		static int displayMode = static_cast<int>(settings.displayMode);
-		displayMode++;
-		if (displayMode >= static_cast<int>(Settings::DisplayMode::DISPLAYCOUNT))
+		const char* buttons[] =
 		{
-			displayMode = 0;
+			"DisplayMode",
+			"VSync",
+			"Debug",
+			"FrameLimit",
+			"PotatoMode",
+			"AudioDevice",
+			"Back"
+		};
+		const int size = sizeof(buttons) / sizeof(const char*);
+		static int selected = 0;
+		if (m_inputSystem.GetGamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_DOWN))
+		{
+			selected++;
+			if (selected >= size)
+				selected = size - 1;
 		}
-
-		settings.displayMode = static_cast<Settings::DisplayMode>(displayMode);
-
+		else if (m_inputSystem.GetGamepadButtonDown(SDL_GAMEPAD_BUTTON_DPAD_UP))
+		{
+			selected--;
+			if (selected <= 0)
+				selected = 0;
+		}
 		UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
-		UIButton& button = m_uiManager.WindowGetButton(window, "DisplayMode");
-
-		switch (settings.displayMode)
+		for (auto c : buttons) {
+			auto& button = window.buttons[window.buttonIndex[c]];
+			button.hovered = false;
+		}
+		auto& button = window.buttons[window.buttonIndex[buttons[selected]]];
+		button.hovered = true;
+		if (m_inputSystem.GetGamepadButtonDown(SDL_GAMEPAD_BUTTON_SOUTH) && IsMenuVisible(m_settingsMenu))
 		{
-		case Settings::DisplayMode::WINDOWED:
-			button.displayText = "[WINDOWED]";
-			break;
-		case Settings::DisplayMode::FULLSCREEN:
-			button.displayText = "[FULLSCREEN]";
-			break;
+			button.pressed = true;
+		}
+
+		if (MenuButtonPress(m_settingsMenu, "DisplayMode"))
+		{
+			static int displayMode = static_cast<int>(settings.displayMode);
+			displayMode++;
+			if (displayMode >= static_cast<int>(Settings::DisplayMode::DISPLAYCOUNT))
+			{
+				displayMode = 0;
+			}
+
+			settings.displayMode = static_cast<Settings::DisplayMode>(displayMode);
+
+			UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
+			UIButton& button = m_uiManager.WindowGetButton(window, "DisplayMode");
+
+			switch (settings.displayMode)
+			{
+			case Settings::DisplayMode::WINDOWED:
+				button.displayText = "[WINDOWED]";
+				break;
+			case Settings::DisplayMode::FULLSCREEN:
+				button.displayText = "[FULLSCREEN]";
+				break;
+			}
+		}
+
+		if (MenuButtonPress(m_settingsMenu, "VSync"))
+		{
+			UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
+			UIButton& button = m_uiManager.WindowGetButton(window, "VSync");
+
+			if (settings.vsync)
+			{
+				button.displayText = "[OFF]";
+				settings.vsync = false;
+			}
+			else if (!settings.vsync)
+			{
+				button.displayText = "[ON]";
+				settings.vsync = true;
+			}
+		}
+
+		if (MenuButtonPress(m_settingsMenu, "FrameLimit"))
+		{
+			static int choice = static_cast<int>(settings.frameLimit);
+
+			choice++;
+			if (choice >= static_cast<int>(Settings::FrameLimit::COUNT) || choice < 0)
+			{
+				choice = 0;
+			}
+
+			UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
+			UIButton& button = m_uiManager.WindowGetButton(window, "FrameLimit");
+
+			Settings::FrameLimit frameLimit = static_cast<Settings::FrameLimit>(choice);
+			switch (frameLimit)
+			{
+			case Settings::FrameLimit::F30:
+				button.displayText = "[30]";
+				break;
+			case Settings::FrameLimit::F60:
+				button.displayText = "[60]";
+				break;
+			case Settings::FrameLimit::F90:
+				button.displayText = "[90]";
+				break;
+			case Settings::FrameLimit::F120:
+				button.displayText = "[120]";
+				break;
+			case Settings::FrameLimit::F144:
+				button.displayText = "[144]";
+				break;
+			case Settings::FrameLimit::F200:
+				button.displayText = "[200]";
+				break;
+			case Settings::FrameLimit::F240:
+				button.displayText = "[240]";
+				break;
+			case Settings::FrameLimit::F360:
+				button.displayText = "[360]";
+				break;
+			case Settings::FrameLimit::UNLIMITED:
+				button.displayText = "[UNLIMITED]";
+				break;
+			}
+			settings.frameLimit = frameLimit;
+		}
+
+		if (MenuButtonPress(m_settingsMenu, "MainSound"))
+		{
+			UIButton& button = m_uiManager.WindowGetButton(m_uiManager.GetWindow(m_settingsMenu), "MainSound");
+
+			static int level;
+			level++;
+
+			constexpr int max_level = 12;
+
+			if (level > max_level)
+				level = 0;
+
+			button.displayText = "[";
+
+			for (int i = 0; i < max_level; i++)
+			{
+				if (i < level)
+					button.displayText += '#';
+				else
+					button.displayText += '-';
+			}
+
+			button.displayText += "]";
+
+			if (level > 0) {
+				settings.masterVolume += 10.0f / 50.0f;
+			}
+			else {
+				settings.masterVolume = level;
+			}
+			std::cout << "Volume: " << settings.masterVolume << std::endl;
+		}
+
+		if (MenuButtonPress(m_settingsMenu, "Debug"))
+		{
+			UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
+			UIButton& button = m_uiManager.WindowGetButton(window, "Debug");
+
+			settings.debugMode = !settings.debugMode;
+			switch (settings.debugMode)
+			{
+			case false:
+				button.displayText = "[OFF]";
+				break;
+			case true:
+				button.displayText = "[ON]";
+				break;
+			}
+		}
+
+		if (MenuButtonPress(m_settingsMenu, "PotatoMode"))
+		{
+			UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
+			UIButton& button = m_uiManager.WindowGetButton(window, "PotatoMode");
+
+			settings.lightMode = !settings.lightMode;
+			switch (settings.lightMode)
+			{
+			case false:
+				button.displayText = "[OFF]";
+				break;
+			case true:
+				button.displayText = "[ON]";
+				break;
+			}
+		}
+
+		if (MenuButtonPress(m_settingsMenu, "Back"))
+		{
+			MenuVisible(m_mainMenu, true);
+		}
+
+		if (MenuButtonPress(m_settingsMenu, "AudioDevice"))
+		{
+			static int choice = m_audioManager.m_playBackDevice;
+			static std::vector<float> savedWidths;
+
+			std::vector<uint32_t> devices = m_audioManager.GetAvailableDevices();
+			size_t count = devices.size();
+			savedWidths.resize(count);
+
+			choice++;
+			if (choice >= count) {
+				choice = 0;
+			}
+
+			UIButton& button = m_uiManager.WindowGetButton(m_uiManager.GetWindow(m_settingsMenu), "AudioDevice");
+			button.displayText = "[" + std::string(m_audioManager.GetDeviceName(devices[choice])) + "]";
+			m_audioManager.m_playBackDevice = devices[choice];
+
+			m_audioManager.RebindAudioDevice();
 		}
 	}
-
-	if (MenuButtonPress(m_settingsMenu, "VSync"))
+	else
 	{
-		UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
-		UIButton& button = m_uiManager.WindowGetButton(window, "VSync");
-
-		if (settings.vsync)
+		if (MenuButtonPress(m_settingsMenu, "DisplayMode"))
 		{
-			button.displayText = "[OFF]";
-			settings.vsync = false;
+			static int displayMode = static_cast<int>(settings.displayMode);
+			displayMode++;
+			if (displayMode >= static_cast<int>(Settings::DisplayMode::DISPLAYCOUNT))
+			{
+				displayMode = 0;
+			}
+
+			settings.displayMode = static_cast<Settings::DisplayMode>(displayMode);
+
+			UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
+			UIButton& button = m_uiManager.WindowGetButton(window, "DisplayMode");
+
+			switch (settings.displayMode)
+			{
+			case Settings::DisplayMode::WINDOWED:
+				button.displayText = "[WINDOWED]";
+				break;
+			case Settings::DisplayMode::FULLSCREEN:
+				button.displayText = "[FULLSCREEN]";
+				break;
+			}
 		}
-		else if (!settings.vsync)
+
+		if (MenuButtonPress(m_settingsMenu, "VSync"))
 		{
-			button.displayText = "[ON]";
-			settings.vsync = true;
+			UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
+			UIButton& button = m_uiManager.WindowGetButton(window, "VSync");
+
+			if (settings.vsync)
+			{
+				button.displayText = "[OFF]";
+				settings.vsync = false;
+			}
+			else if (!settings.vsync)
+			{
+				button.displayText = "[ON]";
+				settings.vsync = true;
+			}
 		}
-	}
 
-	if (MenuButtonPress(m_settingsMenu, "FrameLimit"))
-	{
-		static int choice = static_cast<int>(settings.frameLimit);
-
-		choice++;
-		if (choice >= static_cast<int>(Settings::FrameLimit::COUNT) || choice < 0)
+		if (MenuButtonPress(m_settingsMenu, "FrameLimit"))
 		{
-			choice = 0;
+			static int choice = static_cast<int>(settings.frameLimit);
+
+			choice++;
+			if (choice >= static_cast<int>(Settings::FrameLimit::COUNT) || choice < 0)
+			{
+				choice = 0;
+			}
+
+			UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
+			UIButton& button = m_uiManager.WindowGetButton(window, "FrameLimit");
+
+			Settings::FrameLimit frameLimit = static_cast<Settings::FrameLimit>(choice);
+			switch (frameLimit)
+			{
+			case Settings::FrameLimit::F30:
+				button.displayText = "[30]";
+				break;
+			case Settings::FrameLimit::F60:
+				button.displayText = "[60]";
+				break;
+			case Settings::FrameLimit::F90:
+				button.displayText = "[90]";
+				break;
+			case Settings::FrameLimit::F120:
+				button.displayText = "[120]";
+				break;
+			case Settings::FrameLimit::F144:
+				button.displayText = "[144]";
+				break;
+			case Settings::FrameLimit::F200:
+				button.displayText = "[200]";
+				break;
+			case Settings::FrameLimit::F240:
+				button.displayText = "[240]";
+				break;
+			case Settings::FrameLimit::F360:
+				button.displayText = "[360]";
+				break;
+			case Settings::FrameLimit::UNLIMITED:
+				button.displayText = "[UNLIMITED]";
+				break;
+			}
+			settings.frameLimit = frameLimit;
 		}
 
-		UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
-		UIButton& button = m_uiManager.WindowGetButton(window, "FrameLimit");
-
-		Settings::FrameLimit frameLimit = static_cast<Settings::FrameLimit>(choice);
-		switch (frameLimit)
+		if (MenuButtonPress(m_settingsMenu, "MainSound"))
 		{
-		case Settings::FrameLimit::F30:
-			button.displayText = "[30]";
-			break;
-		case Settings::FrameLimit::F60:
-			button.displayText = "[60]";
-			break;
-		case Settings::FrameLimit::F90:
-			button.displayText = "[90]";
-			break;
-		case Settings::FrameLimit::F120:
-			button.displayText = "[120]";
-			break;
-		case Settings::FrameLimit::F144:
-			button.displayText = "[144]";
-			break;
-		case Settings::FrameLimit::F200:
-			button.displayText = "[200]";
-			break;
-		case Settings::FrameLimit::F240:
-			button.displayText = "[240]";
-			break;
-		case Settings::FrameLimit::F360:
-			button.displayText = "[360]";
-			break;
-		case Settings::FrameLimit::UNLIMITED:
-			button.displayText = "[UNLIMITED]";
-			break;
+			UIButton& button = m_uiManager.WindowGetButton(m_uiManager.GetWindow(m_settingsMenu), "MainSound");
+
+			static int level;
+			level++;
+
+			constexpr int max_level = 12;
+
+			if (level > max_level)
+				level = 0;
+
+			button.displayText = "[";
+
+			for (int i = 0; i < max_level; i++)
+			{
+				if (i < level)
+					button.displayText += '#';
+				else
+					button.displayText += '-';
+			}
+
+			button.displayText += "]";
+
+			if (level > 0) {
+				settings.masterVolume += 10.0f / 50.0f;
+			}
+			else {
+				settings.masterVolume = level;
+			}
+			std::cout << "Volume: " << settings.masterVolume << std::endl;
 		}
-		settings.frameLimit = frameLimit;
-	}
 
-	if (MenuButtonPress(m_settingsMenu, "MainSound"))
-	{
-		UIButton& button = m_uiManager.WindowGetButton(m_uiManager.GetWindow(m_settingsMenu), "MainSound");
-
-		static int level;
-		level++;
-
-		constexpr int max_level = 12;
-
-		if (level > max_level)
-			level = 0;
-
-		button.displayText = "[";
-
-		for (int i = 0; i < max_level; i++)
+		if (MenuButtonPress(m_settingsMenu, "Debug"))
 		{
-			if (i < level)
-				button.displayText += '#';
-			else
-				button.displayText += '-';
+			UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
+			UIButton& button = m_uiManager.WindowGetButton(window, "Debug");
+
+			settings.debugMode = !settings.debugMode;
+			switch (settings.debugMode)
+			{
+			case false:
+				button.displayText = "[OFF]";
+				break;
+			case true:
+				button.displayText = "[ON]";
+				break;
+			}
 		}
 
-		button.displayText += "]";
-
-		if (level > 0) {
-			settings.masterVolume += 10.0f / 50.0f;
-		}
-		else {
-			settings.masterVolume = level;
-		}
-		std::cout << "Volume: " << settings.masterVolume << std::endl;
-	}
-
-	if (MenuButtonPress(m_settingsMenu, "Debug"))
-	{
-		UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
-		UIButton& button = m_uiManager.WindowGetButton(window, "Debug");
-
-		settings.debugMode = !settings.debugMode;
-		switch (settings.debugMode)
+		if (MenuButtonPress(m_settingsMenu, "PotatoMode"))
 		{
-		case false:
-			button.displayText = "[OFF]";
-			break;
-		case true:
-			button.displayText = "[ON]";
-			break;
+			UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
+			UIButton& button = m_uiManager.WindowGetButton(window, "PotatoMode");
+
+			settings.lightMode = !settings.lightMode;
+			switch (settings.lightMode)
+			{
+			case false:
+				button.displayText = "[OFF]";
+				break;
+			case true:
+				button.displayText = "[ON]";
+				break;
+			}
 		}
-	}
 
-	if (MenuButtonPress(m_settingsMenu, "PotatoMode"))
-	{
-		UIWindow& window = m_uiManager.GetWindow(m_settingsMenu);
-		UIButton& button = m_uiManager.WindowGetButton(window, "PotatoMode");
-
-		settings.lightMode = !settings.lightMode;
-		switch (settings.lightMode)
+		if (MenuButtonPress(m_settingsMenu, "Back"))
 		{
-		case false:
-			button.displayText = "[OFF]";
-			break;
-		case true:
-			button.displayText = "[ON]";
-			break;
-		}
-	}
-
-	if (MenuButtonPress(m_settingsMenu, "Back"))
-	{
-		MenuVisible(m_mainMenu, true);
-	}
-
-	if (MenuButtonPress(m_settingsMenu, "AudioDevice"))
-	{
-		static int choice = m_audioManager.m_playBackDevice;
-		static std::vector<float> savedWidths;
-
-		std::vector<uint32_t> devices = m_audioManager.GetAvailableDevices();
-		size_t count = devices.size();
-		savedWidths.resize(count);
-
-		choice++;
-		if (choice >= count) {
-			choice = 0;
+			MenuVisible(m_mainMenu, true);
 		}
 
-		UIButton& button = m_uiManager.WindowGetButton(m_uiManager.GetWindow(m_settingsMenu), "AudioDevice");
-		button.displayText = "[" + std::string(m_audioManager.GetDeviceName(devices[choice])) + "]";
-		m_audioManager.m_playBackDevice = devices[choice];
+		if (MenuButtonPress(m_settingsMenu, "AudioDevice"))
+		{
+			static int choice = m_audioManager.m_playBackDevice;
+			static std::vector<float> savedWidths;
 
-		m_audioManager.RebindAudioDevice();
+			std::vector<uint32_t> devices = m_audioManager.GetAvailableDevices();
+			size_t count = devices.size();
+			savedWidths.resize(count);
+
+			choice++;
+			if (choice >= count) {
+				choice = 0;
+			}
+
+			UIButton& button = m_uiManager.WindowGetButton(m_uiManager.GetWindow(m_settingsMenu), "AudioDevice");
+			button.displayText = "[" + std::string(m_audioManager.GetDeviceName(devices[choice])) + "]";
+			m_audioManager.m_playBackDevice = devices[choice];
+
+			m_audioManager.RebindAudioDevice();
+		}
 	}
 }
